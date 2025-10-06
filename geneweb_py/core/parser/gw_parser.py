@@ -174,6 +174,10 @@ class GeneWebParser:
                 self._parse_family_block(node, persons, families, genealogy)
             elif node.type == BlockType.NOTES:
                 self._parse_notes_block(node, persons)
+            elif node.type == BlockType.PERSON_EVENTS:
+                self._parse_person_events_block(node, persons, genealogy)
+            elif node.type == BlockType.FAMILY_EVENTS:
+                self._parse_family_events_block(node, families, genealogy)
             # TODO: Ajouter les autres types de blocs
         
         # Mettre à jour les références croisées
@@ -215,7 +219,10 @@ class GeneWebParser:
                 i += 1
                 # Date de mariage (optionnelle)
                 if i < len(tokens) and tokens[i].type == TokenType.DATE:
-                    marriage_date = Date.parse(tokens[i].value)
+                    try:
+                        marriage_date = Date.parse_with_fallback(tokens[i].value)
+                    except Exception:
+                        marriage_date = None
                     i += 1
             
             # Lieu de mariage
@@ -361,6 +368,164 @@ class GeneWebParser:
                 
                 if notes_content:
                     persons[person_id].add_note(' '.join(notes_content))
+    
+    def _parse_person_events_block(self, node: SyntaxNode, persons: dict, genealogy: Genealogy) -> None:
+        """Parse un bloc événements personnels et met à jour la personne correspondante"""
+        tokens = node.tokens
+        
+        # Extraire le nom de la personne
+        if len(tokens) >= 3 and tokens[1].type == TokenType.IDENTIFIER and tokens[2].type == TokenType.IDENTIFIER:
+            last_name = tokens[1].value
+            first_name = tokens[2].value
+            
+            person_id = f"{last_name}_{first_name}_0"
+            
+            # Créer la personne si elle n'existe pas
+            if person_id not in persons:
+                person = Person(
+                    last_name=last_name,
+                    first_name=first_name,
+                    gender=Gender.UNKNOWN  # Sera déterminé plus tard
+                )
+                persons[person_id] = person
+                genealogy.add_person(person)
+            
+            person = persons[person_id]
+            
+            # Parser les événements
+            i = 3  # Passer pevt, nom, prénom
+            while i < len(tokens):
+                token = tokens[i]
+                
+                # Événements avec dates
+                if token.type == TokenType.BIRT:
+                    i += 1
+                    # Date de naissance (optionnelle)
+                    if i < len(tokens) and tokens[i].type == TokenType.DATE:
+                        try:
+                            birth_date = Date.parse_with_fallback(tokens[i].value)
+                            person.birth_date = birth_date
+                        except Exception:
+                            # En cas d'erreur, ignorer silencieusement
+                            pass
+                        i += 1
+                    else:
+                        # Pas de date -> date inconnue
+                        person.birth_date = Date(is_unknown=True)
+                    # Lieu de naissance (optionnel)
+                    if i < len(tokens) and tokens[i].type == TokenType.P:
+                        i += 1
+                        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                            person.birth_place = tokens[i].value
+                            i += 1
+                
+                elif token.type == TokenType.DEAT:
+                    i += 1
+                    # Date de décès (optionnelle)
+                    if i < len(tokens) and tokens[i].type == TokenType.DATE:
+                        try:
+                            death_date = Date.parse_with_fallback(tokens[i].value)
+                            person.death_date = death_date
+                        except Exception:
+                            # En cas d'erreur, ignorer silencieusement
+                            pass
+                        i += 1
+                    else:
+                        # Pas de date -> date inconnue
+                        person.death_date = Date(is_unknown=True)
+                    # Lieu de décès (optionnel)
+                    if i < len(tokens) and tokens[i].type == TokenType.P:
+                        i += 1
+                        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                            person.death_place = tokens[i].value
+                            i += 1
+                
+                elif token.type == TokenType.BAPT:
+                    i += 1
+                    # Date de baptême (optionnelle)
+                    if i < len(tokens) and tokens[i].type == TokenType.DATE:
+                        try:
+                            baptism_date = Date.parse_with_fallback(tokens[i].value)
+                            # Ajouter l'événement de baptême
+                            from ..event import Event, EventType
+                            baptism_event = Event(
+                                event_type=EventType.BAPTISM,
+                                date=baptism_date
+                            )
+                            person.add_event(baptism_event)
+                        except Exception:
+                            # En cas d'erreur, ignorer silencieusement
+                            pass
+                        i += 1
+                    # Lieu de baptême (optionnel)
+                    if i < len(tokens) and tokens[i].type == TokenType.P:
+                        i += 1
+                        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                            baptism_place = tokens[i].value
+                            # Mettre à jour l'événement de baptême si il existe
+                            for event in person.events:
+                                if event.event_type == EventType.BAPTISM:
+                                    event.place = baptism_place
+                                    break
+                            i += 1
+                
+                elif token.type == TokenType.NOTE:
+                    i += 1
+                    # Contenu de la note
+                    note_content = []
+                    while i < len(tokens) and tokens[i].type not in [TokenType.NEWLINE, TokenType.END_PEVT]:
+                        note_content.append(tokens[i].value)
+                        i += 1
+                    if note_content:
+                        person.add_note(' '.join(note_content))
+                
+                else:
+                    i += 1
+    
+    def _parse_family_events_block(self, node: SyntaxNode, families: dict, genealogy: Genealogy) -> None:
+        """Parse un bloc événements familiaux et met à jour la famille correspondante"""
+        tokens = node.tokens
+        
+        # Pour l'instant, on ne fait que collecter les témoins
+        # Dans une implémentation complète, on associerait les témoins à la famille
+        witnesses = []
+        
+        i = 1  # Passer 'fevt'
+        while i < len(tokens):
+            token = tokens[i]
+            
+            # Témoins
+            if token.type == TokenType.WIT:
+                i += 1
+                witness_type = None
+                witness_name = []
+                
+                # Type de témoin (m ou f)
+                if i < len(tokens) and tokens[i].type in [TokenType.H, TokenType.F]:
+                    witness_type = "male" if tokens[i].type == TokenType.H else "female"
+                    i += 1
+                
+                # Deux points
+                if i < len(tokens) and tokens[i].type == TokenType.COLON:
+                    i += 1
+                
+                # Nom du témoin
+                while i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                    witness_name.append(tokens[i].value)
+                    i += 1
+                
+                if witness_name:
+                    witnesses.append({
+                        'type': witness_type,
+                        'name': ' '.join(witness_name)
+                    })
+                continue
+            
+            # Autres tokens
+            i += 1
+        
+        # Stocker les témoins dans les métadonnées du nœud
+        node.metadata['witnesses'] = witnesses
     
     def get_tokens(self) -> List[Token]:
         """Retourne la liste des tokens du dernier parsing"""

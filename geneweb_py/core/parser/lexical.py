@@ -66,6 +66,9 @@ class TokenType(Enum):
     APUBL = "apubl"               # Accès public
     APRIV = "apriv"               # Accès privé
     
+    # Notes
+    NOTE = "note"                 # Note personnelle
+    
     # Modificateurs de décès
     OD = "od"                     # Obviously dead
     MJ = "mj"                     # Mort jeune
@@ -195,6 +198,7 @@ class LexicalParser:
             'apriv': TokenType.APRIV,
             'od': TokenType.OD,
             'mj': TokenType.MJ,
+            'note': TokenType.NOTE,
             'buri': TokenType.BURI,
             'crem': TokenType.CREM,
             'wit': TokenType.WIT,
@@ -287,19 +291,36 @@ class LexicalParser:
         start_line = self.line_number
         start_col = self.column
         
-        # Commentaires (lignes commençant par #)
-        if char == '#' and (self.column == 1 or self.text[self.position-1] == '\n'):
-            return self._parse_comment(start_line, start_col, start_pos)
+        # Modificateurs avec # (y compris les événements)
+        # Vérifier d'abord si c'est un modificateur connu
+        if char == '#':
+            # Essayer de parser comme modificateur
+            # Si ça échoue et qu'on est en début de ligne, c'est un commentaire
+            saved_pos = self.position
+            saved_line = self.line_number
+            saved_col = self.column
+            
+            # Tenter de parser comme modificateur
+            token = self._parse_hash_modifier(start_line, start_col, start_pos)
+            
+            # Si c'est un modificateur connu, le retourner
+            if token and token.type != TokenType.IDENTIFIER:
+                return token
+            
+            # Sinon, restaurer la position et traiter comme commentaire si en début de ligne
+            self.position = saved_pos
+            self.line_number = saved_line
+            self.column = saved_col
+            
+            # Si on est en début de ligne et que ce n'est pas un modificateur, c'est un commentaire
+            if self.column == 1 or (self.position > 0 and self.text[self.position-1] == '\n'):
+                return self._parse_comment(start_line, start_col, start_pos)
         
         # Mots-clés de blocs (en début de ligne)
         if self.column == 1:
             block_token = self._parse_block_keyword(start_line, start_col, start_pos)
             if block_token:
                 return block_token
-        
-        # Modificateurs avec #
-        if char == '#':
-            return self._parse_hash_modifier(start_line, start_col, start_pos)
         
         # Dates (commençant par un chiffre ou un préfixe)
         if char.isdigit() or char in '~?<>':
