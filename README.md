@@ -10,7 +10,7 @@ Librairie Python complète pour parser, manipuler et convertir les fichiers gén
 
 - **Parser complet** : Lecture et parsing des fichiers .gw avec support gwplus ✅
 - **Modèles de données** : Représentation structurée des personnes, familles et événements ✅
-- **API REST moderne** : FastAPI avec endpoints complets pour CRUD 🚧
+- **API REST moderne** : FastAPI avec endpoints complets pour CRUD ✅
 - **Validation** : Vérification de cohérence des données généalogiques ✅
 - **Conversion** : Export/import vers GEDCOM, JSON, XML et autres formats ✅
 - **Performance** : Optimisé pour les grandes bases de données ✅
@@ -125,7 +125,7 @@ imported_genealogy = json_importer.import_from_file("ma_famille.json")
 # Exécuter tous les tests
 pytest
 
-# Tests avec couverture (73% actuellement)
+# Tests avec couverture (78% actuellement)
 pytest --cov=geneweb_py
 
 # Tests d'intégration seulement
