@@ -167,7 +167,7 @@ class FamilyBlockParser(BlockParser):
         return i
     
     def _parse_personal_info(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
-        """Parse les informations personnelles (dates, lieux, etc.)"""
+        """Parse les informations personnelles (dates, lieux, occupation, etc.)"""
         i = start_index
         
         # Date de naissance
@@ -180,6 +180,15 @@ class FamilyBlockParser(BlockParser):
             node.add_token(tokens[i])
             i += 1
             if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                node.add_token(tokens[i])
+                i += 1
+        
+        # Occupation (#occu)
+        if i < len(tokens) and tokens[i].type == TokenType.OCCU:
+            node.add_token(tokens[i])
+            i += 1
+            # Consommer tous les tokens de l'occupation jusqu'au prochain modificateur ou fin
+            while i < len(tokens) and tokens[i].type in [TokenType.IDENTIFIER, TokenType.STRING, TokenType.PAREN_OPEN, TokenType.PAREN_CLOSE, TokenType.UNKNOWN]:
                 node.add_token(tokens[i])
                 i += 1
         
@@ -305,9 +314,22 @@ class FamilyBlockParser(BlockParser):
             i += 1
         
         # Nom du témoin
-        while i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
             node.add_token(tokens[i])
             i += 1
+        
+        # Prénom du témoin
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Numéro d'occurrence (après le prénom)
+        if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Informations personnelles du témoin (occupation, etc.)
+        i = self._parse_personal_info(tokens, i, node)
         
         return i
     
@@ -344,6 +366,14 @@ class FamilyBlockParser(BlockParser):
                 if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
                     child_node.add_token(tokens[i])
                     i += 1
+                
+                # Numéro d'occurrence (après le prénom)
+                if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
+                    child_node.add_token(tokens[i])
+                    i += 1
+                
+                # Informations personnelles de l'enfant (occupation, etc.)
+                i = self._parse_personal_info(tokens, i, child_node)
                 
                 node.add_child(child_node)
                 
@@ -698,6 +728,290 @@ class NotesBlockParser(BlockParser):
         return i
 
 
+class RelationsBlockParser(BlockParser):
+    """Parser spécialisé pour les blocs relations (rel)"""
+    
+    def __init__(self):
+        super().__init__(BlockType.RELATIONS)
+    
+    def parse(self, tokens: List[Token], start_index: int) -> tuple[SyntaxNode, int]:
+        """Parse un bloc relations
+        
+        Format: rel LastName FirstName[.Number]
+        beg
+        - adop/reco/cand/godp/fost [fath/moth]: Person
+        end
+        """
+        node = SyntaxNode(BlockType.RELATIONS)
+        i = start_index
+        
+        # Vérifier que c'est bien un bloc rel
+        if i >= len(tokens) or tokens[i].type != TokenType.REL:
+            raise GeneWebParseError(
+                "Attendu 'rel' au début du bloc relations",
+                tokens[i].line_number if i < len(tokens) else 0,
+                token=tokens[i].value if i < len(tokens) else None,
+                expected="rel"
+            )
+        
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Nom de famille
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Prénom
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Numéro d'occurrence (optionnel)
+        if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Parser le contenu des relations
+        i = self._parse_relations_content(tokens, i, node)
+        
+        return node, i
+    
+    def _parse_relations_content(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse le contenu des relations entre beg et end"""
+        i = start_index
+        
+        # Début du contenu
+        if i < len(tokens) and tokens[i].type == TokenType.BEG:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Contenu des relations (jusqu'à end)
+        while i < len(tokens):
+            if tokens[i].type == TokenType.END:
+                node.add_token(tokens[i])
+                i += 1
+                break
+            else:
+                # Parser chaque ligne de relation
+                if tokens[i].type == TokenType.DASH:
+                    child_node = SyntaxNode(BlockType.RELATIONS)  # Créer un nœud enfant
+                    i = self._parse_relation_line(tokens, i, child_node)
+                    node.add_child(child_node)
+                else:
+                    node.add_token(tokens[i])
+                    i += 1
+        
+        return i
+    
+    def _parse_relation_line(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse une ligne de relation (- adop/reco/cand/godp/fost [fath/moth]: Person)"""
+        i = start_index
+        
+        # Token tire
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Type de relation (adop, reco, cand, godp, fost)
+        if i < len(tokens) and tokens[i].type in [TokenType.ADOP, TokenType.RECO, TokenType.CAND, TokenType.GODP, TokenType.FOST]:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Type de parent (fath, moth) - optionnel
+        if i < len(tokens) and tokens[i].type in [TokenType.FATH, TokenType.MOTH]:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Deux points
+        if i < len(tokens) and tokens[i].type == TokenType.COLON:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Nom de la personne
+        while i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        return i
+
+
+class DatabaseNotesBlockParser(BlockParser):
+    """Parser spécialisé pour les blocs notes de base de données (notes-db)"""
+    
+    def __init__(self):
+        super().__init__(BlockType.DATABASE_NOTES)
+    
+    def parse(self, tokens: List[Token], start_index: int) -> tuple[SyntaxNode, int]:
+        """Parse un bloc notes de base de données
+        
+        Format: notes-db
+        Contenu libre jusqu'à end notes-db
+        """
+        node = SyntaxNode(BlockType.DATABASE_NOTES)
+        i = start_index
+        
+        # Vérifier que c'est bien un bloc notes-db
+        if i >= len(tokens) or tokens[i].type != TokenType.NOTES_DB:
+            raise GeneWebParseError(
+                "Attendu 'notes-db' au début du bloc notes de base de données",
+                tokens[i].line_number if i < len(tokens) else 0,
+                token=tokens[i].value if i < len(tokens) else None,
+                expected="notes-db"
+            )
+        
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Parser le contenu jusqu'à end notes-db
+        i = self._parse_notes_content(tokens, i, node)
+        
+        return node, i
+    
+    def _parse_notes_content(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse le contenu des notes entre notes-db et end notes-db"""
+        i = start_index
+        
+        # Contenu des notes (jusqu'à end notes-db)
+        while i < len(tokens):
+            if tokens[i].type == TokenType.END_NOTES_DB:
+                node.add_token(tokens[i])
+                i += 1
+                break
+            else:
+                node.add_token(tokens[i])
+                i += 1
+        
+        return i
+
+
+class ExtendedPageBlockParser(BlockParser):
+    """Parser spécialisé pour les blocs pages étendues (page-ext)"""
+    
+    def __init__(self):
+        super().__init__(BlockType.EXTENDED_PAGE)
+    
+    def parse(self, tokens: List[Token], start_index: int) -> tuple[SyntaxNode, int]:
+        """Parse un bloc page étendue
+        
+        Format: page-ext LastName FirstName[.Number]
+        Contenu HTML/texte jusqu'à end page-ext
+        """
+        node = SyntaxNode(BlockType.EXTENDED_PAGE)
+        i = start_index
+        
+        # Vérifier que c'est bien un bloc page-ext
+        if i >= len(tokens) or tokens[i].type != TokenType.PAGE_EXT:
+            raise GeneWebParseError(
+                "Attendu 'page-ext' au début du bloc page étendue",
+                tokens[i].line_number if i < len(tokens) else 0,
+                token=tokens[i].value if i < len(tokens) else None,
+                expected="page-ext"
+            )
+        
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Nom de famille
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Prénom
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Numéro d'occurrence (optionnel)
+        if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Parser le contenu jusqu'à end page-ext
+        i = self._parse_page_content(tokens, i, node)
+        
+        return node, i
+    
+    def _parse_page_content(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse le contenu de la page entre page-ext et end page-ext"""
+        i = start_index
+        
+        # Contenu de la page (jusqu'à end page-ext)
+        while i < len(tokens):
+            if tokens[i].type == TokenType.END_PAGE_EXT:
+                node.add_token(tokens[i])
+                i += 1
+                break
+            else:
+                node.add_token(tokens[i])
+                i += 1
+        
+        return i
+
+
+class WizardNoteBlockParser(BlockParser):
+    """Parser spécialisé pour les blocs notes de wizard (wizard-note)"""
+    
+    def __init__(self):
+        super().__init__(BlockType.WIZARD_NOTE)
+    
+    def parse(self, tokens: List[Token], start_index: int) -> tuple[SyntaxNode, int]:
+        """Parse un bloc note de wizard
+        
+        Format: wizard-note LastName FirstName[.Number]
+        Notes jusqu'à end wizard-note
+        """
+        node = SyntaxNode(BlockType.WIZARD_NOTE)
+        i = start_index
+        
+        # Vérifier que c'est bien un bloc wizard-note
+        if i >= len(tokens) or tokens[i].type != TokenType.WIZARD_NOTE:
+            raise GeneWebParseError(
+                "Attendu 'wizard-note' au début du bloc note de wizard",
+                tokens[i].line_number if i < len(tokens) else 0,
+                token=tokens[i].value if i < len(tokens) else None,
+                expected="wizard-note"
+            )
+        
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Nom de famille
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Prénom
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Numéro d'occurrence (optionnel)
+        if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Parser le contenu jusqu'à end wizard-note
+        i = self._parse_wizard_content(tokens, i, node)
+        
+        return node, i
+    
+    def _parse_wizard_content(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse le contenu des notes de wizard entre wizard-note et end wizard-note"""
+        i = start_index
+        
+        # Contenu des notes (jusqu'à end wizard-note)
+        while i < len(tokens):
+            if tokens[i].type == TokenType.END_WIZARD_NOTE:
+                node.add_token(tokens[i])
+                i += 1
+                break
+            else:
+                node.add_token(tokens[i])
+                i += 1
+        
+        return i
+
+
 class SyntaxParser:
     """Parser syntaxique principal pour les fichiers .gw"""
     
@@ -705,9 +1019,12 @@ class SyntaxParser:
         self.block_parsers = {
             TokenType.FAM: FamilyBlockParser(),
             TokenType.NOTES: NotesBlockParser(),
+            TokenType.REL: RelationsBlockParser(),
             TokenType.PEVT: PersonEventsBlockParser(),
             TokenType.FEVT: FamilyEventsBlockParser(),
-            # TODO: Ajouter les autres parsers de blocs
+            TokenType.NOTES_DB: DatabaseNotesBlockParser(),
+            TokenType.PAGE_EXT: ExtendedPageBlockParser(),
+            TokenType.WIZARD_NOTE: WizardNoteBlockParser(),
         }
     
     def parse(self, tokens: List[Token]) -> List[SyntaxNode]:

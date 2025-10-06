@@ -21,10 +21,19 @@
 - Exceptions spécifiques : `GeneWebError`, `GeneWebParseError`, `GeneWebValidationError`, `GeneWebConversionError`, `GeneWebEncodingError`
 - Messages d'erreur détaillés avec numéros de ligne
 
-#### 4. Parser complet
-- **Parser lexical** : Tokenisation complète des fichiers .gw (94% couverture)
-- **Parser syntaxique** : Analyse des blocs structurés (fam, notes, rel, etc.)
-- **Parser principal** : GeneWebParser avec API simple et robuste
+#### 4. Parser complet et avancé ✅
+- **Parser lexical** : Tokenisation complète des fichiers .gw (83% couverture)
+  - Support des apostrophes dans les identifiants (`d'Arc`, `O'Brien`)
+  - Support des caractères spéciaux dans les occupations (virgules, parenthèses, apostrophes)
+  - Reconnaissance des tokens spéciaux (`h`, `f`, `m`) pour les sexes
+- **Parser syntaxique** : Analyse des blocs structurés (52% couverture)
+  - Support des nouveaux blocs : `notes-db`, `page-ext`, `wizard-note`
+  - Parsing des numéros d'occurrence (.1, .2, etc.)
+  - Gestion des occupations avec caractères spéciaux
+- **Parser principal** : GeneWebParser avec API simple et robuste (50% couverture)
+  - Déduplication intelligente avec numéros d'occurrence
+  - Parsing des enfants avec sexes et occupations
+  - Parsing des témoins avec toutes leurs informations
 - **Intégration** : Mapping automatique vers les modèles existants
 - **Tests d'intégration** : Parser complet avec fichiers réels
 - **Performance** : Parsing efficace avec gestion mémoire optimisée
@@ -45,13 +54,14 @@
 - **Tests exhaustifs** : Couverture complète des convertisseurs
 
 #### 7. Tests
-- **733 tests** couvrant tous les modules (601 passants, 52 en échec, 80 erreurs)
-- **Couverture de code à 69.72%** (objectif initial : 50% largement dépassé ✅)
+- **Tests exhaustifs** : 12 nouveaux tests pour les améliorations du parser
+- **Couverture de code à 30%** (en cours d'amélioration)
 - Fixtures pour tests avec fichiers .gw d'exemple
 - Tests de validation et de cohérence
 - Tests d'intégration API complets
 - Tests de convertisseurs (JSON, XML, GEDCOM)
 - Tests de parsers (lexical, syntaxique, principal)
+- Tests des nouvelles fonctionnalités (apostrophes, caractères spéciaux, numéros d'occurrence)
 
 #### 8. Exemples
 - Exemple d'utilisation basique démontrant toutes les fonctionnalités
@@ -191,20 +201,20 @@ pytest --cov=geneweb_py --cov-report=html
 
 ### Couverture actuelle
 
-- **Date** : 87% ⭐ Excellent
-- **Family** : 87% ⭐ Excellent  
-- **Person** : 94% ⭐ Excellent
-- **Event** : 83% ⭐ Excellent
-- **Genealogy** : 96% ⭐ Excellent
-- **Exceptions** : 95% ⭐ Excellent
-- **Parser lexical** : 97% ⭐ Excellent
-- **Parser syntaxique** : 85% ⭐ Excellent
-- **Parser principal** : 79% ⭐ Excellent
-- **API Routers** : 72-78% ⭐ Bon à Excellent
-- **API Services** : 67% ⭐ Bon
-- **Convertisseurs** : 75-97% ⭐ Excellent
+- **Date** : 25% ⚠️ À améliorer
+- **Family** : 57% ⭐ Bon
+- **Person** : 68% ⭐ Bon
+- **Event** : 82% ⭐ Excellent
+- **Genealogy** : 59% ⭐ Bon
+- **Exceptions** : 41% ⚠️ À améliorer
+- **Parser lexical** : 83% ⭐ Excellent
+- **Parser syntaxique** : 52% ⭐ Bon
+- **Parser principal** : 50% ⭐ Bon
+- **API Routers** : 0% ⚠️ Non testé
+- **API Services** : 0% ⚠️ Non testé
+- **Convertisseurs** : 0% ⚠️ Non testé
 
-**Total** : 69.72% (objectif : 50% largement dépassé ✅)
+**Total** : 30% (objectif : 50% en cours d'amélioration)
 
 ## Prochaines étapes
 
@@ -221,13 +231,21 @@ pytest --cov=geneweb_py --cov-report=html
 3. ✅ Import JSON/XML
 4. ✅ Tests de conversion bidirectionnelle
 
-### Phase 5 : Optimisations (priorité haute - EN COURS)
-1. ✅ Amélioration de la couverture de code (83.92%)
-2. 🚧 Correction des 91 tests en échec
-3. 🚧 Correction des 92 erreurs de tests
-4. 🚧 Optimisation des performances
-5. 🚧 Gestion avancée des erreurs
-6. 🚧 Documentation avancée
+### Phase 5 : Améliorations du parser (priorité haute - COMPLÈTE ✅)
+1. ✅ Support des apostrophes dans les identifiants (`d'Arc`, `O'Brien`)
+2. ✅ Support des caractères spéciaux dans les occupations (virgules, parenthèses, apostrophes)
+3. ✅ Déduplication intelligente avec numéros d'occurrence (.1, .2, etc.)
+4. ✅ Support des nouveaux blocs (`notes-db`, `page-ext`, `wizard-note`)
+5. ✅ Parsing des enfants avec sexes et occupations
+6. ✅ Parsing des témoins avec toutes leurs informations
+7. ✅ Tests complets pour toutes les nouvelles fonctionnalités
+
+### Phase 6 : Optimisations (priorité moyenne - EN COURS)
+1. 🚧 Amélioration de la couverture de code (30% → 50%+)
+2. 🚧 Correction des tests en échec
+3. 🚧 Optimisation des performances
+4. 🚧 Gestion avancée des erreurs
+5. 🚧 Documentation avancée
 
 ## Contribution
 

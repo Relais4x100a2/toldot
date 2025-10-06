@@ -66,6 +66,9 @@ class TokenType(Enum):
     APUBL = "apubl"               # Accès public
     APRIV = "apriv"               # Accès privé
     
+    # Occupation
+    OCCU = "occu"                 # Occupation
+    
     # Notes
     NOTE = "note"                 # Note personnelle
     
@@ -87,6 +90,15 @@ class TokenType(Enum):
     DIV_EVENT = "div"             # Divorce (événement)
     SEP_EVENT = "sep"             # Séparation (événement)
     ENGA = "enga"                 # Fiançailles
+    
+    # Relations
+    ADOP = "adop"                # Adoption
+    RECO = "reco"                # Reconnaissance
+    CAND = "cand"                # Candidat
+    GODP = "godp"                # Parrain/Marraine
+    FOST = "fost"                # Famille d'accueil
+    FATH = "fath"                # Père
+    MOTH = "moth"                # Mère
     
     # Autres tokens
     IDENTIFIER = "identifier"     # Identifiant (nom, prénom, lieu)
@@ -199,6 +211,7 @@ class LexicalParser:
             'od': TokenType.OD,
             'mj': TokenType.MJ,
             'note': TokenType.NOTE,
+            'occu': TokenType.OCCU,
             'buri': TokenType.BURI,
             'crem': TokenType.CREM,
             'wit': TokenType.WIT,
@@ -211,6 +224,13 @@ class LexicalParser:
             'mp': TokenType.MP,
             'p': TokenType.P,
             's': TokenType.S,
+            'adop': TokenType.ADOP,
+            'reco': TokenType.RECO,
+            'cand': TokenType.CAND,
+            'godp': TokenType.GODP,
+            'fost': TokenType.FOST,
+            'fath': TokenType.FATH,
+            'moth': TokenType.MOTH,
         }
         
         # Types d'événements
@@ -224,6 +244,17 @@ class LexicalParser:
             'div': TokenType.DIV_EVENT,
             'sep': TokenType.SEP_EVENT,
             'enga': TokenType.ENGA,
+        }
+        
+        # Mots-clés de relations (sans #)
+        self.relation_keywords = {
+            'adop': TokenType.ADOP,
+            'reco': TokenType.RECO,
+            'cand': TokenType.CAND,
+            'godp': TokenType.GODP,
+            'fost': TokenType.FOST,
+            'fath': TokenType.FATH,
+            'moth': TokenType.MOTH,
         }
     
     def tokenize(self) -> List[Token]:
@@ -459,6 +490,7 @@ class LexicalParser:
         word = ""
         start_pos = self.position
         
+        # Parser le mot-clé de base
         while (self.position < len(self.text) and 
                (self.text[self.position].isalnum() or self.text[self.position] in '-_')):
             word += self.text[self.position]
@@ -545,7 +577,7 @@ class LexicalParser:
         value = ""
         
         while (self.position < len(self.text) and 
-               (self.text[self.position].isalnum() or self.text[self.position] in '_')):
+               (self.text[self.position].isalnum() or self.text[self.position] in "_-'")):
             value += self.text[self.position]
             self._advance_position()
         
@@ -558,12 +590,16 @@ class LexicalParser:
                 'beg': TokenType.BEG,
                 'end': TokenType.END,
             }[value]
-        # Vérifier si c'est un modificateur de sexe (m/f)
-        elif value in ['m', 'f']:
+        # Vérifier si c'est un modificateur de sexe (m/f/h/f)
+        elif value in ['m', 'f', 'h']:
             token_type = {
                 'm': TokenType.H,  # Masculin
                 'f': TokenType.F,  # Féminin
+                'h': TokenType.H,  # Homme (masculin)
             }[value]
+        # Vérifier si c'est un mot-clé de relation
+        elif value in self.relation_keywords:
+            token_type = self.relation_keywords[value]
         else:
             token_type = TokenType.IDENTIFIER
         

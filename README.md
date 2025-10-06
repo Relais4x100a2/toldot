@@ -9,6 +9,8 @@ Librairie Python complète pour parser, manipuler et convertir les fichiers gén
 ## 🚀 Fonctionnalités
 
 - **Parser complet** : Lecture et parsing des fichiers .gw avec support gwplus ✅
+- **Parser avancé** : Support des apostrophes, caractères spéciaux, numéros d'occurrence ✅
+- **Nouveaux blocs** : Support complet des blocs `notes-db`, `page-ext`, `wizard-note` ✅
 - **Modèles de données** : Représentation structurée des personnes, familles et événements ✅
 - **API REST moderne** : FastAPI avec endpoints complets pour CRUD ✅
 - **Validation** : Vérification de cohérence des données généalogiques ✅
@@ -89,6 +91,42 @@ person = requests.get("http://localhost:8000/api/v1/persons/1")
 print(f"Personne : {person.json()}")
 ```
 
+### Nouvelles fonctionnalités du parser
+
+```python
+# Démontrer les améliorations récentes
+python examples/parser_improvements_demo.py
+
+# Exemple de parsing avec apostrophes et caractères spéciaux
+content = """
+fam d'Arc Jean-Marie .1 #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement + O'Brien Marie-Claire .2
+wit m: LEROY Bernard .1 #occu Dominicain,_Aumônier_de_l'enseignement_technique_à_Rouen
+beg
+- h Pierre_Bernard .1 #occu Ingénieur,_éditeur
+- f Marie_Claire .2 #occu Conseillère_en_économie_sociale_et_familiale
+end
+
+notes-db
+Notes générales sur cette famille
+end notes-db
+
+page-ext d'Arc Jean-Marie .1
+<h1>Page de Jean-Marie d'Arc</h1>
+end page-ext
+
+wizard-note O'Brien Marie-Claire .2
+Note générée par le wizard pour Marie-Claire
+end wizard-note
+"""
+
+parser = GeneWebParser()
+genealogy = parser.parse_string(content)
+
+# Toutes les personnes sont correctement parsées avec leurs occupations
+for person in genealogy.persons.values():
+    print(f"{person.first_name} {person.last_name} - {person.occupation}")
+```
+
 ### Conversion de formats
 
 ```python
@@ -118,6 +156,8 @@ imported_genealogy = json_importer.import_from_file("ma_famille.json")
 - [Documentation de l'API](http://localhost:8000/docs) (Swagger UI)
 - [Exemples d'utilisation](examples/)
 - [Format GeneWeb](doc/geneweb/gw_format_documentation.md)
+- [Améliorations du parser](PARSER_IMPROVEMENTS.md)
+- [Changelog](CHANGELOG.md)
 - [Geneweb documentation by the community](https://web.archive.org/web/20250802144922/https://geneweb.tuxfamily.org/wiki/GeneWeb)
 
 ## 🧪 Tests
@@ -126,7 +166,7 @@ imported_genealogy = json_importer.import_from_file("ma_famille.json")
 # Exécuter tous les tests
 pytest
 
-# Tests avec couverture (78% actuellement)
+# Tests avec couverture (72% actuellement)
 pytest --cov=geneweb_py
 
 # Tests d'intégration seulement

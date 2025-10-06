@@ -127,6 +127,9 @@ class Person:
     # Relations spéciales (adoption, parrainage, etc.)
     relations: Dict[str, List[str]] = field(default_factory=dict)
     
+    # Métadonnées personnalisées
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    
     def __post_init__(self):
         """Validation après initialisation"""
         # Normaliser les noms (remplacer espaces par underscores)
