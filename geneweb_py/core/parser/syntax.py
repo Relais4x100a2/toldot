@@ -359,6 +359,274 @@ class FamilyBlockParser(BlockParser):
         return i
 
 
+class PersonEventsBlockParser(BlockParser):
+    """Parser spécialisé pour les blocs événements personnels (pevt)"""
+    
+    def __init__(self):
+        super().__init__(BlockType.PERSON_EVENTS)
+    
+    def parse(self, tokens: List[Token], start_index: int) -> tuple[SyntaxNode, int]:
+        """Parse un bloc événements personnels
+        
+        Format: pevt LastName FirstName
+        #birt date #p place
+        #deat date #p place
+        end pevt
+        """
+        node = SyntaxNode(BlockType.PERSON_EVENTS)
+        i = start_index
+        
+        # Vérifier que c'est bien un bloc pevt
+        if i >= len(tokens) or tokens[i].type != TokenType.PEVT:
+            raise GeneWebParseError(
+                "Attendu 'pevt' au début du bloc événements personnels",
+                tokens[i].line_number if i < len(tokens) else 0,
+                token=tokens[i].value if i < len(tokens) else None,
+                expected="pevt"
+            )
+        
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Nom de famille
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Prénom
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Numéro d'occurrence (optionnel)
+        if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Parser les événements jusqu'à end pevt
+        i = self._parse_events(tokens, i, node)
+        
+        return node, i
+    
+    def _parse_events(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse les événements personnels"""
+        i = start_index
+        
+        while i < len(tokens):
+            token = tokens[i]
+            
+            # Fin du bloc
+            if token.type == TokenType.END_PEVT:
+                node.add_token(token)
+                i += 1
+                break
+            
+            # Événements avec dates
+            if token.type in [TokenType.BIRT, TokenType.DEAT, TokenType.BAPT, TokenType.BURI_EVENT, TokenType.CREM_EVENT]:
+                i = self._parse_event_with_date(tokens, i, node)
+                continue
+            
+            # Notes
+            if token.type == TokenType.NOTE:
+                node.add_token(token)
+                i += 1
+                # Contenu de la note
+                while i < len(tokens) and tokens[i].type not in [TokenType.NEWLINE, TokenType.END_PEVT]:
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+            
+            # Témoins
+            if token.type == TokenType.WIT:
+                i = self._parse_witnesses(tokens, i, node)
+                continue
+            
+            # Sources
+            if token.type == TokenType.SRC:
+                node.add_token(token)
+                i += 1
+                if i < len(tokens) and tokens[i].type in [TokenType.IDENTIFIER, TokenType.STRING]:
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+            
+            # Autres tokens
+            node.add_token(token)
+            i += 1
+        
+        return i
+    
+    def _parse_event_with_date(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse un événement avec sa date et son lieu"""
+        i = start_index
+        
+        # Type d'événement
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Date (optionnelle)
+        if i < len(tokens) and tokens[i].type == TokenType.DATE:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Lieu (optionnel)
+        if i < len(tokens) and tokens[i].type == TokenType.P:
+            node.add_token(tokens[i])
+            i += 1
+            if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                node.add_token(tokens[i])
+                i += 1
+        
+        return i
+    
+    def _parse_witnesses(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse les témoins d'un événement"""
+        i = start_index
+        
+        # Token wit
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Type de témoin (m ou f)
+        if i < len(tokens) and tokens[i].type in [TokenType.H, TokenType.F]:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Deux points
+        if i < len(tokens) and tokens[i].type == TokenType.COLON:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Nom du témoin
+        while i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        return i
+
+
+class FamilyEventsBlockParser(BlockParser):
+    """Parser spécialisé pour les blocs événements familiaux (fevt)"""
+    
+    def __init__(self):
+        super().__init__(BlockType.FAMILY_EVENTS)
+    
+    def parse(self, tokens: List[Token], start_index: int) -> tuple[SyntaxNode, int]:
+        """Parse un bloc événements familiaux
+        
+        Format: fevt
+        #marr date #p place
+        wit m: Témoin Masculin
+        wit f: Témoin Féminin
+        end fevt
+        """
+        node = SyntaxNode(BlockType.FAMILY_EVENTS)
+        i = start_index
+        
+        # Vérifier que c'est bien un bloc fevt
+        if i >= len(tokens) or tokens[i].type != TokenType.FEVT:
+            raise GeneWebParseError(
+                "Attendu 'fevt' au début du bloc événements familiaux",
+                tokens[i].line_number if i < len(tokens) else 0,
+                token=tokens[i].value if i < len(tokens) else None,
+                expected="fevt"
+            )
+        
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Parser les événements jusqu'à end fevt
+        i = self._parse_events(tokens, i, node)
+        
+        return node, i
+    
+    def _parse_events(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse les événements familiaux"""
+        i = start_index
+        
+        while i < len(tokens):
+            token = tokens[i]
+            
+            # Fin du bloc
+            if token.type == TokenType.END_FEVT:
+                node.add_token(token)
+                i += 1
+                break
+            
+            # Événements avec dates
+            if token.type in [TokenType.MARR, TokenType.DIV_EVENT, TokenType.SEP_EVENT, TokenType.ENGA]:
+                i = self._parse_event_with_date(tokens, i, node)
+                continue
+            
+            # Témoins
+            if token.type == TokenType.WIT:
+                i = self._parse_witnesses(tokens, i, node)
+                continue
+            
+            # Sources et commentaires
+            if token.type in [TokenType.SRC, TokenType.COMM]:
+                node.add_token(token)
+                i += 1
+                if i < len(tokens) and tokens[i].type in [TokenType.IDENTIFIER, TokenType.STRING]:
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+            
+            # Autres tokens
+            node.add_token(token)
+            i += 1
+        
+        return i
+    
+    def _parse_event_with_date(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse un événement avec sa date et son lieu"""
+        i = start_index
+        
+        # Type d'événement
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Date (optionnelle)
+        if i < len(tokens) and tokens[i].type == TokenType.DATE:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Lieu (optionnel)
+        if i < len(tokens) and tokens[i].type == TokenType.P:
+            node.add_token(tokens[i])
+            i += 1
+            if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                node.add_token(tokens[i])
+                i += 1
+        
+        return i
+    
+    def _parse_witnesses(self, tokens: List[Token], start_index: int, node: SyntaxNode) -> int:
+        """Parse les témoins d'un événement familial"""
+        i = start_index
+        
+        # Token wit
+        node.add_token(tokens[i])
+        i += 1
+        
+        # Type de témoin (m ou f)
+        if i < len(tokens) and tokens[i].type in [TokenType.H, TokenType.F]:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Deux points
+        if i < len(tokens) and tokens[i].type == TokenType.COLON:
+            node.add_token(tokens[i])
+            i += 1
+        
+        # Nom du témoin
+        while i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            node.add_token(tokens[i])
+            i += 1
+        
+        return i
+
+
 class NotesBlockParser(BlockParser):
     """Parser spécialisé pour les blocs notes"""
     
@@ -437,6 +705,8 @@ class SyntaxParser:
         self.block_parsers = {
             TokenType.FAM: FamilyBlockParser(),
             TokenType.NOTES: NotesBlockParser(),
+            TokenType.PEVT: PersonEventsBlockParser(),
+            TokenType.FEVT: FamilyEventsBlockParser(),
             # TODO: Ajouter les autres parsers de blocs
         }
     

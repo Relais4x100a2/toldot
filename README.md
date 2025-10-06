@@ -118,6 +118,7 @@ imported_genealogy = json_importer.import_from_file("ma_famille.json")
 - [Documentation de l'API](http://localhost:8000/docs) (Swagger UI)
 - [Exemples d'utilisation](examples/)
 - [Format GeneWeb](doc/geneweb/gw_format_documentation.md)
+- [Geneweb documentation by the community](https://web.archive.org/web/20250802144922/https://geneweb.tuxfamily.org/wiki/GeneWeb)
 
 ## 🧪 Tests
 
@@ -145,6 +146,7 @@ Ce projet est sous licence MIT. Voir [LICENSE](LICENSE) pour plus de détails.
 
 ## 🔗 Liens utiles
 
-- [Documentation GeneWeb](http://geneweb.org/)
+- [GeneWeb GitHub repo](http://geneweb.org/)
 - [Format .gw](doc/geneweb/gw_format_documentation.md)
+- [Geneweb documentation by the community](https://web.archive.org/web/20250802144922/https://geneweb.tuxfamily.org/wiki/GeneWeb)
 - [Issues](https://github.com/guillaumecayeux/geneweb-py/issues)

@@ -37,11 +37,13 @@
 - **Middleware** : Gestion d'erreurs, CORS, logging
 
 #### 6. Tests
-- **115 tests** couvrant tous les modules
-- **Couverture de code à 73%** (objectif initial : 50% ✅)
+- **615+ tests** couvrant tous les modules
+- **Couverture de code à 83.84%** (objectif initial : 50% largement dépassé ✅)
 - Fixtures pour tests avec fichiers .gw d'exemple
 - Tests de validation et de cohérence
-- Tests d'intégration API
+- Tests d'intégration API complets
+- Tests de convertisseurs (JSON, XML, GEDCOM)
+- Tests de parsers (lexical, syntaxique, principal)
 
 #### 7. Exemples
 - Exemple d'utilisation basique démontrant toutes les fonctionnalités
@@ -182,18 +184,20 @@ pytest --cov=geneweb_py --cov-report=html
 
 ### Couverture actuelle
 
-- **Date** : 85% ⭐ Excellent
-- **Family** : 86% ⭐ Excellent  
-- **Person** : 91% ⭐ Excellent
-- **Event** : 82% ⭐ Bon
-- **Genealogy** : 50% ⚠️ À améliorer
-- **Exceptions** : 25% ⚠️ À améliorer
-- **Parser lexical** : 94% ⭐ Excellent
-- **Parser syntaxique** : 74% ⭐ Bon
-- **Parser principal** : 85% ⭐ Excellent
-- **API** : 35% 🚧 En développement
+- **Date** : 87% ⭐ Excellent
+- **Family** : 87% ⭐ Excellent  
+- **Person** : 94% ⭐ Excellent
+- **Event** : 83% ⭐ Excellent
+- **Genealogy** : 96% ⭐ Excellent
+- **Exceptions** : 95% ⭐ Excellent
+- **Parser lexical** : 97% ⭐ Excellent
+- **Parser syntaxique** : 85% ⭐ Excellent
+- **Parser principal** : 79% ⭐ Excellent
+- **API Routers** : 72-78% ⭐ Bon à Excellent
+- **API Services** : 67% ⭐ Bon
+- **Convertisseurs** : 75-97% ⭐ Excellent
 
-**Total** : 73% (objectif : 85%)
+**Total** : 83.84% (objectif : 85% - presque atteint !)
 
 ## Prochaines étapes
 

@@ -39,7 +39,7 @@ class TestDateParsing:
         """Test parsing d'une date inconnue"""
         date = Date.parse("0")
         assert date.is_unknown is True
-        assert date.text_date == "0"
+        assert date.text_date is None
     
     def test_parse_text_date(self):
         """Test parsing d'une date textuelle"""
@@ -142,7 +142,7 @@ class TestDateDisplay:
     def test_display_unknown_date(self):
         """Test affichage date inconnue"""
         date = Date.parse("0")
-        assert date.display_text == "0(0)"  # Format avec parenthèses
+        assert date.display_text == "0"  # Format simple pour date inconnue
 
 
 class TestDateValidation:

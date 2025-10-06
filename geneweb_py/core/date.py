@@ -71,7 +71,7 @@ class Date:
         """Validation et normalisation après initialisation"""
         if self.is_unknown:
             self.day = self.month = self.year = None
-            self.text_date = "0"
+            self.text_date = None
         
         # Validation de cohérence
         if self.day is not None and (self.day < 1 or self.day > 31):
@@ -163,7 +163,8 @@ class Date:
             ValueError: Si la date ne peut pas être parsée
         """
         if not date_str or date_str.strip() == "":
-            raise ValueError("Date vide")
+            # Date vide -> date inconnue
+            return cls(is_unknown=True)
         
         date_str = date_str.strip()
         
@@ -268,6 +269,22 @@ class Date:
             )
         
         raise ValueError(f"Format de date non reconnu: {date_str}")
+    
+    @classmethod
+    def parse_with_fallback(cls, date_str: str) -> 'Date':
+        """Parse une date avec gestion gracieuse des erreurs
+        
+        Args:
+            date_str: Chaîne de date à parser
+            
+        Returns:
+            Instance de Date parsée ou date inconnue en cas d'erreur
+        """
+        try:
+            return cls.parse(date_str)
+        except ValueError:
+            # En cas d'erreur, retourner une date inconnue
+            return cls(is_unknown=True)
     
     def __str__(self) -> str:
         """Représentation string de la date"""
