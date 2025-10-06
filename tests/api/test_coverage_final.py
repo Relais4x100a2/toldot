@@ -27,19 +27,22 @@ class TestCoverageFinal:
         assert response.status_code == 422
     
     def test_genealogy_export_gedcom_not_implemented(self, client):
-        """Test export GEDCOM non implémenté"""
+        """Test export GEDCOM implémenté"""
         response = client.get("/api/v1/genealogy/export/gedcom")
-        assert response.status_code == 501
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/octet-stream"
     
     def test_genealogy_export_json_not_implemented(self, client):
-        """Test export JSON non implémenté"""
+        """Test export JSON implémenté"""
         response = client.get("/api/v1/genealogy/export/json")
-        assert response.status_code == 501
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
     
     def test_genealogy_export_xml_not_implemented(self, client):
-        """Test export XML non implémenté"""
+        """Test export XML implémenté"""
         response = client.get("/api/v1/genealogy/export/xml")
-        assert response.status_code == 501
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/xml"
     
     def test_persons_list_empty(self, client):
         """Test liste des personnes vide"""

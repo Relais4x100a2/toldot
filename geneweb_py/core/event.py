@@ -81,6 +81,9 @@ class Event:
     # Source de l'événement
     source: Optional[str] = None
     
+    # Raison ou cause de l'événement
+    reason: Optional[str] = None
+    
     # Témoins (pour les événements familiaux)
     witnesses: List[Dict[str, Any]] = field(default_factory=list)
     

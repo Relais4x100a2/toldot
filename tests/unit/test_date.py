@@ -164,6 +164,93 @@ class TestDateValidation:
             Date(day=25, month=12, year=0)
 
 
+class TestDateEmptyFields:
+    """Tests pour la gestion des champs vides dans les dates"""
+    
+    def test_empty_string(self):
+        """Test chaîne vide"""
+        date = Date.parse("")
+        assert date.is_unknown is True
+    
+    def test_whitespace_only(self):
+        """Test espaces seulement"""
+        date = Date.parse("   ")
+        assert date.is_unknown is True
+    
+    def test_none_input(self):
+        """Test entrée None"""
+        date = Date.parse(None)
+        assert date.is_unknown is True
+    
+    def test_empty_slashes(self):
+        """Test slashes vides (//)"""
+        date = Date.parse("//")
+        assert date.is_unknown is True
+    
+    def test_empty_month(self):
+        """Test mois vide (/1990)"""
+        date = Date.parse("/1990")
+        assert date.year == 1990
+        assert date.month is None
+        assert date.day is None
+        assert date.is_unknown is False
+    
+    def test_empty_month_middle(self):
+        """Test mois vide au milieu (25//1990)"""
+        date = Date.parse("25//1990")
+        assert date.day == 25
+        assert date.year == 1990
+        assert date.month is None
+        assert date.is_unknown is False
+    
+    def test_empty_year(self):
+        """Test année vide (25/12/)"""
+        date = Date.parse("25/12/")
+        assert date.day == 25
+        assert date.month == 12
+        assert date.year is None
+        assert date.is_unknown is False
+    
+    def test_prefix_with_empty_fields(self):
+        """Test préfixes avec champs vides"""
+        # Préfixe avec jour et mois vides
+        date = Date.parse("~//1990")
+        assert date.prefix == DatePrefix.ABOUT
+        assert date.year == 1990
+        assert date.day is None
+        assert date.month is None
+        
+        # Préfixe avec jour et année vides
+        date = Date.parse("?/12/")
+        assert date.prefix == DatePrefix.MAYBE
+        assert date.month == 12
+        assert date.day is None
+        assert date.year is None
+        
+        # Préfixe avec mois et année vides
+        date = Date.parse("<25//")
+        assert date.prefix == DatePrefix.BEFORE
+        assert date.day == 25
+        assert date.month is None
+        assert date.year is None
+    
+    def test_decimal_year(self):
+        """Test année décimale (1990.5)"""
+        date = Date.parse("1990.5")
+        assert date.year == 1990
+        assert date.day is None
+        assert date.month is None
+        assert date.is_unknown is False
+    
+    def test_invalid_format_still_fails(self):
+        """Test que les formats vraiment invalides échouent toujours"""
+        with pytest.raises(ValueError):
+            Date.parse("invalid")
+        
+        with pytest.raises(ValueError):
+            Date.parse("1990-12")  # Format avec tiret non supporté
+
+
 class TestDateProperties:
     """Tests pour les propriétés des dates"""
     

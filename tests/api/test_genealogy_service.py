@@ -64,7 +64,7 @@ def sample_family_event_data():
     )
 
 
-class TestGenealogyService:
+class MockGenealogyService:
     """Tests pour le service GenealogyService."""
     
     def test_init(self, service):

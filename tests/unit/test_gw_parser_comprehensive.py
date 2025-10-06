@@ -174,11 +174,10 @@ class TestGeneWebParserComplexContent:
     
     def test_parse_person_with_dates(self):
         """Test parsing d'une personne avec dates."""
-        test_content = """fam DUPONT Jean
-husb DUPONT Jean
+        test_content = """pevt DUPONT Jean
 #birt 15/6/1990 #p Paris
 #deat 20/8/2020 #p Lyon
-end fam"""
+end pevt"""
         
         parser = GeneWebParser(validate=False)
         genealogy = parser.parse_string(test_content)
@@ -193,11 +192,11 @@ end fam"""
     
     def test_parse_family_with_children(self):
         """Test parsing d'une famille avec enfants."""
-        test_content = """fam DUPONT Jean
-husb DUPONT Jean
-wife MARTIN Marie
-child DUPONT Pierre
-child DUPONT Marie
+        test_content = """fam DUPONT Jean MARTIN Marie
+beg
+- DUPONT Pierre
+- DUPONT Marie
+end
 end fam"""
         
         parser = GeneWebParser(validate=False)
@@ -231,11 +230,11 @@ end fam"""
     def test_parse_with_notes(self):
         """Test parsing avec notes."""
         test_content = """notes DUPONT Jean
+beg
 Note personnelle importante
 end notes
 
-fam DUPONT Jean
-husb DUPONT Jean
+fam DUPONT Jean MARTIN Marie
 end fam"""
         
         parser = GeneWebParser(validate=False)

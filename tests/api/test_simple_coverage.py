@@ -78,7 +78,8 @@ class TestSimpleCoverage:
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert "Erreur" in data["message"]
     
     def test_genealogy_health(self, client_with_mock_service):
         """Test endpoint de santé"""
@@ -90,7 +91,18 @@ class TestSimpleCoverage:
     
     def test_genealogy_export_gedcom(self, client_with_mock_service, mock_service):
         """Test export GEDCOM"""
-        mock_service.export_gedcom.return_value = b"GEDCOM content"
+        # Mock de la généalogie pour les exports
+        from geneweb_py.core.genealogy import Genealogy
+        from geneweb_py.core.person import Person, Gender, AccessLevel
+        mock_genealogy = Genealogy()
+        # Ajouter une personne pour que la généalogie ne soit pas vide
+        person = Person(
+            first_name="Test",
+            last_name="Person",
+            gender=Gender.MALE
+        )
+        mock_genealogy.persons["Test_Person"] = person
+        mock_service.genealogy = mock_genealogy
         
         response = client_with_mock_service.get("/api/v1/genealogy/export/gedcom")
         
@@ -99,7 +111,18 @@ class TestSimpleCoverage:
     
     def test_genealogy_export_json(self, client_with_mock_service, mock_service):
         """Test export JSON"""
-        mock_service.export_json.return_value = '{"persons": []}'
+        # Mock de la généalogie pour les exports
+        from geneweb_py.core.genealogy import Genealogy
+        from geneweb_py.core.person import Person, Gender, AccessLevel
+        mock_genealogy = Genealogy()
+        # Ajouter une personne pour que la généalogie ne soit pas vide
+        person = Person(
+            first_name="Test",
+            last_name="Person",
+            gender=Gender.MALE
+        )
+        mock_genealogy.persons["Test_Person"] = person
+        mock_service.genealogy = mock_genealogy
         
         response = client_with_mock_service.get("/api/v1/genealogy/export/json")
         
@@ -108,7 +131,18 @@ class TestSimpleCoverage:
     
     def test_genealogy_export_xml(self, client_with_mock_service, mock_service):
         """Test export XML"""
-        mock_service.export_xml.return_value = '<?xml version="1.0"?><genealogy></genealogy>'
+        # Mock de la généalogie pour les exports
+        from geneweb_py.core.genealogy import Genealogy
+        from geneweb_py.core.person import Person, Gender, AccessLevel
+        mock_genealogy = Genealogy()
+        # Ajouter une personne pour que la généalogie ne soit pas vide
+        person = Person(
+            first_name="Test",
+            last_name="Person",
+            gender=Gender.MALE
+        )
+        mock_genealogy.persons["Test_Person"] = person
+        mock_service.genealogy = mock_genealogy
         
         response = client_with_mock_service.get("/api/v1/genealogy/export/xml")
         
@@ -121,7 +155,8 @@ class TestSimpleCoverage:
         
         assert response.status_code == 400
         data = response.json()
-        assert "Format non supporté" in data["detail"]
+        assert data["error"] is True
+        assert "non supporté" in data["message"]
     
     def test_genealogy_search_success(self, client_with_mock_service, mock_service):
         """Test recherche - succès"""
@@ -137,76 +172,90 @@ class TestSimpleCoverage:
         """Test recherche sans query"""
         response = client_with_mock_service.get("/api/v1/genealogy/search")
         
-        assert response.status_code == 400
+        assert response.status_code == 422
         data = response.json()
-        assert "query" in data["detail"]
+        assert "Field required" in data["details"][0]["message"]
     
     def test_genealogy_search_error(self, client_with_mock_service, mock_service):
         """Test recherche - erreur"""
-        mock_service.search_persons.side_effect = Exception("Erreur de recherche")
+        # L'endpoint de recherche utilise service.genealogy directement
+        # Mock de la généalogie pour provoquer une erreur
+        from geneweb_py.core.genealogy import Genealogy
+        mock_genealogy = Genealogy()
+        # Ajouter une propriété qui lèvera une erreur
+        def error_property():
+            raise Exception("Erreur de recherche")
+        mock_genealogy.persons = property(error_property)
+        mock_service.genealogy = mock_genealogy
         
         response = client_with_mock_service.get("/api/v1/genealogy/search?query=test")
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert "Erreur" in data["message"]
     
     def test_persons_list_success(self, client_with_mock_service, mock_service):
         """Test liste des personnes - succès"""
-        mock_service.get_persons.return_value = []
+        mock_service.search_persons.return_value = ([], 0)
         
         response = client_with_mock_service.get("/api/v1/persons")
         
         assert response.status_code == 200
         data = response.json()
-        assert data["success"] is True
+        assert "items" in data
+        assert "pagination" in data
     
     def test_persons_list_error(self, client_with_mock_service, mock_service):
         """Test liste des personnes - erreur"""
-        mock_service.get_persons.side_effect = Exception("Erreur de service")
+        mock_service.search_persons.side_effect = Exception("Erreur de service")
         
         response = client_with_mock_service.get("/api/v1/persons")
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert "Erreur" in data["message"]
     
     def test_families_list_success(self, client_with_mock_service, mock_service):
         """Test liste des familles - succès"""
-        mock_service.get_families.return_value = []
+        mock_service.search_families.return_value = ([], 0)
         
         response = client_with_mock_service.get("/api/v1/families")
         
         assert response.status_code == 200
         data = response.json()
-        assert data["success"] is True
+        assert "items" in data
+        assert "pagination" in data
     
     def test_families_list_error(self, client_with_mock_service, mock_service):
         """Test liste des familles - erreur"""
-        mock_service.get_families.side_effect = Exception("Erreur de service")
+        mock_service.search_families.side_effect = Exception("Erreur de service")
         
         response = client_with_mock_service.get("/api/v1/families")
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert "Erreur" in data["message"]
     
     def test_events_list_success(self, client_with_mock_service, mock_service):
         """Test liste des événements - succès"""
-        mock_service.get_events.return_value = []
+        mock_service.search_events.return_value = ([], 0)
         
         response = client_with_mock_service.get("/api/v1/events")
         
         assert response.status_code == 200
         data = response.json()
-        assert data["success"] is True
+        assert "items" in data
+        assert "pagination" in data
     
     def test_events_list_error(self, client_with_mock_service, mock_service):
         """Test liste des événements - erreur"""
-        mock_service.get_events.side_effect = Exception("Erreur de service")
+        mock_service.search_events.side_effect = Exception("Erreur de service")
         
         response = client_with_mock_service.get("/api/v1/events")
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert "Erreur" in data["message"]
