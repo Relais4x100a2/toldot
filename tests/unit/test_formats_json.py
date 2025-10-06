@@ -8,10 +8,10 @@ from pathlib import Path
 
 from geneweb_py.formats.json import JSONExporter, JSONImporter, ConversionError
 from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person
+from geneweb_py.core.person import Person, Gender
 from geneweb_py.core.family import Family
 from geneweb_py.core.date import Date
-from geneweb_py.core.event import Event
+from geneweb_py.core.event import Event, EventType
 
 
 class TestJSONExporter:
@@ -29,7 +29,7 @@ class TestJSONExporter:
         exporter = JSONExporter()
         genealogy = Genealogy()
         
-        person = Person(surname="DUPONT", given_name="Jean", sex="M")
+        person = Person(last_name="DUPONT", first_name="Jean", gender=Gender.MALE)
         genealogy.add_person(person)
         
         result = exporter.export_to_string(genealogy)
@@ -40,9 +40,9 @@ class TestJSONExporter:
         assert "persons" in data
         assert "families" in data
         assert len(data["persons"]) == 1
-        assert data["persons"][0]["surname"] == "DUPONT"
-        assert data["persons"][0]["given_name"] == "Jean"
-        assert data["persons"][0]["sex"] == "M"
+        assert data["persons"][0]["last_name"] == "DUPONT"
+        assert data["persons"][0]["first_name"] == "Jean"
+        assert data["persons"][0]["gender"] == "m"
     
     def test_export_to_string_with_dates(self):
         """Test d'export avec des dates."""
@@ -50,8 +50,8 @@ class TestJSONExporter:
         genealogy = Genealogy()
         
         person = Person(
-            surname="DUPONT",
-            given_name="Jean",
+            last_name="DUPONT",
+            first_name="Jean",
             birth_date=Date(year=1950, month=3, day=15),
             death_date=Date(year=2020, month=12, day=25)
         )
@@ -73,18 +73,16 @@ class TestJSONExporter:
         exporter = JSONExporter()
         genealogy = Genealogy()
         
-        husband = Person(surname="DUPONT", given_name="Jean", sex="M")
-        wife = Person(surname="MARTIN", given_name="Marie", sex="F")
-        child = Person(surname="DUPONT", given_name="Pierre", sex="M")
-        
-        family = Family()
-        family.husband = husband
-        family.wife = wife
-        family.add_child(child)
+        husband = Person(last_name="DUPONT", first_name="Jean", gender=Gender.MALE)
+        wife = Person(last_name="MARTIN", first_name="Marie", gender=Gender.FEMALE)
+        child = Person(last_name="DUPONT", first_name="Pierre", gender=Gender.MALE)
         
         genealogy.add_person(husband)
         genealogy.add_person(wife)
         genealogy.add_person(child)
+        
+        family = Family(family_id="FAM001", husband_id=husband.unique_id, wife_id=wife.unique_id)
+        family.add_child(child)
         genealogy.add_family(family)
         
         result = exporter.export_to_string(genealogy)
@@ -96,19 +94,19 @@ class TestJSONExporter:
         family_data = data["families"][0]
         assert family_data["husband_id"] is not None
         assert family_data["wife_id"] is not None
-        assert len(family_data["children_ids"]) == 1
+        assert len(family_data["children"]) == 1
     
     def test_export_to_string_with_events(self):
         """Test d'export avec des événements."""
         exporter = JSONExporter()
         genealogy = Genealogy()
         
-        person = Person(surname="DUPONT", given_name="Jean")
+        person = Person(last_name="DUPONT", first_name="Jean")
         event = Event(
-            event_type="graduation",
+            event_type=EventType.GRADUATION,
             date=Date(year=1972, month=6),
             place="Université de Paris",
-            description="Diplôme d'ingénieur"
+            notes=["Diplôme d'ingénieur"]
         )
         person.add_event(event)
         genealogy.add_person(person)
@@ -119,16 +117,16 @@ class TestJSONExporter:
         person_data = data["persons"][0]
         assert len(person_data["events"]) == 1
         event_data = person_data["events"][0]
-        assert event_data["event_type"] == "graduation"
+        assert event_data["event_type"] == "grad"
         assert event_data["place"] == "Université de Paris"
-        assert event_data["description"] == "Diplôme d'ingénieur"
+        assert event_data["notes"] == ["Diplôme d'ingénieur"]
     
     def test_export_to_file(self):
         """Test d'export vers fichier."""
         exporter = JSONExporter()
         genealogy = Genealogy()
         
-        person = Person(surname="DUPONT", given_name="Jean")
+        person = Person(last_name="DUPONT", first_name="Jean")
         genealogy.add_person(person)
         
         temp_file = Path("temp_test.json")
@@ -178,9 +176,9 @@ class TestJSONImporter:
             "persons": [
                 {
                     "id": 1,
-                    "surname": "DUPONT",
-                    "given_name": "Jean",
-                    "sex": "M"
+                    "last_name": "DUPONT",
+                    "first_name": "Jean",
+                    "gender": "m"
                 }
             ],
             "families": []
@@ -190,10 +188,10 @@ class TestJSONImporter:
         genealogy = importer.import_from_string(json_string)
         
         assert len(genealogy.persons) == 1
-        person = genealogy.persons[0]
-        assert person.surname == "DUPONT"
-        assert person.given_name == "Jean"
-        assert person.sex == "M"
+        person = list(genealogy.persons.values())[0]
+        assert person.last_name == "DUPONT"
+        assert person.first_name == "Jean"
+        assert person.gender == Gender.MALE
     
     def test_import_from_string_with_dates(self):
         """Test d'import avec des dates."""
@@ -204,8 +202,8 @@ class TestJSONImporter:
             "persons": [
                 {
                     "id": 1,
-                    "surname": "DUPONT",
-                    "given_name": "Jean",
+                    "last_name": "DUPONT",
+                    "first_name": "Jean",
                     "birth_date": {
                         "year": 1950,
                         "month": 3,
@@ -224,7 +222,7 @@ class TestJSONImporter:
         json_string = json.dumps(json_data)
         genealogy = importer.import_from_string(json_string)
         
-        person = genealogy.persons[0]
+        person = list(genealogy.persons.values())[0]
         assert person.birth_date.year == 1950
         assert person.birth_date.month == 3
         assert person.birth_date.day == 15
@@ -241,14 +239,14 @@ class TestJSONImporter:
             "persons": [
                 {
                     "id": 1,
-                    "surname": "DUPONT",
-                    "given_name": "Jean",
+                    "last_name": "DUPONT",
+                    "first_name": "Jean",
                     "events": [
                         {
-                            "event_type": "graduation",
+                            "event_type": "grad",
                             "date": {"year": 1972, "month": 6},
                             "place": "Université de Paris",
-                            "description": "Diplôme d'ingénieur"
+                            "notes": ["Diplôme d'ingénieur"]
                         }
                     ]
                 }
@@ -259,12 +257,12 @@ class TestJSONImporter:
         json_string = json.dumps(json_data)
         genealogy = importer.import_from_string(json_string)
         
-        person = genealogy.persons[0]
+        person = list(genealogy.persons.values())[0]
         assert len(person.events) == 1
         event = person.events[0]
-        assert event.event_type == "graduation"
+        assert event.event_type == EventType.GRADUATION
         assert event.place == "Université de Paris"
-        assert event.description == "Diplôme d'ingénieur"
+        assert "Diplôme d'ingénieur" in event.notes
         assert event.date.year == 1972
         assert event.date.month == 6
     
@@ -277,8 +275,8 @@ class TestJSONImporter:
             "persons": [
                 {
                     "id": 1,
-                    "surname": "DUPONT",
-                    "given_name": "Jean"
+                    "last_name": "DUPONT",
+                    "first_name": "Jean"
                 }
             ],
             "families": []
@@ -292,7 +290,7 @@ class TestJSONImporter:
             
             genealogy = importer.import_from_file(str(temp_file))
             assert len(genealogy.persons) == 1
-            assert genealogy.persons[0].surname == "DUPONT"
+            assert list(genealogy.persons.values())[0].last_name == "DUPONT"
         finally:
             if temp_file.exists():
                 temp_file.unlink()
@@ -316,17 +314,17 @@ class TestJSONImporter:
         # Créer une généalogie
         genealogy = Genealogy()
         person = Person(
-            surname="DUPONT",
-            given_name="Jean",
-            sex="M",
+            last_name="DUPONT",
+            first_name="Jean",
+            gender=Gender.MALE,
             birth_date=Date(year=1950, month=3, day=15),
             birth_place="Paris, France"
         )
         event = Event(
-            event_type="graduation",
+            event_type=EventType.GRADUATION,
             date=Date(year=1972, month=6),
             place="Université de Paris",
-            description="Diplôme d'ingénieur"
+            notes=["Diplôme d'ingénieur"]
         )
         person.add_event(event)
         genealogy.add_person(person)
@@ -341,11 +339,11 @@ class TestJSONImporter:
         
         # Vérifier que les données sont identiques
         assert len(imported_genealogy.persons) == 1
-        imported_person = imported_genealogy.persons[0]
-        assert imported_person.surname == "DUPONT"
-        assert imported_person.given_name == "Jean"
-        assert imported_person.sex == "M"
+        imported_person = list(imported_genealogy.persons.values())[0]
+        assert imported_person.last_name == "DUPONT"
+        assert imported_person.first_name == "Jean"
+        assert imported_person.gender == Gender.MALE
         assert imported_person.birth_date.year == 1950
         assert imported_person.birth_place == "Paris, France"
         assert len(imported_person.events) == 1
-        assert imported_person.events[0].event_type == "graduation"
+        assert imported_person.events[0].event_type == EventType.GRADUATION

@@ -12,9 +12,6 @@ from contextlib import asynccontextmanager
 from .services.genealogy_service import GenealogyService
 
 
-# Service global partagé
-_genealogy_service: Optional[GenealogyService] = None
-
 def get_genealogy_service() -> GenealogyService:
     """
     Dépendance pour obtenir le service de généalogie.
@@ -22,10 +19,9 @@ def get_genealogy_service() -> GenealogyService:
     Returns:
         GenealogyService: Service de généalogie
     """
-    global _genealogy_service
-    if _genealogy_service is None:
-        _genealogy_service = GenealogyService()
-    return _genealogy_service
+    # Import ici pour éviter les imports circulaires
+    from .main import get_global_genealogy_service
+    return get_global_genealogy_service()
 
 
 @asynccontextmanager
@@ -37,7 +33,8 @@ async def get_genealogy_service_context() -> Generator[GenealogyService, None, N
         GenealogyService: Service de généalogie
     """
     try:
-        yield _genealogy_service
+        service = get_genealogy_service()
+        yield service
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -8,10 +8,10 @@ import xml.etree.ElementTree as ET
 
 from geneweb_py.formats.xml import XMLExporter, XMLImporter, ConversionError
 from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person
+from geneweb_py.core.person import Person, Gender
 from geneweb_py.core.family import Family
 from geneweb_py.core.date import Date
-from geneweb_py.core.event import Event
+from geneweb_py.core.event import Event, EventType
 
 
 class TestXMLExporter:
@@ -28,7 +28,7 @@ class TestXMLExporter:
         exporter = XMLExporter()
         genealogy = Genealogy()
         
-        person = Person(surname="DUPONT", given_name="Jean", sex="M")
+        person = Person(last_name="DUPONT", first_name="Jean", gender=Gender.MALE)
         genealogy.add_person(person)
         
         result = exporter.export_to_string(genealogy)
@@ -43,9 +43,9 @@ class TestXMLExporter:
         assert len(persons_elem.findall("person")) == 1
         
         person_elem = persons_elem.find("person")
-        assert person_elem.get("surname") == "DUPONT"
-        assert person_elem.get("given_name") == "Jean"
-        assert person_elem.get("sex") == "M"
+        assert person_elem.get("last_name") == "DUPONT"
+        assert person_elem.get("first_name") == "Jean"
+        assert person_elem.get("gender") == "m"
     
     def test_export_to_string_with_dates(self):
         """Test d'export avec des dates."""
@@ -53,8 +53,8 @@ class TestXMLExporter:
         genealogy = Genealogy()
         
         person = Person(
-            surname="DUPONT",
-            given_name="Jean",
+            last_name="DUPONT",
+            first_name="Jean",
             birth_date=Date(year=1950, month=3, day=15),
             death_date=Date(year=2020, month=12, day=25)
         )
@@ -82,18 +82,16 @@ class TestXMLExporter:
         exporter = XMLExporter()
         genealogy = Genealogy()
         
-        husband = Person(surname="DUPONT", given_name="Jean", sex="M")
-        wife = Person(surname="MARTIN", given_name="Marie", sex="F")
-        child = Person(surname="DUPONT", given_name="Pierre", sex="M")
-        
-        family = Family()
-        family.husband = husband
-        family.wife = wife
-        family.add_child(child)
+        husband = Person(last_name="DUPONT", first_name="Jean", gender=Gender.MALE)
+        wife = Person(last_name="MARTIN", first_name="Marie", gender=Gender.FEMALE)
+        child = Person(last_name="DUPONT", first_name="Pierre", gender=Gender.MALE)
         
         genealogy.add_person(husband)
         genealogy.add_person(wife)
         genealogy.add_person(child)
+        
+        family = Family(family_id="FAM001", husband_id=husband.unique_id, wife_id=wife.unique_id)
+        family.add_child(child.unique_id)
         genealogy.add_family(family)
         
         result = exporter.export_to_string(genealogy)
@@ -118,12 +116,12 @@ class TestXMLExporter:
         exporter = XMLExporter()
         genealogy = Genealogy()
         
-        person = Person(surname="DUPONT", given_name="Jean")
+        person = Person(last_name="DUPONT", first_name="Jean")
         event = Event(
-            event_type="graduation",
+            event_type=EventType.GRADUATION,
             date=Date(year=1972, month=6),
             place="Université de Paris",
-            description="Diplôme d'ingénieur"
+            notes=["Diplôme d'ingénieur"]
         )
         person.add_event(event)
         genealogy.add_person(person)
@@ -138,16 +136,19 @@ class TestXMLExporter:
         assert len(events_elem.findall("event")) == 1
         
         event_elem = events_elem.find("event")
-        assert event_elem.get("type") == "graduation"
+        assert event_elem.get("type") == "grad"
         assert event_elem.find("place").text == "Université de Paris"
-        assert event_elem.find("description").text == "Diplôme d'ingénieur"
+        notes_elem = event_elem.find("notes")
+        assert notes_elem is not None
+        note_elem = notes_elem.find("note")
+        assert note_elem.text == "Diplôme d'ingénieur"
     
     def test_export_to_file(self):
         """Test d'export vers fichier."""
         exporter = XMLExporter()
         genealogy = Genealogy()
         
-        person = Person(surname="DUPONT", given_name="Jean")
+        person = Person(last_name="DUPONT", first_name="Jean")
         genealogy.add_person(person)
         
         temp_file = Path("temp_test.xml")
@@ -197,7 +198,7 @@ class TestXMLImporter:
                 <statistics persons_count="1" families_count="0" events_count="0"/>
             </metadata>
             <persons>
-                <person id="1" surname="DUPONT" given_name="Jean" sex="M"/>
+                <person id="1" last_name="DUPONT" first_name="Jean" gender="m"/>
             </persons>
             <families/>
         </genealogy>'''
@@ -205,10 +206,10 @@ class TestXMLImporter:
         genealogy = importer.import_from_string(xml_string)
         
         assert len(genealogy.persons) == 1
-        person = genealogy.persons[0]
-        assert person.surname == "DUPONT"
-        assert person.given_name == "Jean"
-        assert person.sex == "M"
+        person = list(genealogy.persons.values())[0]
+        assert person.last_name == "DUPONT"
+        assert person.first_name == "Jean"
+        assert person.gender == Gender.MALE
     
     def test_import_from_string_with_dates(self):
         """Test d'import avec des dates."""
@@ -220,7 +221,7 @@ class TestXMLImporter:
                 <statistics persons_count="1" families_count="0" events_count="0"/>
             </metadata>
             <persons>
-                <person id="1" surname="DUPONT" given_name="Jean">
+                <person id="1" last_name="DUPONT" first_name="Jean">
                     <birth year="1950" month="3" day="15"/>
                     <death year="2020" month="12" day="25"/>
                 </person>
@@ -230,7 +231,7 @@ class TestXMLImporter:
         
         genealogy = importer.import_from_string(xml_string)
         
-        person = genealogy.persons[0]
+        person = list(genealogy.persons.values())[0]
         assert person.birth_date.year == 1950
         assert person.birth_date.month == 3
         assert person.birth_date.day == 15
@@ -248,12 +249,14 @@ class TestXMLImporter:
                 <statistics persons_count="1" families_count="0" events_count="1"/>
             </metadata>
             <persons>
-                <person id="1" surname="DUPONT" given_name="Jean">
+                <person id="1" last_name="DUPONT" first_name="Jean">
                     <events>
-                        <event type="graduation">
+                        <event type="grad">
                             <date year="1972" month="6"/>
                             <place>Université de Paris</place>
-                            <description>Diplôme d'ingénieur</description>
+                            <notes>
+                                <note>Diplôme d'ingénieur</note>
+                            </notes>
                         </event>
                     </events>
                 </person>
@@ -263,12 +266,12 @@ class TestXMLImporter:
         
         genealogy = importer.import_from_string(xml_string)
         
-        person = genealogy.persons[0]
+        person = list(genealogy.persons.values())[0]
         assert len(person.events) == 1
         event = person.events[0]
-        assert event.event_type == "graduation"
+        assert event.event_type == EventType.GRADUATION
         assert event.place == "Université de Paris"
-        assert event.description == "Diplôme d'ingénieur"
+        assert "Diplôme d'ingénieur" in event.notes
         assert event.date.year == 1972
         assert event.date.month == 6
     
@@ -282,7 +285,7 @@ class TestXMLImporter:
                 <statistics persons_count="1" families_count="0" events_count="0"/>
             </metadata>
             <persons>
-                <person id="1" surname="DUPONT" given_name="Jean"/>
+                <person id="1" last_name="DUPONT" first_name="Jean"/>
             </persons>
             <families/>
         </genealogy>'''
@@ -295,7 +298,7 @@ class TestXMLImporter:
             
             genealogy = importer.import_from_file(str(temp_file))
             assert len(genealogy.persons) == 1
-            assert genealogy.persons[0].surname == "DUPONT"
+            assert list(genealogy.persons.values())[0].last_name == "DUPONT"
         finally:
             if temp_file.exists():
                 temp_file.unlink()
@@ -319,17 +322,17 @@ class TestXMLImporter:
         # Créer une généalogie
         genealogy = Genealogy()
         person = Person(
-            surname="DUPONT",
-            given_name="Jean",
-            sex="M",
+            last_name="DUPONT",
+            first_name="Jean",
+            gender=Gender.MALE,
             birth_date=Date(year=1950, month=3, day=15),
             birth_place="Paris, France"
         )
         event = Event(
-            event_type="graduation",
+            event_type=EventType.GRADUATION,
             date=Date(year=1972, month=6),
             place="Université de Paris",
-            description="Diplôme d'ingénieur"
+            notes=["Diplôme d'ingénieur"]
         )
         person.add_event(event)
         genealogy.add_person(person)
@@ -344,11 +347,11 @@ class TestXMLImporter:
         
         # Vérifier que les données sont identiques
         assert len(imported_genealogy.persons) == 1
-        imported_person = imported_genealogy.persons[0]
-        assert imported_person.surname == "DUPONT"
-        assert imported_person.given_name == "Jean"
-        assert imported_person.sex == "M"
+        imported_person = list(imported_genealogy.persons.values())[0]
+        assert imported_person.last_name == "DUPONT"
+        assert imported_person.first_name == "Jean"
+        assert imported_person.gender == Gender.MALE
         assert imported_person.birth_date.year == 1950
         assert imported_person.birth_place == "Paris, France"
         assert len(imported_person.events) == 1
-        assert imported_person.events[0].event_type == "graduation"
+        assert imported_person.events[0].event_type == EventType.GRADUATION

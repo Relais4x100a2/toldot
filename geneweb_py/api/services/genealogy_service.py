@@ -482,10 +482,8 @@ class GenealogyService:
             event_type=event_data.event_type,
             date=None,  # TODO: Parser les dates
             place=event_data.place,
-            reason=event_data.reason,
-            notes=event_data.notes,
-            witnesses=event_data.witnesses or [],
-            sources=event_data.sources or []
+            notes=[event_data.note] if event_data.note else [],
+            witnesses=event_data.witnesses or []
         )
         
         # Ajout à la personne

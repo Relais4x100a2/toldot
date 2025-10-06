@@ -528,12 +528,14 @@ class LexicalParser:
             value += self.text[self.position]
             self._advance_position()
         
-        # Vérifier si c'est un mot-clé spécial (wit, src, comm)
-        if value in ['wit', 'src', 'comm']:
+        # Vérifier si c'est un mot-clé spécial (wit, src, comm, beg, end)
+        if value in ['wit', 'src', 'comm', 'beg', 'end']:
             token_type = {
                 'wit': TokenType.WIT,
                 'src': TokenType.SRC,
                 'comm': TokenType.COMM,
+                'beg': TokenType.BEG,
+                'end': TokenType.END,
             }[value]
         # Vérifier si c'est un modificateur de sexe (m/f)
         elif value in ['m', 'f']:

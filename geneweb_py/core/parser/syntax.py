@@ -320,6 +320,10 @@ class FamilyBlockParser(BlockParser):
             node.add_token(tokens[i])
             i += 1
             
+            # Ignorer les newlines après beg
+            while i < len(tokens) and tokens[i].type == TokenType.NEWLINE:
+                i += 1
+            
             # Parser chaque enfant
             while i < len(tokens) and tokens[i].type == TokenType.DASH:
                 child_node = SyntaxNode(BlockType.FAMILY)  # Enfant
@@ -327,7 +331,7 @@ class FamilyBlockParser(BlockParser):
                 i += 1
                 
                 # Sexe de l'enfant (optionnel)
-                if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER and tokens[i].value in ['h', 'f']:
+                if i < len(tokens) and ((tokens[i].type == TokenType.IDENTIFIER and tokens[i].value in ['h', 'f']) or tokens[i].type in [TokenType.H, TokenType.F]):
                     child_node.add_token(tokens[i])
                     i += 1
                 
@@ -342,6 +346,10 @@ class FamilyBlockParser(BlockParser):
                     i += 1
                 
                 node.add_child(child_node)
+                
+                # Ignorer les newlines après l'enfant
+                while i < len(tokens) and tokens[i].type == TokenType.NEWLINE:
+                    i += 1
             
             # Fin du bloc enfants
             if i < len(tokens) and tokens[i].type == TokenType.END:

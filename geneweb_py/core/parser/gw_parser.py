@@ -176,6 +176,9 @@ class GeneWebParser:
                 self._parse_notes_block(node, persons)
             # TODO: Ajouter les autres types de blocs
         
+        # Mettre à jour les références croisées
+        genealogy._update_cross_references()
+        
         return genealogy
     
     def _parse_family_block(self, node: SyntaxNode, persons: dict, families: dict, genealogy: Genealogy) -> None:
@@ -290,9 +293,12 @@ class GeneWebParser:
         
         i = 1  # Passer le tire
         
-        # Sexe de l'enfant (h ou f comme identifiant)
-        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER and tokens[i].value in ['h', 'f']:
-            sex = ChildSex.MALE if tokens[i].value == 'h' else ChildSex.FEMALE
+        # Sexe de l'enfant (h ou f comme identifiant ou token spécial)
+        if i < len(tokens) and ((tokens[i].type == TokenType.IDENTIFIER and tokens[i].value in ['h', 'f']) or tokens[i].type in [TokenType.H, TokenType.F]):
+            if tokens[i].type == TokenType.H or (tokens[i].type == TokenType.IDENTIFIER and tokens[i].value == 'h'):
+                sex = ChildSex.MALE
+            else:
+                sex = ChildSex.FEMALE
             i += 1
         
         # Nom de famille (si différent du père)

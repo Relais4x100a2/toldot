@@ -13,13 +13,8 @@ from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
 
-# Instance globale du service (en production, utiliser l'injection de dépendances)
-genealogy_service = GenealogyService()
-
-
-def get_genealogy_service() -> GenealogyService:
-    """Dépendance pour obtenir le service de généalogie."""
-    return genealogy_service
+# Import de la dépendance depuis le module dependencies
+from ..dependencies import get_genealogy_service
 
 
 @router.post("/import", response_model=SuccessResponse)
@@ -164,12 +159,12 @@ async def get_genealogy_stats(
                 "updated": stats["metadata"]["updated"],
                 "version": stats["metadata"]["version"],
                 "encoding": stats["metadata"]["encoding"],
-                "persons_by_sex": stats["persons_by_sex"],
-                "persons_by_access_level": stats["persons_by_access_level"],
-                "families_by_status": stats["families_by_status"],
-                "events_by_type": stats["events_by_type"],
-                "average_children_per_family": stats["average_children_per_family"],
-            }
+            },
+            persons_by_sex=stats["persons_by_sex"],
+            persons_by_access_level=stats["persons_by_access_level"],
+            families_by_status=stats["families_by_status"],
+            events_by_type=stats["events_by_type"],
+            average_children_per_family=stats["average_children_per_family"]
         )
         
         return SuccessResponse(
