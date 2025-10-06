@@ -17,13 +17,8 @@ from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
 
-# Instance globale du service (en production, utiliser l'injection de dépendances)
-genealogy_service = GenealogyService()
-
-
-def get_genealogy_service() -> GenealogyService:
-    """Dépendance pour obtenir le service de généalogie."""
-    return genealogy_service
+# Import de la dépendance depuis le module dependencies
+from ..dependencies import get_genealogy_service
 
 
 @router.post("/personal", response_model=SuccessResponse, status_code=201)
@@ -50,10 +45,10 @@ async def create_personal_event(
             event_type=event.event_type,
             date=None,  # TODO: Convertir les dates
             place=event.place,
-            reason=event.reason,
+            reason=None,  # Pas d'attribut reason dans Event
             notes=event.notes,
             witnesses=event.witnesses,
-            sources=event.sources,
+            sources=[],  # Pas d'attribut sources dans Event
             person_id=event_data.person_id,
             family_id=None
         )
@@ -330,10 +325,10 @@ async def list_events(
                 event_type=event.event_type,
                 date=None,  # TODO: Convertir les dates
                 place=event.place,
-                reason=event.reason,
+                reason=None,  # Pas d'attribut reason dans Event
                 notes=event.notes,
                 witnesses=event.witnesses,
-                sources=event.sources,
+                sources=[],  # Pas d'attribut sources dans Event
                 person_id=getattr(event, 'person_id', None),
                 family_id=getattr(event, 'family_id', None)
             )
@@ -354,7 +349,7 @@ async def list_events(
         )
         
         return PaginatedResponse(
-            data=event_schemas,
+            items=event_schemas,
             pagination=pagination_info
         )
         

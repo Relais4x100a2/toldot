@@ -414,10 +414,21 @@ class XMLImporter(BaseImporter):
     def _deserialize_person(self, elem: ET.Element) -> Optional[Person]:
         """Désérialise une personne depuis un élément XML."""
         try:
+            # Genre
+            gender_value = elem.get("gender")
+            gender = None
+            if gender_value:
+                from ..core.person import Gender
+                try:
+                    gender = Gender(gender_value)
+                except ValueError:
+                    gender = Gender.UNKNOWN
+            
             person = Person(
                 last_name=elem.get("last_name", ""),
                 first_name=elem.get("first_name", ""),
-                public_name=elem.get("public_name")
+                public_name=elem.get("public_name"),
+                gender=gender
             )
             
             # Stocker dans la map pour les références
@@ -545,7 +556,14 @@ class XMLImporter(BaseImporter):
     def _deserialize_event(self, elem: ET.Element) -> Optional[Event]:
         """Désérialise un événement depuis un élément XML."""
         try:
-            event_type = elem.get("type", "")
+            event_type_str = elem.get("type", "")
+            # Convertir le string en enum EventType
+            from ..core.event import EventType
+            try:
+                event_type = EventType(event_type_str)
+            except ValueError:
+                # Si le type n'est pas reconnu, utiliser OTHER
+                event_type = EventType.OTHER
             
             # Date
             date_elem = elem.find("date")

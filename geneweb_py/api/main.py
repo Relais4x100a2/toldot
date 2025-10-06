@@ -13,6 +13,15 @@ from .middleware.error_handler import setup_error_handlers
 from .middleware.logging import setup_logging_middleware
 from .routers import persons, families, events, genealogy
 from .dependencies import get_genealogy_service
+from .services.genealogy_service import GenealogyService
+
+# Service global partagé pour l'application
+_genealogy_service = GenealogyService()
+
+# Fonction pour obtenir le service global
+def get_global_genealogy_service() -> GenealogyService:
+    """Retourne le service global de généalogie."""
+    return _genealogy_service
 
 # Configuration de l'application FastAPI
 app = FastAPI(

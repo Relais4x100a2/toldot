@@ -17,13 +17,8 @@ from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
 
-# Instance globale du service (en production, utiliser l'injection de dépendances)
-genealogy_service = GenealogyService()
-
-
-def get_genealogy_service() -> GenealogyService:
-    """Dépendance pour obtenir le service de généalogie."""
-    return genealogy_service
+# Import de la dépendance depuis le module dependencies
+from ..dependencies import get_genealogy_service
 
 
 @router.post("/", response_model=SuccessResponse, status_code=201)

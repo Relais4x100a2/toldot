@@ -186,6 +186,38 @@ class GEDCOMExporter(BaseExporter):
             for note in person.notes:
                 lines.append(f"2 CONT {note}")
         
+        # Événements personnels
+        if person.events:
+            for event in person.events:
+                if event.event_type:
+                    event_lines = self._export_event(event)
+                    lines.extend(event_lines)
+        
+        return lines
+    
+    def _export_event(self, event: Event) -> List[str]:
+        """Exporte un événement vers le format GEDCOM."""
+        lines = []
+        
+        # Mapper le type d'événement vers le tag GEDCOM
+        event_tag = self._map_event_type(event.event_type.value)
+        
+        lines.append(f"1 {event_tag}")
+        
+        # Date
+        if event.date:
+            date_lines = self._export_date(event.date, "")
+            lines.extend(date_lines)
+        
+        # Lieu
+        if event.place:
+            lines.append(f"2 PLAC {event.place}")
+        
+        # Notes
+        if event.notes:
+            for note in event.notes:
+                lines.append(f"2 NOTE {note}")
+        
         return lines
     
     def _export_family(self, family: Family) -> List[str]:
@@ -274,6 +306,7 @@ class GEDCOMExporter(BaseExporter):
             "burial": "BURI",
             "confirmation": "CONF",
             "graduation": "GRAD",
+            "grad": "GRAD",  # Alias pour EventType.GRADUATION.value
             "immigration": "IMMI",
             "emigration": "EMIG",
             "naturalization": "NATU",

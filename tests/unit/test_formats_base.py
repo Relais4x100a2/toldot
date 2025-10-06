@@ -8,7 +8,31 @@ from unittest.mock import Mock
 
 from geneweb_py.formats.base import BaseExporter, BaseImporter, ConversionError
 from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person
+from geneweb_py.core.person import Person, Gender
+
+
+class ConcreteExporter(BaseExporter):
+    """Implémentation concrète pour les tests."""
+    
+    def export(self, genealogy: Genealogy, output_path: str) -> None:
+        """Export vers un fichier."""
+        pass
+    
+    def export_to_string(self, genealogy: Genealogy) -> str:
+        """Export vers une chaîne."""
+        return "test"
+
+
+class ConcreteImporter(BaseImporter):
+    """Implémentation concrète pour les tests."""
+    
+    def import_from_file(self, file_path: str) -> Genealogy:
+        """Import depuis un fichier."""
+        return Genealogy()
+    
+    def import_from_string(self, content: str) -> Genealogy:
+        """Import depuis une chaîne."""
+        return Genealogy()
 
 
 class TestBaseExporter:
@@ -16,28 +40,28 @@ class TestBaseExporter:
     
     def test_init(self):
         """Test de l'initialisation."""
-        exporter = BaseExporter(encoding="utf-8")
+        exporter = ConcreteExporter(encoding="utf-8")
         assert exporter.encoding == "utf-8"
     
     def test_validate_genealogy_valid(self):
         """Test de validation d'une généalogie valide."""
-        exporter = BaseExporter()
+        exporter = ConcreteExporter()
         genealogy = Genealogy()
-        genealogy.add_person(Person(surname="TEST", given_name="Test"))
+        genealogy.add_person(Person(last_name="TEST", first_name="Test"))
         
         # Ne doit pas lever d'exception
         exporter._validate_genealogy(genealogy)
     
     def test_validate_genealogy_invalid_type(self):
         """Test de validation d'un objet invalide."""
-        exporter = BaseExporter()
+        exporter = ConcreteExporter()
         
         with pytest.raises(ConversionError, match="n'est pas une instance de Genealogy"):
             exporter._validate_genealogy("invalid")
     
     def test_validate_genealogy_empty(self):
         """Test de validation d'une généalogie vide."""
-        exporter = BaseExporter()
+        exporter = ConcreteExporter()
         genealogy = Genealogy()
         
         with pytest.raises(ConversionError, match="La généalogie est vide"):
@@ -49,12 +73,12 @@ class TestBaseImporter:
     
     def test_init(self):
         """Test de l'initialisation."""
-        importer = BaseImporter(encoding="utf-8")
+        importer = ConcreteImporter(encoding="utf-8")
         assert importer.encoding == "utf-8"
     
     def test_validate_file_path_valid(self):
         """Test de validation d'un chemin de fichier valide."""
-        importer = BaseImporter()
+        importer = ConcreteImporter()
         
         # Créer un fichier temporaire
         temp_file = Path("temp_test_file.txt")
@@ -68,14 +92,14 @@ class TestBaseImporter:
     
     def test_validate_file_path_nonexistent(self):
         """Test de validation d'un fichier inexistant."""
-        importer = BaseImporter()
+        importer = ConcreteImporter()
         
         with pytest.raises(ConversionError, match="Le fichier n'existe pas"):
             importer._validate_file_path("nonexistent_file.txt")
     
     def test_validate_file_path_not_file(self):
         """Test de validation d'un répertoire."""
-        importer = BaseImporter()
+        importer = ConcreteImporter()
         
         with pytest.raises(ConversionError, match="n'est pas un fichier"):
             importer._validate_file_path(Path("."))
