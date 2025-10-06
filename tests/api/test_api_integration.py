@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from geneweb_py.api.main import app
 from geneweb_py.api.services.genealogy_service import GenealogyService
 from geneweb_py.core.models import Gender, AccessLevel, MarriageStatus, EventType
-from tests.api.test_service import TestGenealogyService
+from tests.api.test_service import MockGenealogyService
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def client():
 @pytest.fixture
 def test_service():
     """Service de test avec isolation des données."""
-    return TestGenealogyService()
+    return MockGenealogyService()
 
 
 @pytest.fixture

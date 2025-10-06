@@ -45,7 +45,7 @@ async def create_personal_event(
             event_type=event.event_type,
             date=None,  # TODO: Convertir les dates
             place=event.place,
-            reason=None,  # Pas d'attribut reason dans Event
+            reason=event.reason,
             notes=event.notes,
             witnesses=event.witnesses,
             sources=[],  # Pas d'attribut sources dans Event
@@ -97,7 +97,7 @@ async def create_family_event(
             reason=event.reason,
             notes=event.notes,
             witnesses=event.witnesses,
-            sources=event.sources,
+            sources=[event.source] if event.source else [],
             person_id=None,
             family_id=event_data.family_id
         )
@@ -152,7 +152,7 @@ async def get_event(
             reason=event.reason,
             notes=event.notes,
             witnesses=event.witnesses,
-            sources=event.sources,
+            sources=[event.source] if event.source else [],
             person_id=getattr(event, 'person_id', None),
             family_id=getattr(event, 'family_id', None)
         )
@@ -206,7 +206,7 @@ async def update_event(
             reason=event.reason,
             notes=event.notes,
             witnesses=event.witnesses,
-            sources=event.sources,
+            sources=[event.source] if event.source else [],
             person_id=getattr(event, 'person_id', None),
             family_id=getattr(event, 'family_id', None)
         )

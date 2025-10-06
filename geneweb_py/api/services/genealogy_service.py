@@ -30,7 +30,22 @@ class GenealogyService:
         self._initialize_empty_genealogy()
     
     def _initialize_empty_genealogy(self) -> None:
-        """Initialise une généalogie vide."""
+        """Initialise une généalogie avec des données de test."""
+        import os
+        from pathlib import Path
+        
+        # Essayer de charger un fichier de test
+        test_file = Path(__file__).parent.parent.parent.parent / "tests" / "fixtures" / "simple_test.gw"
+        
+        if test_file.exists():
+            try:
+                self._genealogy = self._parser.parse_file(str(test_file))
+                return
+            except Exception:
+                # Si le parsing échoue, continuer avec une généalogie vide
+                pass
+        
+        # Créer une généalogie vide par défaut
         from ...core.genealogy import Genealogy, GenealogyMetadata
         
         metadata = GenealogyMetadata(

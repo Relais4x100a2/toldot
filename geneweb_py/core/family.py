@@ -68,6 +68,11 @@ class Family:
     # Identifiant unique de la famille
     family_id: str
     
+    @property
+    def id(self) -> str:
+        """Alias pour family_id pour compatibilité API"""
+        return self.family_id
+    
     # Époux et épouse (références vers les Person)
     husband_id: Optional[str] = None
     wife_id: Optional[str] = None

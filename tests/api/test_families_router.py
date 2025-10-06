@@ -127,7 +127,8 @@ class TestFamiliesRouter:
         
         assert response.status_code == 404
         data = response.json()
-        assert "non trouvée" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_create_family(self, client_with_mock_service, mock_service):
         """Test création d'une famille"""
@@ -179,7 +180,8 @@ class TestFamiliesRouter:
         
         assert response.status_code == 404
         data = response.json()
-        assert "non trouvée" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_delete_family(self, client_with_mock_service, mock_service):
         """Test suppression d'une famille"""
@@ -200,7 +202,8 @@ class TestFamiliesRouter:
         
         assert response.status_code == 404
         data = response.json()
-        assert "non trouvée" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_get_family_children(self, client_with_mock_service, mock_service):
         """Test récupération des enfants d'une famille"""

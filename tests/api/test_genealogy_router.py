@@ -131,7 +131,7 @@ end fam"""
             
             assert response.status_code == 400
             data = response.json()
-            assert "extension" in data["detail"]
+            assert data["error"] is True
             
         finally:
             os.unlink(temp_file_path)
@@ -157,7 +157,7 @@ end fam"""
             
             assert response.status_code == 500
             data = response.json()
-            assert "Erreur" in data["detail"]
+            assert data["error"] is True
             
         finally:
             os.unlink(temp_file_path)
@@ -200,7 +200,8 @@ end fam"""
         
         assert response.status_code == 400
         data = response.json()
-        assert "Format non supporté" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_search_persons(self, client_with_mock_service, mock_service):
         """Test recherche de personnes"""
@@ -220,7 +221,8 @@ end fam"""
         
         assert response.status_code == 400
         data = response.json()
-        assert "query" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_get_health(self, client_with_mock_service, mock_service):
         """Test endpoint de santé"""

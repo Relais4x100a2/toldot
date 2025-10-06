@@ -15,7 +15,18 @@ from ..core.exceptions import GeneWebConversionError
 
 class ConversionError(GeneWebConversionError):
     """Exception levée lors d'erreurs de conversion de formats."""
-    pass
+    
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None, **kwargs):
+        """
+        Initialise l'erreur de conversion.
+        
+        Args:
+            message: Message d'erreur
+            details: Détails supplémentaires de l'erreur
+            **kwargs: Arguments supplémentaires pour la classe parente
+        """
+        super().__init__(message, **kwargs)
+        self.details = details or {}
 
 
 class BaseExporter(ABC):

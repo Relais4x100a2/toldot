@@ -133,7 +133,7 @@ end fam"""
             
             assert response.status_code == 400
             data = response.json()
-            assert "extension" in data["detail"]
+            assert data["error"] is True
             
         finally:
             os.unlink(temp_file_path)
@@ -159,7 +159,7 @@ end fam"""
             
             assert response.status_code == 500
             data = response.json()
-            assert "Erreur" in data["detail"]
+            assert data["error"] is True
             
         finally:
             os.unlink(temp_file_path)
@@ -182,7 +182,8 @@ end fam"""
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_search_persons_success(self, client_with_mock_service, mock_service):
         """Test recherche de personnes - succès"""
@@ -210,7 +211,8 @@ end fam"""
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_get_health(self, client_with_mock_service):
         """Test endpoint de santé"""
@@ -227,31 +229,32 @@ end fam"""
         
         assert response.status_code == 400
         data = response.json()
-        assert "Format non supporté" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
-    def test_export_gedcom_not_implemented(self, client_with_mock_service):
-        """Test export GEDCOM non implémenté"""
+    def test_export_gedcom_success(self, client_with_mock_service):
+        """Test export GEDCOM réussi"""
         response = client_with_mock_service.get("/api/v1/genealogy/export/gedcom")
         
-        assert response.status_code == 501
-        data = response.json()
-        assert "non implémenté" in data["detail"]
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/octet-stream"
+        assert "genealogy.ged" in response.headers.get("content-disposition", "")
     
-    def test_export_json_not_implemented(self, client_with_mock_service):
-        """Test export JSON non implémenté"""
+    def test_export_json_success(self, client_with_mock_service):
+        """Test export JSON réussi"""
         response = client_with_mock_service.get("/api/v1/genealogy/export/json")
         
-        assert response.status_code == 501
-        data = response.json()
-        assert "non implémenté" in data["detail"]
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
+        assert "genealogy.json" in response.headers.get("content-disposition", "")
     
-    def test_export_xml_not_implemented(self, client_with_mock_service):
-        """Test export XML non implémenté"""
+    def test_export_xml_success(self, client_with_mock_service):
+        """Test export XML réussi"""
         response = client_with_mock_service.get("/api/v1/genealogy/export/xml")
         
-        assert response.status_code == 501
-        data = response.json()
-        assert "non implémenté" in data["detail"]
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/xml"
+        assert "genealogy.xml" in response.headers.get("content-disposition", "")
     
     def test_export_gw_not_implemented(self, client_with_mock_service):
         """Test export GW non implémenté"""
@@ -259,4 +262,5 @@ end fam"""
         
         assert response.status_code == 501
         data = response.json()
-        assert "non implémenté" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True

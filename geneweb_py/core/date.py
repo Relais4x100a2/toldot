@@ -239,11 +239,27 @@ class Date:
                 end_year = int(parts[1])
                 alternative_dates.append(cls(year=end_year))
         
-        # Parser la date principale
+        # Parser la date principale avec gestion des champs vides
         if "/" in date_str:
             parts = date_str.split("/")
+            
+            # Filtrer les parties vides et convertir en entiers
+            def safe_int(value):
+                """Convertit une chaîne en entier, retourne None si vide ou invalide"""
+                if not value or value.strip() == "":
+                    return None
+                try:
+                    return int(value.strip())
+                except ValueError:
+                    return None
+            
             if len(parts) == 3:
-                day, month, year = map(int, parts)
+                day, month, year = map(safe_int, parts)
+                
+                # Si tous les champs sont vides, c'est une date inconnue
+                if day is None and month is None and year is None:
+                    return cls(is_unknown=True)
+                
                 return cls(
                     day=day, month=month, year=year,
                     prefix=prefix, calendar=calendar,
@@ -251,7 +267,12 @@ class Date:
                     death_type=death_type
                 )
             elif len(parts) == 2:
-                month, year = map(int, parts)
+                month, year = map(safe_int, parts)
+                
+                # Si les deux champs sont vides, c'est une date inconnue
+                if month is None and year is None:
+                    return cls(is_unknown=True)
+                
                 return cls(
                     month=month, year=year,
                     prefix=prefix, calendar=calendar,
@@ -267,6 +288,20 @@ class Date:
                 alternative_dates=alternative_dates,
                 death_type=death_type
             )
+        
+        # Si on arrive ici et que la chaîne n'est pas vide, c'est un format non reconnu
+        # Mais on peut essayer de parser comme année si c'est numérique
+        if date_str.replace("-", "").replace(".", "").isdigit():
+            try:
+                year = int(float(date_str))
+                return cls(
+                    year=year,
+                    prefix=prefix, calendar=calendar,
+                    alternative_dates=alternative_dates,
+                    death_type=death_type
+                )
+            except ValueError:
+                pass
         
         raise ValueError(f"Format de date non reconnu: {date_str}")
     

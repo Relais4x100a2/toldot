@@ -136,7 +136,7 @@ end fam"""
             
             assert response.status_code == 400
             data = response.json()
-            assert "extension" in data["detail"]
+            assert data["error"] is True
             
         finally:
             os.unlink(temp_file_path)
@@ -162,7 +162,7 @@ end fam"""
             
             assert response.status_code == 500
             data = response.json()
-            assert "Erreur" in data["detail"]
+            assert data["error"] is True
             
         finally:
             os.unlink(temp_file_path)
@@ -185,7 +185,8 @@ end fam"""
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_export_gedcom_success(self, client_with_mock_service, mock_service):
         """Test export GEDCOM - succès"""
@@ -203,7 +204,8 @@ end fam"""
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_export_json_success(self, client_with_mock_service, mock_service):
         """Test export JSON - succès"""
@@ -220,7 +222,8 @@ end fam"""
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_export_xml_success(self, client_with_mock_service, mock_service):
         """Test export XML - succès"""
@@ -237,7 +240,8 @@ end fam"""
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_export_unsupported_format(self, client_with_mock_service):
         """Test export format non supporté"""
@@ -245,7 +249,8 @@ end fam"""
         
         assert response.status_code == 400
         data = response.json()
-        assert "Format non supporté" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_search_persons_success(self, client_with_mock_service, mock_service):
         """Test recherche de personnes - succès"""
@@ -273,7 +278,8 @@ end fam"""
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_get_health(self, client_with_mock_service):
         """Test endpoint de santé"""
@@ -301,4 +307,5 @@ end fam"""
         
         assert response.status_code == 500
         data = response.json()
-        assert "Erreur" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True

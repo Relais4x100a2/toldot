@@ -173,7 +173,7 @@ class GeneWebParser:
             if node.type == BlockType.FAMILY:
                 self._parse_family_block(node, persons, families, genealogy)
             elif node.type == BlockType.NOTES:
-                self._parse_notes_block(node, persons)
+                self._parse_notes_block(node, persons, genealogy)
             elif node.type == BlockType.PERSON_EVENTS:
                 self._parse_person_events_block(node, persons, genealogy)
             elif node.type == BlockType.FAMILY_EVENTS:
@@ -341,7 +341,7 @@ class GeneWebParser:
             # Ajouter l'enfant à la famille
             family.add_child(child_id, sex)
     
-    def _parse_notes_block(self, node: SyntaxNode, persons: dict) -> None:
+    def _parse_notes_block(self, node: SyntaxNode, persons: dict, genealogy: Genealogy) -> None:
         """Parse un bloc notes et ajoute les notes à la personne correspondante"""
         tokens = node.tokens
         
@@ -352,22 +352,31 @@ class GeneWebParser:
             
             person_id = f"{last_name}_{first_name}_0"
             
-            if person_id in persons:
-                # Extraire le contenu des notes
-                notes_content = []
-                in_content = False
-                
-                for token in tokens:
-                    if token.type == TokenType.BEG:
-                        in_content = True
-                        continue
-                    elif token.type == TokenType.END_NOTES:
-                        break
-                    elif in_content and token.type not in [TokenType.NEWLINE, TokenType.WHITESPACE]:
-                        notes_content.append(token.value)
-                
-                if notes_content:
-                    persons[person_id].add_note(' '.join(notes_content))
+            # Créer la personne si elle n'existe pas
+            if person_id not in persons:
+                person = Person(
+                    last_name=last_name,
+                    first_name=first_name,
+                    gender=Gender.UNKNOWN
+                )
+                persons[person_id] = person
+                genealogy.add_person(person)
+            
+            # Extraire le contenu des notes
+            notes_content = []
+            in_content = False
+            
+            for token in tokens:
+                if token.type == TokenType.BEG:
+                    in_content = True
+                    continue
+                elif token.type == TokenType.END_NOTES:
+                    break
+                elif in_content and token.type not in [TokenType.NEWLINE, TokenType.WHITESPACE]:
+                    notes_content.append(token.value)
+            
+            if notes_content:
+                persons[person_id].add_note(' '.join(notes_content))
     
     def _parse_person_events_block(self, node: SyntaxNode, persons: dict, genealogy: Genealogy) -> None:
         """Parse un bloc événements personnels et met à jour la personne correspondante"""

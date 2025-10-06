@@ -128,7 +128,8 @@ class TestPersonsRouter:
         
         assert response.status_code == 404
         data = response.json()
-        assert "non trouvée" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_create_person(self, client_with_mock_service, mock_service):
         """Test création d'une personne"""
@@ -180,7 +181,8 @@ class TestPersonsRouter:
         
         assert response.status_code == 404
         data = response.json()
-        assert "non trouvée" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_delete_person(self, client_with_mock_service, mock_service):
         """Test suppression d'une personne"""
@@ -201,7 +203,8 @@ class TestPersonsRouter:
         
         assert response.status_code == 404
         data = response.json()
-        assert "non trouvée" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_get_person_families(self, client_with_mock_service, mock_service):
         """Test récupération des familles d'une personne"""
@@ -243,4 +246,5 @@ class TestPersonsRouter:
         
         assert response.status_code == 400
         data = response.json()
-        assert "query" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True

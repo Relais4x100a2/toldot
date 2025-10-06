@@ -10,7 +10,7 @@ from geneweb_py.api.services.genealogy_service import GenealogyService
 from geneweb_py.core.models import Genealogy, Person, Family, Event
 
 
-class TestGenealogyService(GenealogyService):
+class MockGenealogyService(GenealogyService):
     """Service de test avec isolation des données."""
     
     def __init__(self):

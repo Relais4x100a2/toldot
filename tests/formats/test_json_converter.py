@@ -73,11 +73,11 @@ class TestJSONExporter:
             with open(temp_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
-            assert "genealogy" in data
-            assert "persons" in data["genealogy"]
-            assert "families" in data["genealogy"]
-            assert len(data["genealogy"]["persons"]) == 2
-            assert len(data["genealogy"]["families"]) == 1
+            assert "persons" in data
+            assert "families" in data
+            assert "metadata" in data
+            assert len(data["persons"]) == 2
+            assert len(data["families"]) == 1
             
         finally:
             if os.path.exists(temp_path):
@@ -91,9 +91,9 @@ class TestJSONExporter:
         
         # Vérifier que c'est du JSON valide
         data = json.loads(json_string)
-        assert "genealogy" in data
-        assert "persons" in data["genealogy"]
-        assert "families" in data["genealogy"]
+        assert "persons" in data
+        assert "families" in data
+        assert "metadata" in data
     
     def test_export_with_custom_settings(self, sample_genealogy):
         """Test export avec paramètres personnalisés."""
@@ -103,7 +103,9 @@ class TestJSONExporter:
         
         # Vérifier que c'est du JSON valide
         data = json.loads(json_string)
-        assert "genealogy" in data
+        assert "persons" in data
+        assert "families" in data
+        assert "metadata" in data
     
     def test_export_invalid_genealogy(self):
         """Test export avec généalogie invalide."""

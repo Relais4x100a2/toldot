@@ -39,7 +39,7 @@ def sample_family_data():
     )
 
 
-class TestGenealogyServiceSimple:
+class MockGenealogyServiceSimple:
     """Tests simples pour le service GenealogyService."""
     
     def test_init(self, service):

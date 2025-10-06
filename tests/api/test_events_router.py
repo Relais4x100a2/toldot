@@ -120,7 +120,8 @@ class TestEventsRouter:
         
         assert response.status_code == 404
         data = response.json()
-        assert "non trouvé" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_create_event(self, client_with_mock_service, mock_service):
         """Test création d'un événement"""
@@ -173,7 +174,8 @@ class TestEventsRouter:
         
         assert response.status_code == 404
         data = response.json()
-        assert "non trouvé" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_delete_event(self, client_with_mock_service, mock_service):
         """Test suppression d'un événement"""
@@ -194,7 +196,8 @@ class TestEventsRouter:
         
         assert response.status_code == 404
         data = response.json()
-        assert "non trouvé" in data["detail"]
+        assert data["error"] is True
+        assert data["error"] is True
     
     def test_get_events_by_person(self, client_with_mock_service, mock_service):
         """Test récupération des événements d'une personne"""

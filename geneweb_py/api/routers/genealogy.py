@@ -2,9 +2,13 @@
 Router FastAPI pour la gestion de la généalogie dans l'API geneweb-py.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
 from fastapi.responses import JSONResponse, FileResponse
+import tempfile
+import os
+
+from ...formats import GEDCOMExporter, JSONExporter, XMLExporter
 
 from ..models.responses import (
     SuccessResponse, StatsResponse, HealthResponse, ErrorResponse
@@ -92,7 +96,8 @@ async def export_genealogy(
         FileResponse: Fichier exporté
     """
     try:
-        # TODO: Implémenter les exports selon le format demandé
+        # Récupérer la généalogie depuis le service
+        genealogy = service.genealogy
         
         if format == "gw":
             # Export vers format GeneWeb natif
@@ -102,22 +107,79 @@ async def export_genealogy(
             )
         elif format == "json":
             # Export vers JSON
-            raise HTTPException(
-                status_code=501,
-                detail="Export vers JSON non encore implémenté"
-            )
+            try:
+                exporter = JSONExporter()
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+                temp_file.close()
+                
+                exporter.export(genealogy, temp_file.name)
+                
+                return FileResponse(
+                    path=temp_file.name,
+                    filename=f"genealogy.json",
+                    media_type="application/json"
+                )
+            except Exception as exc:
+                # Nettoyer le fichier temporaire en cas d'erreur
+                if 'temp_file' in locals():
+                    try:
+                        os.unlink(temp_file.name)
+                    except:
+                        pass
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Erreur lors de l'export JSON: {exc}"
+                )
         elif format == "xml":
             # Export vers XML
-            raise HTTPException(
-                status_code=501,
-                detail="Export vers XML non encore implémenté"
-            )
+            try:
+                exporter = XMLExporter()
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".xml")
+                temp_file.close()
+                
+                exporter.export(genealogy, temp_file.name)
+                
+                return FileResponse(
+                    path=temp_file.name,
+                    filename=f"genealogy.xml",
+                    media_type="application/xml"
+                )
+            except Exception as exc:
+                # Nettoyer le fichier temporaire en cas d'erreur
+                if 'temp_file' in locals():
+                    try:
+                        os.unlink(temp_file.name)
+                    except:
+                        pass
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Erreur lors de l'export XML: {exc}"
+                )
         elif format == "gedcom":
             # Export vers GEDCOM
-            raise HTTPException(
-                status_code=501,
-                detail="Export vers GEDCOM non encore implémenté"
-            )
+            try:
+                exporter = GEDCOMExporter()
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".ged")
+                temp_file.close()
+                
+                exporter.export(genealogy, temp_file.name)
+                
+                return FileResponse(
+                    path=temp_file.name,
+                    filename=f"genealogy.ged",
+                    media_type="application/octet-stream"
+                )
+            except Exception as exc:
+                # Nettoyer le fichier temporaire en cas d'erreur
+                if 'temp_file' in locals():
+                    try:
+                        os.unlink(temp_file.name)
+                    except:
+                        pass
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Erreur lors de l'export GEDCOM: {exc}"
+                )
         else:
             raise HTTPException(
                 status_code=400,
@@ -379,3 +441,19 @@ async def clear_genealogy(
             status_code=500,
             detail=f"Erreur lors du vidage de la généalogie: {exc}"
         )
+
+
+@router.get("/health")
+async def health_check() -> Dict[str, Any]:
+    """
+    Vérification de l'état de santé du service de généalogie.
+    
+    Returns:
+        Dict[str, Any]: Statut du service
+    """
+    return {
+        "status": "healthy",
+        "service": "genealogy",
+        "message": "Service de généalogie opérationnel",
+        "version": "0.1.0"
+    }
