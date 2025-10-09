@@ -40,6 +40,7 @@ dev = [
     "flake8>=6.0.0",
     "mypy>=1.0.0",
     "hypothesis>=6.0.0",
+    "httpx>=0.24.0",  # Requis pour TestClient de FastAPI
 ]
 docs = [
     "sphinx>=5.0.0",
@@ -57,6 +58,7 @@ api = [
     "uvicorn[standard]>=0.20.0",
     "pydantic>=2.0.0",
     "python-multipart>=0.0.5",
+    "httpx>=0.24.0",  # Requis pour TestClient
 ]
 parsing = [
     "lark>=1.0.0",
