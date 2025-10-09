@@ -41,7 +41,7 @@ async def get_genealogy_service_context() -> Generator[GenealogyService, None, N
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur du service de généalogie: {exc}",
-        )
+        ) from exc
 
 
 def validate_genealogy_loaded(
@@ -63,11 +63,11 @@ def validate_genealogy_loaded(
         # Tentative d'accès à la généalogie pour vérifier qu'elle est chargée
         _ = service.genealogy
         return service
-    except ValueError:
+    except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Aucune généalogie n'est chargée. Utilisez l'endpoint /api/v1/genealogy/import pour charger un fichier.",
-        )
+        ) from exc
 
 
 def get_pagination_params(
