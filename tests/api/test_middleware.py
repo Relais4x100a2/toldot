@@ -77,3 +77,22 @@ class TestLoggingMiddleware:
         response = client.get("/test-log")
         assert response.status_code == 200
         assert response.json() == {"message": "OK"}
+
+    def test_error_logging(self):
+        """Test logging des erreurs dans le middleware."""
+        app = FastAPI()
+        setup_error_handlers(app)  # D'abord le handler pour capturer les erreurs
+        setup_logging_middleware(app)  # Puis le logging
+
+        @app.get("/test-error-log")
+        async def test_error():
+            raise ValueError("Test error for logging")
+
+        # raise_server_exceptions=False pour ne pas propager l'exception au test
+        client = TestClient(app, raise_server_exceptions=False)
+        # L'erreur est loggée par le middleware puis gérée par error_handler
+        response = client.get("/test-error-log")
+        # Le error_handler retourne une réponse 500
+        assert response.status_code == 500
+        assert "error" in response.json()
+        assert response.json()["error"] is True
