@@ -183,7 +183,7 @@ class StreamingGeneWebParser:
         file_path = Path(file_path)
 
         if not file_path.exists():
-            raise GeneWebParseError(f"Fichier non trouvé: {file_path}")
+            raise GeneWebParseError(f"Fichier non trouvé: {file_path}") from e
 
         # Détection d'encodage
         encoding = self._detect_encoding(file_path)
@@ -228,7 +228,7 @@ class StreamingGeneWebParser:
             return "iso-8859-1"
 
         except Exception as e:
-            raise GeneWebEncodingError(f"Erreur lors de la détection d'encodage: {e}")
+            raise GeneWebEncodingError(f"Erreur lors de la détection d'encodage: {e}") from e
 
 
 def should_use_streaming(

@@ -56,7 +56,7 @@ class JSONExporter(BaseExporter):
                 f.write(json_content)
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors de l'export JSON : {e}")
+            raise ConversionError(f"Erreur lors de l'export JSON : {e}") from e
 
     def export_to_string(self, genealogy: Genealogy) -> str:
         """
@@ -79,7 +79,7 @@ class JSONExporter(BaseExporter):
                 data, indent=self.indent, ensure_ascii=self.ensure_ascii, default=str
             )
         except Exception as e:
-            raise ConversionError(f"Erreur lors de la sérialisation JSON : {e}")
+            raise ConversionError(f"Erreur lors de la sérialisation JSON : {e}") from e
 
     def _serialize_genealogy(self, genealogy: Genealogy) -> Dict[str, Any]:
         """Sérialise une généalogie en dictionnaire JSON."""
@@ -229,7 +229,7 @@ class JSONImporter(BaseImporter):
             return self.import_from_string(content)
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors de l'import JSON : {e}")
+            raise ConversionError(f"Erreur lors de l'import JSON : {e}") from e
 
     def import_from_string(self, data: str) -> Genealogy:
         """
@@ -250,13 +250,13 @@ class JSONImporter(BaseImporter):
 
             # Vérifier que le JSON n'est pas vide
             if not json_data or (not isinstance(json_data, dict)):
-                raise ConversionError("JSON vide ou invalide")
+                raise ConversionError("JSON vide ou invalide") from e
 
             # Vérifier qu'il y a au moins des données de généalogie
             if not any(key in json_data for key in ["persons", "families", "metadata"]):
                 raise ConversionError(
                     "JSON ne contient pas de données de généalogie valides"
-                )
+                ) from e
 
             # Réinitialiser les maps
             self._person_map.clear()
@@ -282,7 +282,7 @@ class JSONImporter(BaseImporter):
             return genealogy
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors du parsing JSON : {e}")
+            raise ConversionError(f"Erreur lors du parsing JSON : {e}") from e
 
     def _deserialize_person(self, data: Dict[str, Any]) -> Optional[Person]:
         """Désérialise une personne depuis un dictionnaire JSON."""
@@ -327,7 +327,7 @@ class JSONImporter(BaseImporter):
         except Exception as e:
             raise ConversionError(
                 f"Erreur lors de la désérialisation de la personne : {e}"
-            )
+            ) from e
 
     def _deserialize_family(self, data: Dict[str, Any]) -> Optional[Family]:
         """Désérialise une famille depuis un dictionnaire JSON."""
@@ -375,7 +375,7 @@ class JSONImporter(BaseImporter):
         except Exception as e:
             raise ConversionError(
                 f"Erreur lors de la désérialisation de la famille : {e}"
-            )
+            ) from e
 
     def _deserialize_event(self, data: Dict[str, Any]) -> Optional[Event]:
         """Désérialise un événement depuis un dictionnaire JSON."""
@@ -399,7 +399,7 @@ class JSONImporter(BaseImporter):
         except Exception as e:
             raise ConversionError(
                 f"Erreur lors de la désérialisation de l'événement : {e}"
-            )
+            ) from e
 
     def _deserialize_date(self, data: Optional[Dict[str, Any]]) -> Optional[Date]:
         """Désérialise une date depuis un dictionnaire JSON."""
@@ -418,4 +418,4 @@ class JSONImporter(BaseImporter):
                 death_type=data.get("death_type"),
             )
         except Exception as e:
-            raise ConversionError(f"Erreur lors de la désérialisation de la date : {e}")
+            raise ConversionError(f"Erreur lors de la désérialisation de la date : {e}") from e

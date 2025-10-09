@@ -66,7 +66,7 @@ async def create_family(
     except Exception as exc:
         raise HTTPException(
             status_code=500, detail=f"Erreur lors de la création de la famille: {exc}"
-        )
+        ) from exc
 
 
 @router.get("/{family_id}", response_model=SuccessResponse)
@@ -88,7 +88,7 @@ async def get_family(
     if family is None:
         raise HTTPException(
             status_code=404, detail=f"Famille avec l'ID '{family_id}' non trouvée"
-        )
+        ) from exc
 
     # Conversion vers le schéma de réponse
     family_schema = FamilySchema(
@@ -133,7 +133,7 @@ async def update_family(
     if family is None:
         raise HTTPException(
             status_code=404, detail=f"Famille avec l'ID '{family_id}' non trouvée"
-        )
+        ) from exc
 
     # Conversion vers le schéma de réponse
     family_schema = FamilySchema(
@@ -175,7 +175,7 @@ async def delete_family(
     if not success:
         raise HTTPException(
             status_code=404, detail=f"Famille avec l'ID '{family_id}' non trouvée"
-        )
+        ) from exc
 
     return SuccessResponse(message="Famille supprimée avec succès")
 
@@ -288,7 +288,7 @@ async def get_family_children(
     if family is None:
         raise HTTPException(
             status_code=404, detail=f"Famille avec l'ID '{family_id}' non trouvée"
-        )
+        ) from exc
 
     # TODO: Implémenter la récupération des enfants avec leurs détails
     children = []
@@ -316,7 +316,7 @@ async def get_family_events(
         if family is None:
             raise HTTPException(
                 status_code=404, detail=f"Famille avec l'ID '{family_id}' non trouvée"
-            )
+            ) from exc
 
         # Conversion des événements familiaux
         events = []
@@ -342,7 +342,7 @@ async def get_family_events(
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors de la récupération des événements: {exc}",
-        )
+        ) from exc
 
 
 @router.get("/stats/overview", response_model=SuccessResponse)

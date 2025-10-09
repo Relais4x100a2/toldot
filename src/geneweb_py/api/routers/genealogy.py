@@ -41,7 +41,7 @@ async def import_genealogy_file(
             raise HTTPException(
                 status_code=400,
                 detail="Le fichier doit avoir l'extension .gw ou .gwplus",
-            )
+            ) from exc
 
         # Sauvegarde temporaire du fichier
         import os
@@ -75,7 +75,7 @@ async def import_genealogy_file(
     except Exception as exc:
         raise HTTPException(
             status_code=500, detail=f"Erreur lors de l'import du fichier: {exc}"
-        )
+        ) from exc
 
 
 @router.get("/export/{format}", response_class=FileResponse)
@@ -101,7 +101,7 @@ async def export_genealogy(
             raise HTTPException(
                 status_code=501,
                 detail="Export vers format GeneWeb non encore implémenté",
-            )
+            ) from exc
         elif format == "json":
             # Export vers JSON
             try:
@@ -125,7 +125,7 @@ async def export_genealogy(
                         pass
                 raise HTTPException(
                     status_code=500, detail=f"Erreur lors de l'export JSON: {exc}"
-                )
+                ) from exc
         elif format == "xml":
             # Export vers XML
             try:
@@ -149,7 +149,7 @@ async def export_genealogy(
                         pass
                 raise HTTPException(
                     status_code=500, detail=f"Erreur lors de l'export XML: {exc}"
-                )
+                ) from exc
         elif format == "gedcom":
             # Export vers GEDCOM
             try:
@@ -173,17 +173,17 @@ async def export_genealogy(
                         pass
                 raise HTTPException(
                     status_code=500, detail=f"Erreur lors de l'export GEDCOM: {exc}"
-                )
+                ) from exc
         else:
             raise HTTPException(
                 status_code=400,
                 detail=f"Format d'export '{format}' non supporté. Formats disponibles: gw, json, xml, gedcom",
-            )
+            ) from exc
 
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de l'export: {exc}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors de l'export: {exc}") from exc
 
 
 @router.get("/stats", response_model=SuccessResponse)
@@ -229,7 +229,7 @@ async def get_genealogy_stats(
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors de la récupération des statistiques: {exc}",
-        )
+        ) from exc
 
 
 @router.get("/search", response_model=SuccessResponse)
@@ -391,7 +391,7 @@ async def search_genealogy(
     except Exception as exc:
         raise HTTPException(
             status_code=500, detail=f"Erreur lors de la recherche: {exc}"
-        )
+        ) from exc
 
 
 @router.post("/validate", response_model=SuccessResponse)
@@ -424,7 +424,7 @@ async def validate_genealogy(
     except Exception as exc:
         raise HTTPException(
             status_code=500, detail=f"Erreur lors de la validation: {exc}"
-        )
+        ) from exc
 
 
 @router.delete("/", response_model=SuccessResponse)
@@ -449,7 +449,7 @@ async def clear_genealogy(
     except Exception as exc:
         raise HTTPException(
             status_code=500, detail=f"Erreur lors du vidage de la généalogie: {exc}"
-        )
+        ) from exc
 
 
 @router.get("/health")

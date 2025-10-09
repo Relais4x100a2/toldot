@@ -52,7 +52,7 @@ class XMLExporter(BaseExporter):
                 f.write(xml_content)
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors de l'export XML : {e}")
+            raise ConversionError(f"Erreur lors de l'export XML : {e}") from e
 
     def export_to_string(self, genealogy: Genealogy) -> str:
         """
@@ -80,7 +80,7 @@ class XMLExporter(BaseExporter):
             ).decode(self.encoding)
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors de la sérialisation XML : {e}")
+            raise ConversionError(f"Erreur lors de la sérialisation XML : {e}") from e
 
     def _serialize_genealogy(self, genealogy: Genealogy) -> ET.Element:
         """Sérialise une généalogie en élément XML."""
@@ -369,7 +369,7 @@ class XMLImporter(BaseImporter):
             return self.import_from_string(content)
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors de l'import XML : {e}")
+            raise ConversionError(f"Erreur lors de l'import XML : {e}") from e
 
     def import_from_string(self, data: str) -> Genealogy:
         """
@@ -414,7 +414,7 @@ class XMLImporter(BaseImporter):
             return genealogy
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors du parsing XML : {e}")
+            raise ConversionError(f"Erreur lors du parsing XML : {e}") from e
 
     def _deserialize_person(self, elem: ET.Element) -> Optional[Person]:
         """Désérialise une personne depuis un élément XML."""
@@ -514,7 +514,7 @@ class XMLImporter(BaseImporter):
         except Exception as e:
             raise ConversionError(
                 f"Erreur lors de la désérialisation de la personne : {e}"
-            )
+            ) from e
 
     def _deserialize_family(self, elem: ET.Element) -> Optional[Family]:
         """Désérialise une famille depuis un élément XML."""
@@ -570,7 +570,7 @@ class XMLImporter(BaseImporter):
         except Exception as e:
             raise ConversionError(
                 f"Erreur lors de la désérialisation de la famille : {e}"
-            )
+            ) from e
 
     def _deserialize_event(self, elem: ET.Element) -> Optional[Event]:
         """Désérialise un événement depuis un élément XML."""
@@ -637,7 +637,7 @@ class XMLImporter(BaseImporter):
         except Exception as e:
             raise ConversionError(
                 f"Erreur lors de la désérialisation de l'événement : {e}"
-            )
+            ) from e
 
     def _deserialize_date(self, elem: ET.Element) -> Optional[Date]:
         """Désérialise une date depuis un élément XML."""
@@ -674,4 +674,4 @@ class XMLImporter(BaseImporter):
             )
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors de la désérialisation de la date : {e}")
+            raise ConversionError(f"Erreur lors de la désérialisation de la date : {e}") from e

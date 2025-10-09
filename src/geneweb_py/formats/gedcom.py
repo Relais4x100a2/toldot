@@ -56,7 +56,7 @@ class GEDCOMExporter(BaseExporter):
                 f.write(gedcom_content)
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors de l'export GEDCOM : {e}")
+            raise ConversionError(f"Erreur lors de l'export GEDCOM : {e}") from e
 
     def export_to_string(self, genealogy: Genealogy) -> str:
         """
@@ -365,7 +365,7 @@ class GEDCOMImporter(BaseImporter):
             return self.import_from_string(content)
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors de l'import GEDCOM : {e}")
+            raise ConversionError(f"Erreur lors de l'import GEDCOM : {e}") from e
 
     def import_from_string(self, data: str) -> Genealogy:
         """
@@ -413,7 +413,7 @@ class GEDCOMImporter(BaseImporter):
             return genealogy
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors du parsing GEDCOM : {e}")
+            raise ConversionError(f"Erreur lors du parsing GEDCOM : {e}") from e
 
     def _parse_header(self, lines: List[str], start_idx: int) -> int:
         """Parse l'en-tête GEDCOM."""
