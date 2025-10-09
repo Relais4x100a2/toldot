@@ -33,7 +33,8 @@ class TestGeneWebErrorCoverage:
         error = GeneWebError("Message d'erreur", context="Contexte d'erreur")
         assert error.message == "Message d'erreur"
         assert error.context == "Contexte d'erreur"
-        assert str(error) == "Message d'erreur"
+        assert "Message d'erreur" in str(error)
+        assert "Contexte d'erreur" in str(error)
     
     def test_gene_web_error_with_line_and_context(self):
         """Test création d'une erreur avec ligne et contexte"""
@@ -41,7 +42,9 @@ class TestGeneWebErrorCoverage:
         assert error.message == "Message d'erreur"
         assert error.line_number == 42
         assert error.context == "Contexte"
-        assert str(error) == "Ligne 42: Message d'erreur"
+        assert "Ligne 42" in str(error)
+        assert "Message d'erreur" in str(error)
+        assert "Contexte" in str(error)
     
     def test_gene_web_error_with_kwargs(self):
         """Test création d'une erreur avec arguments supplémentaires"""
@@ -75,14 +78,16 @@ class TestGeneWebParseErrorCoverage:
         error = GeneWebParseError("Erreur de parsing", token="invalid_token")
         assert error.message == "Erreur de parsing"
         assert error.token == "invalid_token"
-        assert str(error) == "Erreur de parsing"
+        assert "Erreur de parsing" in str(error)
+        assert "invalid_token" in str(error)
     
     def test_gene_web_parse_error_with_expected(self):
         """Test création d'une erreur de parsing avec token attendu"""
         error = GeneWebParseError("Erreur de parsing", expected="fam")
         assert error.message == "Erreur de parsing"
         assert error.expected == "fam"
-        assert str(error) == "Erreur de parsing"
+        assert "Erreur de parsing" in str(error)
+        assert "fam" in str(error)
     
     def test_gene_web_parse_error_with_all_params(self):
         """Test création d'une erreur de parsing avec tous les paramètres"""
@@ -98,7 +103,12 @@ class TestGeneWebParseErrorCoverage:
         assert error.token == "invalid"
         assert error.expected == "fam"
         assert error.context == "Dans un bloc famille"
-        assert str(error) == "Ligne 15: Erreur de parsing"
+        error_str = str(error)
+        assert "Ligne 15" in error_str
+        assert "Erreur de parsing" in error_str
+        assert "invalid" in error_str
+        assert "fam" in error_str
+        assert "Dans un bloc famille" in error_str
     
     def test_gene_web_parse_error_with_kwargs(self):
         """Test création d'une erreur de parsing avec arguments supplémentaires"""
@@ -132,14 +142,16 @@ class TestGeneWebValidationErrorCoverage:
         error = GeneWebValidationError("Erreur de validation", field="nom")
         assert error.message == "Erreur de validation"
         assert error.field == "nom"
-        assert str(error) == "Erreur de validation"
+        assert "Erreur de validation" in str(error)
+        assert "nom" in str(error)
     
     def test_gene_web_validation_error_with_value(self):
         """Test création d'une erreur de validation avec valeur"""
         error = GeneWebValidationError("Erreur de validation", value="valeur_invalide")
         assert error.message == "Erreur de validation"
         assert error.value == "valeur_invalide"
-        assert str(error) == "Erreur de validation"
+        assert "Erreur de validation" in str(error)
+        assert "valeur_invalide" in str(error)
     
     def test_gene_web_validation_error_with_all_params(self):
         """Test création d'une erreur de validation avec tous les paramètres"""
@@ -155,7 +167,12 @@ class TestGeneWebValidationErrorCoverage:
         assert error.field == "nom"
         assert error.value == "valeur_invalide"
         assert error.context == "Validation d'une personne"
-        assert str(error) == "Ligne 25: Erreur de validation"
+        error_str = str(error)
+        assert "Ligne 25" in error_str
+        assert "Erreur de validation" in error_str
+        assert "nom" in error_str
+        assert "valeur_invalide" in error_str
+        assert "Validation d'une personne" in error_str
     
     def test_gene_web_validation_error_with_kwargs(self):
         """Test création d'une erreur de validation avec arguments supplémentaires"""
@@ -202,7 +219,10 @@ class TestGeneWebEncodingErrorCoverage:
         assert error.line_number == 35
         assert error.encoding == "iso-8859-1"
         assert error.context == "Lecture du fichier"
-        assert str(error) == "Ligne 35: Erreur d'encodage"
+        error_str = str(error)
+        assert "Ligne 35" in error_str
+        assert "Erreur d'encodage" in error_str
+        assert "Lecture du fichier" in error_str
     
     def test_gene_web_encoding_error_with_kwargs(self):
         """Test création d'une erreur d'encodage avec arguments supplémentaires"""
@@ -237,7 +257,10 @@ class TestGeneWebConversionErrorCoverage:
         assert error.message == "Erreur de conversion"
         assert error.source_format == "gw"
         assert error.target_format == "gedcom"
-        assert str(error) == "Erreur de conversion"
+        error_str = str(error)
+        assert "Erreur de conversion" in error_str
+        assert "gw" in error_str
+        assert "gedcom" in error_str
     
     def test_gene_web_conversion_error_with_all_params(self):
         """Test création d'une erreur de conversion avec tous les paramètres"""
@@ -253,7 +276,12 @@ class TestGeneWebConversionErrorCoverage:
         assert error.source_format == "gw"
         assert error.target_format == "json"
         assert error.context == "Conversion vers JSON"
-        assert str(error) == "Ligne 45: Erreur de conversion"
+        error_str = str(error)
+        assert "Ligne 45" in error_str
+        assert "Erreur de conversion" in error_str
+        assert "gw" in error_str
+        assert "json" in error_str
+        assert "Conversion vers JSON" in error_str
     
     def test_gene_web_conversion_error_with_kwargs(self):
         """Test création d'une erreur de conversion avec arguments supplémentaires"""
