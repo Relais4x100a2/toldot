@@ -104,7 +104,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
+          pip install -e ".[dev,api]"
           pip install pip-audit pip-licenses
       
       - name: Run security audit
@@ -176,8 +176,7 @@ jobs:
       - name: Lint with Ruff
         run: |
           echo "Linting avec Ruff..."
-          ruff check . --output-format=github
-        continue-on-error: true
+          ruff check . --output-format=github --ignore E501
       
       - name: Type check with mypy
         run: |

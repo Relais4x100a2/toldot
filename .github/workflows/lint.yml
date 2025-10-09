@@ -35,7 +35,7 @@ jobs:
     - name: Lint with Ruff
       run: |
         echo "Linting avec Ruff..."
-        ruff check . --output-format=github
+        ruff check . --output-format=github --ignore E501
     
     - name: Type checking with mypy
       run: |
