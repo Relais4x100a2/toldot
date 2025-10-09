@@ -25,7 +25,7 @@ class BlockType(Enum):
     WIZARD_NOTE = "wizard_note"
 
 
-@dataclass(slots=True)
+@dataclass
 class SyntaxNode:
     """Nœud de l'arbre syntaxique"""
     

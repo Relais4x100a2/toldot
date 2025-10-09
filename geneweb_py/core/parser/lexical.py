@@ -126,7 +126,7 @@ class TokenType(Enum):
     UNKNOWN = "unknown"           # Token inconnu
 
 
-@dataclass(slots=True)
+@dataclass
 class Token:
     """Représentation d'un token avec sa position"""
     
