@@ -165,13 +165,13 @@ jobs:
           pip install black flake8 mypy
       
       - name: Check formatting with black
-        run: black --check geneweb_py/ tests/ --line-length 88
+        run: black --check src/geneweb_py/ tests/ --line-length 88
       
       - name: Lint with flake8
-        run: flake8 geneweb_py/ tests/ --max-line-length=88 --ignore=E203,W503,F401,F841,E501,E712,F541,E402,E722,F811 --count --show-source --statistics
+        run: flake8 src/geneweb_py/ tests/ --max-line-length=88 --ignore=E203,W503,F401,F841,E501,E712,F541,E402,E722,F811 --count --show-source --statistics
       
       - name: Type check with mypy
-        run: mypy geneweb_py/ --ignore-missing-imports || true
+        run: mypy src/geneweb_py/ --ignore-missing-imports || true
 
   publish-test-pypi:
     name: Publier sur TestPyPI
