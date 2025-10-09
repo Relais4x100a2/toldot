@@ -2,10 +2,10 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://github.com/guillaumecayeux/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/guillaumecayeux/geneweb-py/actions)
-[![Linting](https://github.com/guillaumecayeux/geneweb-py/workflows/Linting%20et%20Formatage/badge.svg)](https://github.com/guillaumecayeux/geneweb-py/actions)
-[![Coverage](https://img.shields.io/badge/coverage-84%25-green.svg)](htmlcov/index.html)
-[![Tests Passing](https://img.shields.io/badge/tests-858%20passing-success.svg)](tests/)
+[![Tests](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
+[![Linting](https://github.com/Relais4x100a2/geneweb-py/workflows/Linting%20et%20Formatage/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
+[![Coverage](https://img.shields.io/badge/coverage-75.79%25-green.svg)](htmlcov/index.html)
+[![Tests Passing](https://img.shields.io/badge/tests-688%20passing-success.svg)](tests/)
 
 Librairie Python complète pour parser, manipuler et convertir les fichiers généalogiques au format GeneWeb (.gw).
 
