@@ -128,7 +128,9 @@ class GeneWebParser:
         except Exception as e:
             if isinstance(e, (GeneWebParseError, GeneWebEncodingError)):
                 raise
-            raise GeneWebParseError(f"Erreur lors du parsing de {file_path}: {e}") from e  # noqa: E501
+            raise GeneWebParseError(
+                f"Erreur lors du parsing de {file_path}: {e}"
+            ) from e  # noqa: E501
 
     def _parse_file_streaming(self, file_path: Path) -> Genealogy:
         """Parse un fichier en mode streaming (pour gros fichiers)
@@ -416,7 +418,9 @@ class GeneWebParser:
         except Exception as e:
             if isinstance(e, GeneWebEncodingError):
                 raise
-            raise GeneWebEncodingError(f"Erreur lors de la lecture du fichier: {e}") from e  # noqa: E501
+            raise GeneWebEncodingError(
+                f"Erreur lors de la lecture du fichier: {e}"
+            ) from e  # noqa: E501
 
     def get_memory_estimate(self, file_path: Union[str, Path]) -> dict:
         """Estime l'utilisation mémoire pour parser un fichier
