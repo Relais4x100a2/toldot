@@ -75,9 +75,9 @@ geneweb-py est une librairie Python pour parser, manipuler et convertir les fich
 
 ## 🧪 Qualité et tests
 
-### Couverture de tests : **85.7%** ✅
+### Couverture de tests : **85.5%** ✅
 
-**Dernière mise à jour** : 9 octobre 2025 - **Approche perfectionniste en cours** 🎯
+**Dernière mise à jour** : 9 octobre 2025 - **Session perfectionniste - 4/6 modules prioritaires améliorés** 🎯
 
 | Catégorie | Couverture | État |
 |-----------|-----------|------|
@@ -123,8 +123,8 @@ tests/
 ```
 
 ### Tests disponibles
-- **635 tests passants** (92.4%) - Tous les tests critiques sont verts
-- **52 tests skippés** (7.6%) - Documentés avec raisons (fonctionnalités non implémentées, bugs à corriger)
+- **671 tests passants** (92.7%) - Tous les tests critiques sont verts ✅
+- **53 tests skippés** (7.3%) - Documentés avec raisons (fonctionnalités non implémentées, bugs à corriger)
 - Tests de récupération d'erreurs (`test_error_recovery.py`)
 - Tests de validation gracieuse (`test_validation_graceful.py`)
 - Tests de parsing complet avec vrais fichiers
@@ -139,15 +139,14 @@ tests/
 - **Traceback court** : Pour des rapports concis
 - Seuil CI défini à 80% dans `pyproject.toml`
 
-### Améliorations récentes (Session Perfectionniste)
-- ✨ **Tests API massifs** : 140+ tests (routers, services, models, middleware)
-- 🚀 **Tests streaming** : 32 tests (17% → 97% couverture)
-- 🎯 **Router genealogy** : 29% → 69% (+40 points)
-- 📈 **Services API** : 54% → 67% (+13 points)
-- 🌟 **Main API** : 88% → 100% (couverture parfaite)
-- 🧪 **Total tests** : 635 passants (+170 depuis v0.1.0)
-- 🎯 **Progression** : 64% → 85.7% (+21.7 points)
-- 📋 **Objectif 90%** : Plus que 4.3 points
+### Améliorations récentes (Session Perfectionniste - Suite)
+- 🌟 **4 modules à 99%** : `core/event.py`, `core/family.py`, `core/validation.py` (98%), `api/routers/events.py` (91%)
+- ✨ **+75 nouveaux tests** : Couvrant méthodes utilitaires et cas edge
+- 📝 **Nouveau fichier** : `test_event.py` (23 tests) pour couvrir Event/FamilyEvent/PersonalEvent
+- 🎯 **Couverture améliorée** : 83.3% → 85.5% (+2.2 points)
+- 🧪 **Total tests** : 671 passants (+75 depuis dernière session)
+- 📋 **Objectif 90%** : Plus que 4.5 points (213 lignes)
+- 🔥 **Méthodologie validée** : "Commit-Verify-Iterate" avec push fréquents
 
 ## 🚧 Travaux en cours
 - **Tests API REST** ✅ (Complété)
