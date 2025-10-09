@@ -12,9 +12,9 @@ import sys
 import os
 from pathlib import Path
 
-# Ajout du répertoire racine au path Python
+# Ajout du répertoire src au path Python (structure src/)
 root_dir = Path(__file__).parent
-sys.path.insert(0, str(root_dir))
+sys.path.insert(0, str(root_dir / "src"))
 
 from geneweb_py.api.main import app
 

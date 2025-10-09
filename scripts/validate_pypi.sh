@@ -46,7 +46,7 @@ echo "================================"
 
 # Vérifier qu'on est dans le bon dossier
 check "Vérification du répertoire"
-if [ -f "pyproject.toml" ] && [ -d "geneweb_py" ]; then
+if [ -f "pyproject.toml" ] && [ -d "src/geneweb_py" ]; then
     pass
 else
     fail "Pas dans le répertoire racine du projet"
@@ -267,7 +267,7 @@ echo "=================="
 
 # Vérifier la version
 check "Lecture version"
-VERSION=$(python -c "import geneweb_py; print(geneweb_py.__version__)")
+VERSION=$(python -c "import sys; sys.path.insert(0, 'src'); import geneweb_py; print(geneweb_py.__version__)")
 if [ ! -z "$VERSION" ]; then
     pass
     echo "  Version: $VERSION"

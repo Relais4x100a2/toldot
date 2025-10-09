@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "Guillaume Cayeux", email = "guillaume@example.com"},
+    {name = "Guillaume Cayeux", email = "guillaume.cayeux@relais4x100a2.fr"},
 ]
 keywords = ["genealogy", "geneweb", "parser", "gedcom", "family-tree"]
 classifiers = [
@@ -69,7 +69,7 @@ Documentation = "https://geneweb-py.readthedocs.io"
 "Bug Tracker" = "https://github.com/guillaumecayeux/geneweb-py/issues"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["geneweb_py*"]
 
 [tool.black]
@@ -143,7 +143,7 @@ filterwarnings = [
 
 # Configuration de couverture pour les tests avec --cov
 [tool.coverage.run]
-source = ["geneweb_py"]
+source = ["src/geneweb_py"]
 omit = [
     "*/tests/*",
     "*/test_*",

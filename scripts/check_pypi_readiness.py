@@ -65,7 +65,7 @@ class PyPIChecker:
         
         # Lire version depuis __init__.py
         self.check("Version dans geneweb_py/__init__.py")
-        init_file = self.root / "geneweb_py" / "__init__.py"
+        init_file = self.root / "src" / "geneweb_py" / "__init__.py"
         try:
             with open(init_file) as f:
                 content = f.read()
@@ -160,9 +160,9 @@ class PyPIChecker:
         print("\n📦 Vérification structure package")
         print("=" * 50)
         
-        package_dir = self.root / "geneweb_py"
+        package_dir = self.root / "src" / "geneweb_py"
         
-        self.check("Dossier geneweb_py/")
+        self.check("Dossier src/geneweb_py/")
         if package_dir.exists() and package_dir.is_dir():
             self.pass_check()
         else:
@@ -292,7 +292,7 @@ class PyPIChecker:
         self.check("Docstrings sur classes publiques")
         code = """
 import sys
-sys.path.insert(0, '.')
+sys.path.insert(0, 'src')
 from geneweb_py import GeneWebParser, Genealogy, Person, Family, Date
 
 classes = [GeneWebParser, Genealogy, Person, Family, Date]

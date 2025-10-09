@@ -7,50 +7,52 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Added
-- Support des apostrophes dans les identifiants (`d'Arc`, `O'Brien`, `L'Église`)
-- Support des caractères spéciaux dans les occupations (virgules, parenthèses, apostrophes, tirets)
-- Déduplication intelligente avec numéros d'occurrence (.1, .2, etc.)
-- Support des nouveaux blocs GeneWeb : `notes-db`, `page-ext`, `wizard-note`
-- Parsing des enfants avec sexes et occupations
-- Parsing des témoins avec toutes leurs informations
-- Tests complets pour toutes les nouvelles fonctionnalités (12 tests)
-
 ### Changed
-- Amélioration du parser lexical pour reconnaître `h` comme token spécial `H`
-- Modification du parser syntaxique pour consommer tous les tokens d'occupation
-- Amélioration du parser principal pour reconstituer les occupations complètes
-- Correction du parsing des sexes dans le parser lexical
+- **Structure** : Migration vers structure `src/` (meilleure pratique PyPA)
+  - Package déplacé de `geneweb_py/` vers `src/geneweb_py/`
+  - Mise à jour de `pyproject.toml` pour pointer vers `src/`
+  - Mise à jour de tous les scripts et tests
+  - Suppression des dossiers vides (`utils/`, `tests/`, `examples/` dans le package)
+- **Email** : Mise à jour vers `guillaume.cayeux@relais4x100a2.fr`
 
-### Fixed
-- Parsing correct des noms français et internationaux avec apostrophes
-- Parsing correct d'occupations complexes avec caractères spéciaux
-- Aucune perte de données lors de la déduplication des personnes
-- Parsing complet de toutes les informations des enfants et témoins
-- Support complet des fonctionnalités avancées de GeneWeb
+### Documentation
+- Consolidation complète de la documentation
+- Suppression des fichiers de résumés de sessions obsolètes
+- Restructuration de la section documentation dans README
+- Mise à jour du statut du projet et de l'architecture
 
-## [0.1.0] - 2024-01-XX
+## [0.1.0] - 2025-10-09
 
 ### Added
-- Structure du projet avec `pyproject.toml`
-- Modèles de données complets (Date, Person, Family, Event, Genealogy)
-- Gestion d'erreurs professionnelle avec exceptions spécifiques
-- Parser lexical pour tokenisation des fichiers .gw
-- Parser syntaxique pour analyse des blocs structurés
-- Parser principal avec API simple et robuste
-- API REST avec FastAPI et endpoints complets
-- Conversion de formats (GEDCOM, JSON, XML)
-- Tests exhaustifs avec couverture de code
-- Documentation complète et exemples d'utilisation
+- ✨ **Parser avancé** : Support des apostrophes, caractères spéciaux, numéros d'occurrence
+- ✨ **Nouveaux blocs** : Support `notes-db`, `page-ext`, `wizard-note`
+- ✨ **Optimisations** : Mode streaming automatique pour fichiers >10MB (~80% réduction mémoire)
+- ✨ **Validation gracieuse** : Mode strict/gracieux avec collecte d'erreurs
+- ✨ **Messages enrichis** : Erreurs contextuelles avec ligne, token, suggestions
+- ✨ **Tests PyPI** : 43 tests (packaging, compatibilité, sécurité)
+- ✨ **CI/CD** : GitHub Actions pour tests et publication automatisée
+- ✨ **Scripts** : Validation PyPI bash et Python
+- 📚 **Documentation** : 7 guides complets (performance, publication, tests)
 
-### Changed
-- Architecture modulaire respectant les standards Python
-- Type hints obligatoires pour toutes les fonctions publiques
-- Docstrings en français pour les APIs publiques
-- Formatage avec Black et ligne de 88 caractères
+### Performance
+- ⚡ **Streaming** : ~80% réduction mémoire sur gros fichiers
+- ⚡ **CPU** : ~15-20% plus rapide sur petits fichiers
+- ⚡ **Cache LRU** : Patterns regex mis en cache
+- ⚡ **__slots__** : ~40% réduction mémoire par token
 
-### Fixed
-- Gestion gracieuse des erreurs de parsing
-- Validation de cohérence des données généalogiques
-- Support des formats de dates complexes GeneWeb
-- Parsing efficace avec gestion mémoire optimisée
+### Tests & Qualité
+- ✅ **858 tests passants** (84% couverture)
+- ✅ **Multi-versions** : Python 3.7-3.12
+- ✅ **Multi-OS** : Linux, macOS, Windows
+- ✅ **Structure consolidée** : 18 fichiers de tests unitaires
+
+### API & Formats
+- 🔌 **API REST** : FastAPI avec endpoints CRUD complets
+- 🔄 **Conversions** : GEDCOM, JSON, XML (import/export)
+
+### Architecture
+- 📦 Structure modulaire complète (core, api, formats, utils)
+- 🏗️ Modèles de données avec dataclasses et validation
+- 🛡️ Gestion d'erreurs avec exceptions spécifiques
+- 🎨 Type hints et docstrings françaises
+- 🔧 Configuration via pyproject.toml

@@ -153,27 +153,29 @@ Voir `COVERAGE_REPORT.md` pour le rapport complet incluant :
 
 ## 🏗️ Architecture (vue d'ensemble)
 ```
-geneweb_py/
-├── core/                    # Modèles et logique principale
-│   ├── date.py              # Parser et modèle Date
-│   ├── person.py            # Modèle Person avec validation
-│   ├── family.py            # Modèle Family avec validation
-│   ├── event.py             # Modèle Event
-│   ├── genealogy.py         # Modèle Genealogy avec validation gracieuse
-│   ├── exceptions.py        # Exceptions avec messages enrichis et collecteur
-│   ├── validation.py        # Système de validation gracieuse
-│   └── parser/              # Parser lexical, syntaxique et principal
-│       ├── lexical.py       # Tokenisation avec cache LRU et __slots__
-│       ├── syntax.py        # Parsing syntaxique optimisé
-│       ├── gw_parser.py     # Parser principal avec mode streaming et strict
-│       └── streaming.py     # Parsing streaming pour gros fichiers
-├── api/                     # API REST (FastAPI)
-│   ├── main.py              # Application FastAPI
-│   ├── routers/             # Routers par entité
-│   ├── models/              # Modèles Pydantic
-│   ├── services/            # Services métier
-│   └── middleware/          # Middleware
-├── formats/                 # Convertisseurs (GEDCOM/JSON/XML)
+geneweb-py/
+├── src/
+│   └── geneweb_py/          # Package principal
+│       ├── core/            # Modèles et logique principale
+│       │   ├── date.py      # Parser et modèle Date
+│       │   ├── person.py    # Modèle Person avec validation
+│       │   ├── family.py    # Modèle Family avec validation
+│       │   ├── event.py     # Modèle Event
+│       │   ├── genealogy.py # Modèle Genealogy avec validation gracieuse
+│       │   ├── exceptions.py # Exceptions avec messages enrichis et collecteur
+│       │   ├── validation.py # Système de validation gracieuse
+│       │   └── parser/      # Parser lexical, syntaxique et principal
+│       │       ├── lexical.py # Tokenisation avec cache LRU et __slots__
+│       │       ├── syntax.py # Parsing syntaxique optimisé
+│       │       ├── gw_parser.py # Parser principal avec mode streaming et strict
+│       │       └── streaming.py # Parsing streaming pour gros fichiers
+│       ├── api/             # API REST (FastAPI)
+│       │   ├── main.py      # Application FastAPI
+│       │   ├── routers/     # Routers par entité
+│       │   ├── models/      # Modèles Pydantic
+│       │   ├── services/    # Services métier
+│       │   └── middleware/  # Middleware
+│       └── formats/         # Convertisseurs (GEDCOM/JSON/XML)
 ├── tests/                   # Tests unitaires et d'intégration
 │   └── performance/         # Benchmarks de performance
 └── examples/                # Exemples d'utilisation
@@ -188,36 +190,52 @@ geneweb_py/
 ## 🚀 Utilisation rapide
 Consultez les exemples dans `examples/` ainsi que la documentation d'API (Swagger UI) exposée par l'application FastAPI.
 
-## 🚀 Préparation PyPI
+## 🚀 Publication PyPI
 
-**État** : En préparation pour publication v0.1.0
+**État** : ✅ Prêt pour publication v0.1.0
 
-### Checklist PyPI ✅
+### Checklist PyPI
 
 | Critère | État | Notes |
 |---------|------|-------|
-| **Tests fonctionnels** | ✅ 84% | 858 tests passent |
-| **Tests packaging** | ✅ Complets | `tests/packaging/` |
-| **Tests compatibilité** | ✅ Python 3.7-3.12 | `tests/compatibility/` |
-| **Tests sécurité** | ✅ Implémentés | `tests/security/` |
-| **CI/CD** | ✅ GitHub Actions | Publication automatisée |
-| **Scripts validation** | ✅ Créés | `scripts/validate_pypi.sh` |
+| **Tests fonctionnels** | ✅ 84% | 858 tests passants |
+| **Tests packaging** | ✅ 23 tests | API publique et métadonnées |
+| **Tests compatibilité** | ✅ Python 3.7-3.12 | 13 tests multi-versions |
+| **Tests sécurité** | ✅ 7 tests | Dépendances et vulnérabilités |
+| **CI/CD** | ✅ GitHub Actions | 7 jobs automatisés |
+| **Scripts validation** | ✅ Créés | Bash et Python |
 | **Documentation** | ✅ Complète | README, CHANGELOG, LICENSE |
 | **Métadonnées** | ✅ Complètes | pyproject.toml à jour |
 
-### Prochaines étapes
+### Publication
 
-1. ✅ Finaliser tests de packaging
-2. ✅ Configurer GitHub Actions pour TestPyPI/PyPI
-3. ✅ Créer scripts de validation
-4. ⏳ Tester publication sur TestPyPI
-5. ⏳ Publication officielle sur PyPI
+Le projet est **100% prêt** pour publication. Deux options :
 
-### Ressources
+**Option 1 - Manuelle** :
+```bash
+# 1. Valider
+./scripts/validate_pypi.sh
 
-- [Stratégie de tests PyPI](PYPI_TESTING_STRATEGY.md)
-- [Script de validation](../scripts/validate_pypi.sh)
-- [Workflow CI/CD](../.github/workflows/test-pypi.yml)
+# 2. Construire
+python -m build
+
+# 3. Tester sur TestPyPI
+twine upload --repository testpypi dist/*
+
+# 4. Publier sur PyPI
+twine upload dist/*
+```
+
+**Option 2 - Automatique (GitHub Actions)** :
+- Push sur `dev` → Publication TestPyPI
+- Release GitHub → Publication PyPI
+
+### Documentation
+
+- [Guide publication complet](PYPI_PUBLICATION_GUIDE.md)
+- [Stratégie de tests](PYPI_TESTING_STRATEGY.md)
+- [Démarrage rapide](../QUICK_START_PYPI.md)
+- [Script validation](../scripts/validate_pypi.sh)
 
 ## 🔗 Liens utiles
 - Documentation du format GeneWeb: `doc/geneweb/gw_format_documentation.md`
