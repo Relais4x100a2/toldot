@@ -90,10 +90,10 @@ class GeneWebParser:
         if file_path.suffix.lower() not in [".gw", ".gwplus"]:
             raise GeneWebParseError(
                 f"Extension de fichier invalide: {file_path.suffix}"
-            )
+            ) from e
 
         if not file_path.exists():
-            raise GeneWebParseError(f"Fichier non trouvé: {file_path}")
+            raise GeneWebParseError(f"Fichier non trouvé: {file_path}") from e
 
         # Déterminer si on doit utiliser le mode streaming
         use_streaming = self.stream_mode
@@ -128,7 +128,7 @@ class GeneWebParser:
         except Exception as e:
             if isinstance(e, (GeneWebParseError, GeneWebEncodingError)):
                 raise
-            raise GeneWebParseError(f"Erreur lors du parsing de {file_path}: {e}")
+            raise GeneWebParseError(f"Erreur lors du parsing de {file_path}: {e}") from e
 
     def _parse_file_streaming(self, file_path: Path) -> Genealogy:
         """Parse un fichier en mode streaming (pour gros fichiers)
@@ -252,7 +252,7 @@ class GeneWebParser:
                 if word not in allowed_starts:
                     raise GeneWebParseError(
                         "Contenu .gw invalide: ligne non reconnue", line_number=line_num
-                    )
+                    ) from e
 
         # Tokenisation lexicale
         self.lexical_parser = LexicalParser(content, filename)
@@ -287,7 +287,7 @@ class GeneWebParser:
                 if not has_comments:
                     raise GeneWebParseError(
                         "Contenu .gw invalide: aucun bloc reconnu", line_number=1
-                    )
+                    ) from e
 
         # Construction des modèles de données
         genealogy = self._build_genealogy()
@@ -416,7 +416,7 @@ class GeneWebParser:
         except Exception as e:
             if isinstance(e, GeneWebEncodingError):
                 raise
-            raise GeneWebEncodingError(f"Erreur lors de la lecture du fichier: {e}")
+            raise GeneWebEncodingError(f"Erreur lors de la lecture du fichier: {e}") from e
 
     def get_memory_estimate(self, file_path: Union[str, Path]) -> dict:
         """Estime l'utilisation mémoire pour parser un fichier

@@ -1157,7 +1157,7 @@ class SyntaxParser:
                         f"Erreur dans le bloc {token.type.value}: {e.message}",
                         e.line_number,
                         token=token.value,
-                    )
+                    ) from e
             else:
                 # Token non reconnu, on l'ignore ou on lève une erreur
                 i += 1
