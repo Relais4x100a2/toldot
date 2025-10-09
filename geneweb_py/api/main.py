@@ -18,10 +18,12 @@ from .services.genealogy_service import GenealogyService
 # Service global partagé pour l'application
 _genealogy_service = GenealogyService()
 
+
 # Fonction pour obtenir le service global
 def get_global_genealogy_service() -> GenealogyService:
     """Retourne le service global de généalogie."""
     return _genealogy_service
+
 
 # Configuration de l'application FastAPI
 app = FastAPI(
@@ -71,12 +73,13 @@ app.include_router(
     tags=["Généalogie"],
 )
 
+
 # Route de santé
 @app.get("/health")
 async def health_check() -> JSONResponse:
     """
     Vérification de l'état de santé de l'API.
-    
+
     Returns:
         JSONResponse: Statut de l'API
     """
@@ -88,12 +91,13 @@ async def health_check() -> JSONResponse:
         }
     )
 
+
 # Route racine
 @app.get("/")
 async def root() -> JSONResponse:
     """
     Route racine de l'API.
-    
+
     Returns:
         JSONResponse: Informations sur l'API
     """
@@ -106,9 +110,10 @@ async def root() -> JSONResponse:
         }
     )
 
+
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
         "geneweb_py.api.main:app",
         host="0.0.0.0",

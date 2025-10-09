@@ -9,8 +9,13 @@ import pytest
 from typing import Dict, Any
 
 from geneweb_py.core.models import (
-    Person, Family, Date, Genealogy,
-    Gender, MarriageStatus, CalendarType
+    Person,
+    Family,
+    Date,
+    Genealogy,
+    Gender,
+    MarriageStatus,
+    CalendarType,
 )
 
 
@@ -40,7 +45,7 @@ def sample_person() -> Person:
         first_name="Joseph",
         gender=Gender.MALE,
         birth_date=Date.parse("25/12/1990"),
-        birth_place="Paris"
+        birth_place="Paris",
     )
 
 
@@ -52,7 +57,7 @@ def sample_person_2() -> Person:
         first_name="Marie",
         gender=Gender.FEMALE,
         birth_date=Date.parse("15/06/1992"),
-        birth_place="Lyon"
+        birth_place="Lyon",
     )
 
 
@@ -64,7 +69,7 @@ def sample_family() -> Family:
         husband_id="CORNO_Joseph_0",
         wife_id="THOMAS_Marie_0",
         marriage_date=Date.parse("10/08/2015"),
-        marriage_place="Paris"
+        marriage_place="Paris",
     )
 
 
@@ -72,14 +77,14 @@ def sample_family() -> Family:
 def sample_genealogy(sample_person, sample_person_2, sample_family) -> Genealogy:
     """Fixture pour une généalogie d'exemple"""
     genealogy = Genealogy()
-    
+
     # Ajouter les personnes
     genealogy.add_person(sample_person)
     genealogy.add_person(sample_person_2)
-    
+
     # Ajouter la famille
     genealogy.add_family(sample_family)
-    
+
     return genealogy
 
 
