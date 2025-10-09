@@ -1,0 +1,90 @@
+name: Rapport Hebdomadaire
+
+on:
+  schedule:
+    # Tous les lundis à 8h
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+jobs:
+  weekly-report:
+    name: Génération Rapport Hebdomadaire
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Pour l'historique git complet
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev,api,validation]"
+        pip install pytest-cov
+    
+    - name: Generate coverage report
+      run: |
+        pytest tests/ --cov=geneweb_py --cov-report=json --cov-report=term || true
+    
+    - name: Generate weekly summary
+      run: |
+        python << 'EOF'
+        import json
+        import subprocess
+        from datetime import datetime, timedelta
+        
+        print("\n" + "="*70)
+        print(f"  📊 RAPPORT HEBDOMADAIRE - {datetime.now().strftime('%Y-%m-%d')}")
+        print("="*70 + "\n")
+        
+        # Couverture actuelle
+        try:
+            with open('coverage.json') as f:
+                data = json.load(f)
+            coverage = data['totals']['percent_covered']
+            print(f"📈 Couverture actuelle: {coverage:.2f}%\n")
+        except:
+            print("📈 Couverture: Non disponible\n")
+        
+        # Commits de la semaine
+        one_week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        result = subprocess.run(
+            ['git', 'log', '--since', one_week_ago, '--oneline'],
+            capture_output=True,
+            text=True
+        )
+        
+        commits = result.stdout.strip().split('\n')
+        commit_count = len([c for c in commits if c])
+        
+        print(f"📝 Commits cette semaine: {commit_count}")
+        for commit in commits[:5]:
+            if commit:
+                print(f"   • {commit}")
+        
+        # Tests
+        result = subprocess.run(
+            ['pytest', 'tests/', '--co', '-q'],
+            capture_output=True,
+            text=True
+        )
+        
+        test_count = len([l for l in result.stdout.split('\n') if 'test_' in l])
+        print(f"\n🧪 Tests disponibles: {test_count}")
+        
+        print("\n" + "="*70)
+        print("  📋 PROCHAINES ÉTAPES")
+        print("="*70 + "\n")
+        print("• Objectif 90%: Voir TESTING_ROADMAP.md")
+        print("• Phase 2: Tests formats (GEDCOM, JSON, XML)")
+        print("• Documentation: Maintenir à jour STATUS.md")
+        
+        print("\n" + "="*70 + "\n")
+        EOF
+

@@ -1,0 +1,147 @@
+name: Rapport de Couverture
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    # Tous les lundis à 9h
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  coverage-report:
+    name: Génération Rapport Couverture Détaillé
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev,api,validation]"
+        pip install pytest-cov pytest-html
+    
+    - name: Generate detailed coverage report
+      run: |
+        pytest tests/ \
+          --cov=geneweb_py \
+          --cov-report=html \
+          --cov-report=json \
+          --cov-report=term-missing \
+          --html=report.html \
+          --self-contained-html
+    
+    - name: Parse coverage and generate summary
+      run: |
+        python << 'EOF'
+        import json
+        
+        with open('coverage.json') as f:
+            data = json.load(f)
+        
+        print("\n" + "="*70)
+        print("  📊 RAPPORT DE COUVERTURE DÉTAILLÉ")
+        print("="*70 + "\n")
+        
+        total = data['totals']['percent_covered']
+        print(f"COUVERTURE GLOBALE: {total:.2f}%\n")
+        
+        # Trier les fichiers par couverture
+        files = []
+        for filename, file_data in data['files'].items():
+            if filename.startswith('geneweb_py/'):
+                coverage = file_data['summary']['percent_covered']
+                files.append((filename, coverage, file_data['summary']['missing_lines']))
+        
+        files.sort(key=lambda x: x[1])
+        
+        print("MODULE PAR MODULE:\n")
+        
+        # Top performers
+        print("⭐ EXCELLENTS (>95%):")
+        for filename, cov, _ in files:
+            if cov >= 95:
+                print(f"  {cov:5.1f}% - {filename}")
+        
+        print("\n✅ TRÈS BONS (90-95%):")
+        for filename, cov, _ in files:
+            if 90 <= cov < 95:
+                print(f"  {cov:5.1f}% - {filename}")
+        
+        print("\n🟡 BONS (80-90%):")
+        for filename, cov, _ in files:
+            if 80 <= cov < 90:
+                print(f"  {cov:5.1f}% - {filename}")
+        
+        print("\n🟠 À AMÉLIORER (<80%):")
+        for filename, cov, missing in files:
+            if cov < 80:
+                print(f"  {cov:5.1f}% - {filename} ({missing} lignes manquantes)")
+        
+        print("\n" + "="*70)
+        print(f"  TOTAL: {total:.2f}%")
+        print("="*70 + "\n")
+        EOF
+    
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report-html
+        path: htmlcov/
+        retention-days: 90
+    
+    - name: Upload test report
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-report
+        path: report.html
+        retention-days: 30
+    
+    - name: Create coverage summary
+      run: |
+        echo "## 📊 Rapport de Couverture" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        python << 'EOF' >> $GITHUB_STEP_SUMMARY
+        import json
+        
+        with open('coverage.json') as f:
+            data = json.load(f)
+        
+        total = data['totals']['percent_covered']
+        
+        # Badge
+        if total >= 90:
+            badge = "🟢"
+        elif total >= 80:
+            badge = "🟡"
+        else:
+            badge = "🔴"
+        
+        print(f"**Couverture globale : {badge} {total:.2f}%**\n")
+        print("| Module | Couverture | État |")
+        print("|--------|-----------|------|")
+        
+        # Modules core
+        core_modules = [f for f in data['files'].keys() if 'geneweb_py/core/' in f and '__pycache__' not in f]
+        for module in sorted(core_modules):
+            cov = data['files'][module]['summary']['percent_covered']
+            name = module.replace('geneweb_py/core/', '')
+            if cov >= 95:
+                status = "⭐ Excellent"
+            elif cov >= 90:
+                status = "✅ Très bon"
+            elif cov >= 80:
+                status = "🟡 Bon"
+            else:
+                status = "🟠 À améliorer"
+            print(f"| {name} | {cov:.1f}% | {status} |")
+        EOF
+

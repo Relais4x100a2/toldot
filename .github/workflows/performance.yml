@@ -1,0 +1,81 @@
+name: Tests de Performance
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Tous les dimanches à 3h
+    - cron: '0 3 * * 0'
+
+jobs:
+  performance:
+    name: Benchmarks de Performance
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install pytest-benchmark memory-profiler psutil
+    
+    - name: Run performance benchmarks
+      run: |
+        # Si vous avez des tests de performance
+        if [ -d "tests/performance" ]; then
+          pytest tests/performance/ -v --benchmark-only || true
+        else
+          echo "Pas de tests de performance pour le moment"
+        fi
+    
+    - name: Test parsing performance
+      run: |
+        python << 'EOF'
+        import time
+        from geneweb_py.core.parser.gw_parser import GeneWebParser
+        
+        print("\n" + "="*60)
+        print("  BENCHMARKS DE PARSING")
+        print("="*60 + "\n")
+        
+        # Test 1: Petit fichier
+        content_small = "fam DUPONT Jean + MARTIN Marie\n" * 100
+        parser = GeneWebParser()
+        
+        start = time.time()
+        genealogy = parser.parse_string(content_small)
+        elapsed = time.time() - start
+        
+        print(f"Petit fichier (100 familles):")
+        print(f"  Temps: {elapsed*1000:.2f}ms")
+        print(f"  Personnes: {len(genealogy.persons)}")
+        print(f"  Familles: {len(genealogy.families)}")
+        
+        # Test 2: Fichier moyen
+        content_medium = "fam PERSON{i} First{i} + SPOUSE{i} Last{i}\n".format(i=0)
+        for i in range(1000):
+            content_medium += f"fam PERSON{i} First{i} + SPOUSE{i} Last{i}\n"
+        
+        start = time.time()
+        genealogy = parser.parse_string(content_medium)
+        elapsed = time.time() - start
+        
+        print(f"\nFichier moyen (1000 familles):")
+        print(f"  Temps: {elapsed*1000:.2f}ms")
+        print(f"  Personnes: {len(genealogy.persons)}")
+        print(f"  Familles: {len(genealogy.families)}")
+        
+        print("\n" + "="*60 + "\n")
+        EOF
+
