@@ -133,7 +133,7 @@ async def get_event(
         if event is None:
             raise HTTPException(
                 status_code=404, detail=f"Événement avec l'ID {event_id} non trouvé"
-            ) from exc
+            )
 
         # Conversion vers le schéma de réponse
         event_schema = EventSchema(
@@ -185,7 +185,7 @@ async def update_event(
         if event is None:
             raise HTTPException(
                 status_code=404, detail=f"Événement avec l'ID {event_id} non trouvé"
-            ) from exc
+            )
 
         # Conversion vers le schéma de réponse
         event_schema = EventSchema(
@@ -234,7 +234,7 @@ async def delete_event(
         if not success:
             raise HTTPException(
                 status_code=404, detail=f"Événement avec l'ID {event_id} non trouvé"
-            ) from exc
+            )
 
         return SuccessResponse(
             message="Événement supprimé avec succès", data={"event_id": event_id}

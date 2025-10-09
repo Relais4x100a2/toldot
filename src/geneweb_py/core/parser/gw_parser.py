@@ -90,10 +90,10 @@ class GeneWebParser:
         if file_path.suffix.lower() not in [".gw", ".gwplus"]:
             raise GeneWebParseError(
                 f"Extension de fichier invalide: {file_path.suffix}"
-            ) from e
+            )
 
         if not file_path.exists():
-            raise GeneWebParseError(f"Fichier non trouvé: {file_path}") from e
+            raise GeneWebParseError(f"Fichier non trouvé: {file_path}")
 
         # Déterminer si on doit utiliser le mode streaming
         use_streaming = self.stream_mode
@@ -252,7 +252,7 @@ class GeneWebParser:
                 if word not in allowed_starts:
                     raise GeneWebParseError(
                         "Contenu .gw invalide: ligne non reconnue", line_number=line_num
-                    ) from e
+                    )
 
         # Tokenisation lexicale
         self.lexical_parser = LexicalParser(content, filename)
@@ -287,7 +287,7 @@ class GeneWebParser:
                 if not has_comments:
                     raise GeneWebParseError(
                         "Contenu .gw invalide: aucun bloc reconnu", line_number=1
-                    ) from e
+                    )
 
         # Construction des modèles de données
         genealogy = self._build_genealogy()

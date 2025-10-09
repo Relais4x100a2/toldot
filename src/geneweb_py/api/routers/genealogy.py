@@ -41,7 +41,7 @@ async def import_genealogy_file(
             raise HTTPException(
                 status_code=400,
                 detail="Le fichier doit avoir l'extension .gw ou .gwplus",
-            ) from exc
+            )
 
         # Sauvegarde temporaire du fichier
         import os
@@ -101,7 +101,7 @@ async def export_genealogy(
             raise HTTPException(
                 status_code=501,
                 detail="Export vers format GeneWeb non encore implémenté",
-            ) from exc
+            )
         elif format == "json":
             # Export vers JSON
             try:
@@ -178,7 +178,7 @@ async def export_genealogy(
             raise HTTPException(
                 status_code=400,
                 detail=f"Format d'export '{format}' non supporté. Formats disponibles: gw, json, xml, gedcom",
-            ) from exc
+            )
 
     except HTTPException:
         raise
