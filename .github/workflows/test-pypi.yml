@@ -1,0 +1,229 @@
+name: Tests PyPI et Publication
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+jobs:
+  test-packaging:
+    name: Test packaging et métadonnées
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine check-manifest pip-licenses
+      
+      - name: Check manifest
+        run: check-manifest || true
+      
+      - name: Build package
+        run: python -m build
+      
+      - name: Check package with twine
+        run: twine check dist/*
+      
+      - name: Install package from wheel
+        run: |
+          pip install dist/*.whl
+      
+      - name: Test imports
+        run: |
+          python -c "from geneweb_py import GeneWebParser, Genealogy, Person, Family, Date"
+          python -c "import geneweb_py; print(f'Version: {geneweb_py.__version__}')"
+      
+      - name: Run packaging tests
+        run: |
+          pip install pytest
+          pytest tests/packaging/ -v --tb=short
+
+  test-compatibility:
+    name: Test Python ${{ matrix.python-version }} sur ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        exclude:
+          # Python 3.7 n'est plus supporté sur les dernières versions de macOS
+          - os: macos-latest
+            python-version: '3.7'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+      
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ tests/compatibility/ -v --tb=short -m "not slow"
+      
+      - name: Run integration tests (fast only)
+        run: |
+          pytest tests/integration/test_complete_person_parsing.py -v --tb=short
+
+  test-security:
+    name: Audit de sécurité
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pip-audit pip-licenses
+      
+      - name: Run security audit
+        run: |
+          pip-audit --desc || true
+      
+      - name: Check licenses
+        run: |
+          pip-licenses --format=markdown --output-file=licenses.md
+          cat licenses.md
+      
+      - name: Run security tests
+        run: |
+          pip install pytest
+          pytest tests/security/ -v --tb=short || true
+
+  test-full-suite:
+    name: Suite de tests complète
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+      
+      - name: Run all tests with coverage
+        run: |
+          pytest tests/ --cov=geneweb_py --cov-report=xml --cov-report=term-missing -m "not slow"
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+  lint-and-format:
+    name: Linting et formatage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black flake8 mypy
+      
+      - name: Check formatting with black
+        run: black --check geneweb_py/ tests/
+      
+      - name: Lint with flake8
+        run: flake8 geneweb_py/ tests/ --count --show-source --statistics
+      
+      - name: Type check with mypy
+        run: mypy geneweb_py/ --ignore-missing-imports || true
+
+  publish-test-pypi:
+    name: Publier sur TestPyPI
+    needs: [test-packaging, test-compatibility, test-security, test-full-suite]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+      
+      - name: Build package
+        run: python -m build
+      
+      - name: Publish to TestPyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          twine upload --repository testpypi dist/* --skip-existing
+
+  publish-pypi:
+    name: Publier sur PyPI
+    needs: [test-packaging, test-compatibility, test-security, test-full-suite]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+      
+      - name: Build package
+        run: python -m build
+      
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          twine upload dist/*
+
