@@ -299,3 +299,58 @@ class TestDateProperties:
 
         partial_date = Date.parse("12/1990")
         assert partial_date.to_iso_format() is None
+
+
+class TestDateComparisons:
+    """Tests pour les méthodes de comparaison de dates."""
+
+    def test_is_after_different_years(self):
+        """Test is_after avec années différentes."""
+        date1 = Date(year=2000)
+        date2 = Date(year=1990)
+        assert date1.is_after(date2) is True
+        assert date2.is_after(date1) is False
+
+    def test_is_after_same_year_different_months(self):
+        """Test is_after même année, mois différents."""
+        date1 = Date(year=2000, month=6)
+        date2 = Date(year=2000, month=3)
+        assert date1.is_after(date2) is True
+        assert date2.is_after(date1) is False
+
+    def test_is_after_same_date(self):
+        """Test is_after avec dates identiques."""
+        date1 = Date(year=2000, month=6, day=15)
+        date2 = Date(year=2000, month=6, day=15)
+        assert date1.is_after(date2) is False
+
+    def test_is_after_unknown(self):
+        """Test is_after avec date inconnue."""
+        date1 = Date(is_unknown=True)
+        date2 = Date(year=2000)
+        assert date1.is_after(date2) is False
+        assert date2.is_after(date1) is False
+
+    def test_is_before_different_years(self):
+        """Test is_before avec années différentes."""
+        date1 = Date(year=1990)
+        date2 = Date(year=2000)
+        assert date1.is_before(date2) is True
+        assert date2.is_before(date1) is False
+
+    def test_is_before_same_year_different_months(self):
+        """Test is_before même année, mois différents."""
+        date1 = Date(year=2000, month=3)
+        date2 = Date(year=2000, month=6)
+        assert date1.is_before(date2) is True
+
+    def test_is_before_unknown(self):
+        """Test is_before avec date inconnue."""
+        date1 = Date(is_unknown=True)
+        date2 = Date(year=2000)
+        assert date1.is_before(date2) is False
+
+        """Test méthode __str__."""
+        date = Date(year=1950, month=3, day=15)
+        result = str(date)
+        assert isinstance(result, str)
