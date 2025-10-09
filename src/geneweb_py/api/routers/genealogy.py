@@ -177,13 +177,13 @@ async def export_genealogy(
         else:
             raise HTTPException(
                 status_code=400,
-                detail=f"Format d'export '{format}' non supporté. Formats disponibles: gw, json, xml, gedcom",
+                detail=f"Format d'export '{format}' non supporté. Formats disponibles: gw, json, xml, gedcom",  # noqa: E501
             )
 
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de l'export: {exc}") from exc
+        raise HTTPException(status_code=500, detail=f"Erreur lors de l'export: {exc}") from exc  # noqa: E501
 
 
 @router.get("/stats", response_model=SuccessResponse)

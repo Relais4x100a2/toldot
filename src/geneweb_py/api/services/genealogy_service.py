@@ -109,7 +109,7 @@ class GenealogyService:
         """
         if self._genealogy is None:
             raise ValueError(
-                "Aucune généalogie chargée. Utilisez load_from_file() ou create_empty()."
+                "Aucune généalogie chargée. Utilisez load_from_file() ou create_empty()."  # noqa: E501
             )
         return self._genealogy
 

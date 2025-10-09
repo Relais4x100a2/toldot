@@ -674,4 +674,4 @@ class XMLImporter(BaseImporter):
             )
 
         except Exception as e:
-            raise ConversionError(f"Erreur lors de la désérialisation de la date : {e}") from e
+            raise ConversionError(f"Erreur lors de la désérialisation de la date : {e}") from e  # noqa: E501

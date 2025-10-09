@@ -194,7 +194,7 @@ end"""
 
     def test_parse_complex_family(self):
         """Test parsing d'une famille complexe avec tous les éléments"""
-        content = """fam CORNO Joseph_Marie_Vincent 25/12/1990 #bp Paris + 10/08/2015 #mp Paris THOMAS Marie_Julienne 15/06/1992 #bp Lyon
+        content = """fam CORNO Joseph_Marie_Vincent 25/12/1990 #bp Paris + 10/08/2015 #mp Paris THOMAS Marie_Julienne 15/06/1992 #bp Lyon  # noqa: E501
 wit m: DUPONT Pierre
 wit f: MARTIN Claire
 src "Acte de mariage, mairie de Paris"
@@ -222,7 +222,7 @@ end notes"""
         # Vérifier Joseph
         joseph = genealogy.find_person("CORNO", "Joseph_Marie_Vincent")
         assert joseph is not None
-        # Le parser actuel ne parse pas les dates et lieux de naissance dans les familles
+        # Le parser actuel ne parse pas les dates et lieux de naissance dans les familles  # noqa: E501
 
         # Marie n'est pas parsée par le parser actuel
 
@@ -293,7 +293,7 @@ class TestWitnessesIntegration:
         content = (
             "pevt MARTIN Paul_Henri\n"
             "#birt 8/3/1943 #p Lanchères,_80464\n"
-            "wit m: LEROY Bernard_Marie {Denis} #occu Dominicain,_Aumônier_de_l'enseignement_technique_à_Rouen\n"
+            "wit m: LEROY Bernard_Marie {Denis} #occu Dominicain,_Aumônier_de_l'enseignement_technique_à_Rouen\n"  # noqa: E501
             "wit m: GIRARD-ROUX Gustave_Marie\n"
             "end pevt\n"
         )
@@ -307,7 +307,7 @@ class TestWitnessesIntegration:
         person = genealogy.find_person("MARTIN", "Paul_Henri")
         assert person is not None
         # Trouver un événement BAPTISM si créé ou vérifier que le parsing ne casse pas
-        # Ici, on vérifie surtout que les témoins existent et que l'occupation a été normalisée
+        # Ici, on vérifie surtout que les témoins existent et que l'occupation a été normalisée  # noqa: E501
         witness = genealogy.find_person("LEROY", "Bernard_Marie")
         assert witness is not None
         assert witness.occupation is None or "Dominicain" in (witness.occupation or "")

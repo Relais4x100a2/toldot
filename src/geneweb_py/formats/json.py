@@ -418,4 +418,4 @@ class JSONImporter(BaseImporter):
                 death_type=data.get("death_type"),
             )
         except Exception as e:
-            raise ConversionError(f"Erreur lors de la désérialisation de la date : {e}") from e
+            raise ConversionError(f"Erreur lors de la désérialisation de la date : {e}") from e  # noqa: E501

@@ -159,7 +159,7 @@ class Person:
                     from .exceptions import GeneWebValidationError
 
                     error = GeneWebValidationError(
-                        f"Date de naissance ({self.birth_date}) postérieure à la date de décès ({self.death_date})",
+                        f"Date de naissance ({self.birth_date}) postérieure à la date de décès ({self.death_date})",  # noqa: E501
                         field="birth_date",
                         entity_type="Person",
                         entity_id=self.unique_id,

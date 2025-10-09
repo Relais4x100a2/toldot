@@ -228,7 +228,7 @@ class StreamingGeneWebParser:
             return "iso-8859-1"
 
         except Exception as e:
-            raise GeneWebEncodingError(f"Erreur lors de la détection d'encodage: {e}") from e
+            raise GeneWebEncodingError(f"Erreur lors de la détection d'encodage: {e}") from e  # noqa: E501
 
 
 def should_use_streaming(

@@ -398,7 +398,7 @@ class TestFamilyMissingCoverage:
 
         family = Family(
             family_id="FAM001",
-            husband_id="husband001",  # Avoir au moins un époux pour éviter validation auto
+            husband_id="husband001",  # Avoir au moins un époux pour éviter validation auto  # noqa: E501
         )
 
         # Ajouter une erreur

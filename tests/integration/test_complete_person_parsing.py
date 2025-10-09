@@ -56,15 +56,15 @@ class TestCompletePersonParsing:
                 break
 
         assert leroy is not None
-        # TODO: Bug connu - Les occupations avec virgules des témoins ne sont pas parsées complètement
+        # TODO: Bug connu - Les occupations avec virgules des témoins ne sont pas parsées complètement  # noqa: E501
         assert "Dominicain" in leroy.occupation
-        # TODO: Bug connu - Les lieux avec virgules multiples ne sont pas parsés complètement
+        # TODO: Bug connu - Les lieux avec virgules multiples ne sont pas parsés complètement  # noqa: E501
         assert leroy.birth_place and "Paris" in leroy.birth_place
         # Le lieu de décès peut ne pas être parsé dans ce contexte
         # assert leroy.death_place and "Paris" in leroy.death_place
 
     def test_spouse_inline_info(self):
-        """Test que les informations personnelles des époux sur ligne fam sont parsées"""
+        """Test que les informations personnelles des époux sur ligne fam sont parsées"""  # noqa: E501
         parser = GeneWebParser()
         genealogy = parser.parse_file("tests/fixtures/test_witnesses.gw")
 
@@ -88,7 +88,7 @@ class TestCompletePersonParsing:
         genealogy = parser.parse_file("tests/fixtures/test_complete.gw")
 
         # Vérifier le nombre total de personnes (parents, témoins, parrains)
-        # Note: Les enfants dans beg...end ne sont pas créés comme personnes séparées actuellement
+        # Note: Les enfants dans beg...end ne sont pas créés comme personnes séparées actuellement  # noqa: E501
         assert (
             len(genealogy.persons) >= 8
         )  # Au minimum toutes les personnes principales
@@ -121,7 +121,7 @@ class TestCompletePersonParsing:
                 break
 
         assert pierre is not None
-        # TODO: Bug connu - Les relations ne sont pas actuellement stockées de manière accessible
+        # TODO: Bug connu - Les relations ne sont pas actuellement stockées de manière accessible  # noqa: E501
         # Vérification que Pierre existe au moins
         assert pierre.last_name == "CORNO"
         assert pierre.first_name == "Paul_Henri"
@@ -228,7 +228,7 @@ end
         parser = GeneWebParser()
 
         test_content = """
-fam CORNO Jean #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement_technique + MOREAU Marie
+fam CORNO Jean #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement_technique + MOREAU Marie  # noqa: E501
 wit m: LEROY Bernard #occu Dominicain,_Aumônier_de_l'enseignement_à_Rouen
 beg
 - h Pierre_Bernard #occu Ingénieur,_éditeur,_dirigeant
@@ -250,5 +250,5 @@ end
         assert bernard is not None
         assert bernard.occupation == "Dominicain, Aumônier de l'enseignement à Rouen"
 
-        # Note: Les enfants dans beg...end ne sont pas actuellement créés comme personnes séparées
+        # Note: Les enfants dans beg...end ne sont pas actuellement créés comme personnes séparées  # noqa: E501
         # C'est une limitation connue du parser actuel

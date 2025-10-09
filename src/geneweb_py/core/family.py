@@ -136,7 +136,7 @@ class Family:
                     from .exceptions import GeneWebValidationError
 
                     error = GeneWebValidationError(
-                        f"Date de mariage ({self.marriage_date}) postérieure à la date de divorce ({self.divorce_date})",
+                        f"Date de mariage ({self.marriage_date}) postérieure à la date de divorce ({self.divorce_date})",  # noqa: E501
                         field="marriage_date",
                         entity_type="Family",
                         entity_id=self.family_id,

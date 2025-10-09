@@ -18,7 +18,7 @@ def main():
 
     # Contenu de test avec toutes les nouvelles fonctionnalités
     content = """
-fam d'Arc Jean-Marie .1 #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement + O'Brien Marie-Claire .2
+fam d'Arc Jean-Marie .1 #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement + O'Brien Marie-Claire .2  # noqa: E501
 wit m: LEROY Bernard .1 #occu Dominicain,_Aumônier_de_l'enseignement_technique_à_Rouen
 beg
 - h Pierre_Bernard .1 #occu Ingénieur,_éditeur
@@ -69,11 +69,11 @@ end wizard-note
         if person.metadata:
             if "extended_page" in person.metadata:
                 print(
-                    f"  - Page étendue : {len(person.metadata['extended_page'])} élément(s)"
+                    f"  - Page étendue : {len(person.metadata['extended_page'])} élément(s)"  # noqa: E501
                 )
             if "wizard_note" in person.metadata:
                 print(
-                    f"  - Note wizard : {len(person.metadata['wizard_note'])} élément(s)"
+                    f"  - Note wizard : {len(person.metadata['wizard_note'])} élément(s)"  # noqa: E501
                 )
         print()
 
@@ -92,10 +92,10 @@ end wizard-note
     print(f"• Total personnes : {stats['total_persons']}")
     print(f"• Total familles : {stats['total_families']}")
     print(
-        f"• Personnes avec occupation : {sum(1 for p in genealogy.persons.values() if p.occupation)}"
+        f"• Personnes avec occupation : {sum(1 for p in genealogy.persons.values() if p.occupation)}"  # noqa: E501
     )
     print(
-        f"• Personnes avec numéros d'occurrence : {sum(1 for p in genealogy.persons.values() if p.occurrence_number > 0)}"
+        f"• Personnes avec numéros d'occurrence : {sum(1 for p in genealogy.persons.values() if p.occurrence_number > 0)}"  # noqa: E501
     )
     print()
 

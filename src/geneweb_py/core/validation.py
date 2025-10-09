@@ -130,7 +130,7 @@ def validate_person_basic(
     # Avertissement si is_deceased est None mais death_date existe
     if person.death_date and person.is_deceased is None:
         context.add_warning(
-            f"Date de décès présente mais is_deceased n'est pas défini pour {person.unique_id}",
+            f"Date de décès présente mais is_deceased n'est pas défini pour {person.unique_id}",  # noqa: E501
             context=f"Personne: {person.unique_id}",
         )
 
@@ -233,7 +233,7 @@ def validate_family_basic(
     # Avertissement si divorce_date sans is_separated
     if family.divorce_date and not family.is_separated:
         context.add_warning(
-            f"Date de divorce présente mais is_separated=False pour famille {family.family_id}",
+            f"Date de divorce présente mais is_separated=False pour famille {family.family_id}",  # noqa: E501
             context=f"Famille: {family.family_id}",
         )
 
@@ -352,7 +352,7 @@ def validate_bidirectional_references(
             husband = genealogy.persons.get(family.husband_id)
             if husband and family.family_id not in husband.families_as_spouse:
                 context.add_warning(
-                    f"L'époux {family.husband_id} ne référence pas la famille {family.family_id}",
+                    f"L'époux {family.husband_id} ne référence pas la famille {family.family_id}",  # noqa: E501
                     context=f"Famille: {family.family_id}",
                 )
 
@@ -360,7 +360,7 @@ def validate_bidirectional_references(
             wife = genealogy.persons.get(family.wife_id)
             if wife and family.family_id not in wife.families_as_spouse:
                 context.add_warning(
-                    f"L'épouse {family.wife_id} ne référence pas la famille {family.family_id}",
+                    f"L'épouse {family.wife_id} ne référence pas la famille {family.family_id}",  # noqa: E501
                     context=f"Famille: {family.family_id}",
                 )
 
@@ -369,7 +369,7 @@ def validate_bidirectional_references(
             child_person = genealogy.persons.get(child.person_id)
             if child_person and family.family_id not in child_person.families_as_child:
                 context.add_warning(
-                    f"L'enfant {child.person_id} ne référence pas la famille {family.family_id}",
+                    f"L'enfant {child.person_id} ne référence pas la famille {family.family_id}",  # noqa: E501
                     context=f"Famille: {family.family_id}",
                 )
 

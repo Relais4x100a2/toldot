@@ -27,7 +27,7 @@ def get_global_genealogy_service() -> GenealogyService:
 # Configuration de l'application FastAPI
 app = FastAPI(
     title="GeneWeb-py API",
-    description="API REST moderne pour manipuler les fichiers généalogiques au format GeneWeb (.gw)",
+    description="API REST moderne pour manipuler les fichiers généalogiques au format GeneWeb (.gw)",  # noqa: E501
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
