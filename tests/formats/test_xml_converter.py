@@ -2,17 +2,17 @@
 Tests pour le convertisseur XML
 """
 
-import pytest
-import xml.etree.ElementTree as ET
-import tempfile
 import os
-from pathlib import Path
-from geneweb_py.formats.xml import XMLExporter, XMLImporter, ConversionError
-from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person, Gender
-from geneweb_py.core.family import Family, MarriageStatus
-from geneweb_py.core.event import Event, EventType
+import tempfile
+import xml.etree.ElementTree as ET
+
+import pytest
+
 from geneweb_py.core.date import Date
+from geneweb_py.core.family import Family, MarriageStatus
+from geneweb_py.core.genealogy import Genealogy
+from geneweb_py.core.person import Gender, Person
+from geneweb_py.formats.xml import ConversionError, XMLExporter, XMLImporter
 
 
 @pytest.fixture

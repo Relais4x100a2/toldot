@@ -2,10 +2,11 @@
 Schémas Pydantic pour les familles dans l'API geneweb-py.
 """
 
-from typing import Optional, List, Dict, Any, Union
+from typing import Dict, List, Optional, Union
+
 from pydantic import BaseModel, Field, field_validator
 
-from ...core.models import Family, MarriageStatus, ChildSex
+from ...core.models import ChildSex, MarriageStatus
 
 
 class ChildSchema(BaseModel):

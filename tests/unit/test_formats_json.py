@@ -3,15 +3,16 @@ Tests unitaires pour les convertisseurs JSON.
 """
 
 import json
-import pytest
 from pathlib import Path
 
-from geneweb_py.formats.json import JSONExporter, JSONImporter, ConversionError
-from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person, Gender
-from geneweb_py.core.family import Family
+import pytest
+
 from geneweb_py.core.date import Date
 from geneweb_py.core.event import Event, EventType
+from geneweb_py.core.family import Family
+from geneweb_py.core.genealogy import Genealogy
+from geneweb_py.core.person import Gender, Person
+from geneweb_py.formats.json import ConversionError, JSONExporter, JSONImporter
 
 
 class TestJSONExporter:
@@ -138,7 +139,7 @@ class TestJSONExporter:
             assert temp_file.exists()
 
             # Vérifier le contenu
-            with open(temp_file, "r", encoding="utf-8") as f:
+            with open(temp_file, encoding="utf-8") as f:
                 data = json.load(f)
             assert len(data["persons"]) == 1
         finally:

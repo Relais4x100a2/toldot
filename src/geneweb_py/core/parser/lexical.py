@@ -7,11 +7,9 @@ tous les tokens du format : blocs, mots-clés, identifiants, dates, etc.
 
 import re
 from dataclasses import dataclass
-from typing import Optional, List, Iterator, Union, Pattern
 from enum import Enum
 from functools import lru_cache
-
-from ..exceptions import GeneWebParseError
+from typing import Iterator, List, Optional, Pattern
 
 
 class TokenType(Enum):
@@ -524,7 +522,6 @@ class LexicalParser:
         self._advance_position()  # Passer le #
 
         word = ""
-        start_pos = self.position
 
         # Parser le mot-clé de base
         while self.position < len(self.text) and (
@@ -551,7 +548,6 @@ class LexicalParser:
 
     def _parse_date(self, line: int, col: int, pos: int) -> Token:
         """Parse une date (ex: 25/12/1990, ~10/5/1990, 0(texte))"""
-        start_pos = pos
         value = ""
 
         # Cas spécial pour les dates avec parenthèses 0(texte)
@@ -561,7 +557,6 @@ class LexicalParser:
             and self.position + 1 < len(self.text)
             and self.text[self.position + 1] == "("
         ):
-
             # Parser jusqu'à la parenthèse fermante correspondante
             paren_count = 0
             while self.position < len(self.text):
@@ -591,7 +586,6 @@ class LexicalParser:
 
     def _parse_number(self, line: int, col: int, pos: int) -> Token:
         """Parse un numéro d'occurrence (ex: .1, .2)"""
-        start_pos = pos
         value = ""
 
         while self.position < len(self.text) and (
@@ -610,7 +604,6 @@ class LexicalParser:
 
     def _parse_identifier(self, line: int, col: int, pos: int) -> Token:
         """Parse un identifiant (nom, prénom, lieu) ou un mot-clé spécial"""
-        start_pos = pos
         value = ""
 
         while self.position < len(self.text) and (
@@ -648,7 +641,6 @@ class LexicalParser:
     def _parse_string(self, line: int, col: int, pos: int) -> Token:
         """Parse une chaîne de caractères entre guillemets"""
         self._advance_position()  # Passer le guillemet ouvrant
-        start_pos = self.position
         value = ""
 
         while self.position < len(self.text) and self.text[self.position] != '"':

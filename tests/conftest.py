@@ -5,17 +5,15 @@ Ce fichier contient les fixtures et configurations partagées
 pour tous les tests.
 """
 
+
 import pytest
-from typing import Dict, Any
 
 from geneweb_py.core.models import (
-    Person,
-    Family,
     Date,
-    Genealogy,
+    Family,
     Gender,
-    MarriageStatus,
-    CalendarType,
+    Genealogy,
+    Person,
 )
 
 

@@ -6,16 +6,16 @@ le format GEDCOM (Genealogical Data Communication), un standard
 international pour l'échange de données généalogiques.
 """
 
-from typing import Any, Dict, List, Optional, Union, Tuple
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
 
-from .base import BaseExporter, BaseImporter, ConversionError
+from ..core.date import Date
+from ..core.event import Event
+from ..core.family import Family
 from ..core.genealogy import Genealogy
 from ..core.person import Person
-from ..core.family import Family
-from ..core.event import Event
-from ..core.date import Date
+from .base import BaseExporter, BaseImporter, ConversionError
 
 
 class GEDCOMExporter(BaseExporter):
@@ -359,7 +359,7 @@ class GEDCOMImporter(BaseImporter):
         path = self._validate_file_path(input_path)
 
         try:
-            with open(path, "r", encoding=self.encoding) as f:
+            with open(path, encoding=self.encoding) as f:
                 content = f.read()
 
             return self.import_from_string(content)

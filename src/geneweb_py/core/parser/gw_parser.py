@@ -5,21 +5,22 @@ Ce module implémente le parser principal qui orchestre le parsing lexical
 et syntaxique pour créer une représentation complète des données généalogiques.
 """
 
-import chardet
 from pathlib import Path
-from typing import Optional, Union, TextIO, List, Tuple
+from typing import List, Optional, Tuple, Union
 
+import chardet
+
+from ..exceptions import GeneWebEncodingError, GeneWebParseError
+from ..family import ChildSex
+from ..models import Date, Family, Genealogy, Person
+from ..person import Gender
 from .lexical import LexicalParser, Token, TokenType
-from .syntax import SyntaxParser, SyntaxNode, BlockType
 from .streaming import (
     StreamingGeneWebParser,
-    should_use_streaming,
     estimate_memory_usage,
+    should_use_streaming,
 )
-from ..exceptions import GeneWebParseError, GeneWebEncodingError
-from ..models import Genealogy, Person, Family, Date
-from ..person import Gender
-from ..family import ChildSex, MarriageStatus
+from .syntax import BlockType, SyntaxNode, SyntaxParser
 
 
 class GeneWebParser:
@@ -805,7 +806,9 @@ class GeneWebParser:
                 (
                     Gender.MALE
                     if sex == ChildSex.MALE
-                    else Gender.FEMALE if sex == ChildSex.FEMALE else Gender.UNKNOWN
+                    else Gender.FEMALE
+                    if sex == ChildSex.FEMALE
+                    else Gender.UNKNOWN
                 ),
             )
 
@@ -1395,7 +1398,6 @@ class GeneWebParser:
                 and tokens[i + 1].type == TokenType.IDENTIFIER
                 and tokens[i + 1].value == first_name
             ):
-
                 # Vérifier que c'est bien cette personne (pas un autre avec le même nom)
                 # En regardant le contexte (pas après 'fam', pas avant '+')
                 if i > 0 and tokens[i - 1].type == TokenType.FAM:

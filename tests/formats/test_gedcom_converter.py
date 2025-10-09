@@ -2,16 +2,16 @@
 Tests pour le convertisseur GEDCOM
 """
 
-import pytest
-import tempfile
 import os
-from pathlib import Path
-from geneweb_py.formats.gedcom import GEDCOMExporter, GEDCOMImporter, ConversionError
-from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person, Gender
-from geneweb_py.core.family import Family, MarriageStatus
-from geneweb_py.core.event import Event, EventType
+import tempfile
+
+import pytest
+
 from geneweb_py.core.date import Date
+from geneweb_py.core.family import Family, MarriageStatus
+from geneweb_py.core.genealogy import Genealogy
+from geneweb_py.core.person import Gender, Person
+from geneweb_py.formats.gedcom import ConversionError, GEDCOMExporter, GEDCOMImporter
 
 
 @pytest.fixture
@@ -69,7 +69,7 @@ class TestGEDCOMExporter:
             assert os.path.exists(temp_path)
 
             # Vérifier le contenu GEDCOM
-            with open(temp_path, "r", encoding="utf-8") as f:
+            with open(temp_path, encoding="utf-8") as f:
                 content = f.read()
 
             assert "0 HEAD" in content

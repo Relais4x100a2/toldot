@@ -2,23 +2,20 @@
 Router FastAPI pour la gestion des événements dans l'API geneweb-py.
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, Query
-from fastapi.responses import JSONResponse
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..models.event import (
     EventSchema,
-    PersonalEventCreateSchema,
-    FamilyEventCreateSchema,
     EventUpdateSchema,
-    EventListSchema,
-    EventStatsSchema,
+    FamilyEventCreateSchema,
+    PersonalEventCreateSchema,
 )
 from ..models.responses import (
-    SuccessResponse,
     PaginatedResponse,
     PaginationInfo,
-    ErrorResponse,
+    SuccessResponse,
 )
 from ..services.genealogy_service import GenealogyService
 

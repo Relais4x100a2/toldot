@@ -2,15 +2,15 @@
 Tests pour le router events de l'API geneweb-py.
 """
 
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import Mock
 
-from geneweb_py.api.main import app
+import pytest
+from fastapi.testclient import TestClient
+
 from geneweb_py.api.dependencies import get_genealogy_service
-from geneweb_py.core.models import Event, EventType
-from geneweb_py.core.event import FamilyEventType
+from geneweb_py.api.main import app
 from geneweb_py.api.services.genealogy_service import GenealogyService
+from geneweb_py.core.models import Event, EventType
 
 
 @pytest.fixture
@@ -109,7 +109,9 @@ class TestCreateFamilyEvent:
     @pytest.mark.skip(
         reason="EventType vs FamilyEventType - conflit enums, FastAPI ne peut pas distinguer"
     )
-    def test_create_family_event_success(self, client, mock_service, sample_family_event):
+    def test_create_family_event_success(
+        self, client, mock_service, sample_family_event
+    ):
         """Test création d'un événement familial."""
         pass
 

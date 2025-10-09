@@ -2,11 +2,8 @@
 Tests unitaires pour les améliorations du parser GeneWeb
 """
 
-import pytest
-from geneweb_py.core.parser.lexical import LexicalParser, TokenType
-from geneweb_py.core.parser.syntax import SyntaxParser, BlockType
 from geneweb_py.core.parser.gw_parser import GeneWebParser
-from geneweb_py.core.person import Gender
+from geneweb_py.core.parser.lexical import LexicalParser, TokenType
 
 
 class TestLexicalParserImprovements:

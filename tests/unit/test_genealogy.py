@@ -6,11 +6,12 @@ et toutes ses méthodes de recherche et validation.
 """
 
 import pytest
-from geneweb_py.core.genealogy import Genealogy, GenealogyMetadata
-from geneweb_py.core.person import Person, Gender, AccessLevel
-from geneweb_py.core.family import Family, MarriageStatus, ChildSex
+
 from geneweb_py.core.date import Date
 from geneweb_py.core.exceptions import GeneWebValidationError
+from geneweb_py.core.family import ChildSex, Family, MarriageStatus
+from geneweb_py.core.genealogy import Genealogy, GenealogyMetadata
+from geneweb_py.core.person import AccessLevel, Gender, Person
 
 
 class TestGenealogyCreation:

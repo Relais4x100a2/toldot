@@ -2,7 +2,6 @@
 Tests pour les middlewares de l'API.
 """
 
-import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
@@ -49,7 +48,9 @@ class TestErrorHandler:
             return item
 
         client = TestClient(app)
-        response = client.post("/test-validation", json={"name": "test"})  # Missing value
+        response = client.post(
+            "/test-validation", json={"name": "test"}
+        )  # Missing value
         assert response.status_code == 422
 
 
@@ -76,4 +77,3 @@ class TestLoggingMiddleware:
         response = client.get("/test-log")
         assert response.status_code == 200
         assert response.json() == {"message": "OK"}
-

@@ -5,7 +5,6 @@ Vérifie que tous les imports publics fonctionnent correctement
 et que l'API est stable.
 """
 
-import pytest
 
 
 def test_main_imports():
@@ -33,7 +32,7 @@ def test_main_imports():
 
 def test_core_imports():
     """Test imports depuis geneweb_py.core.models"""
-    from geneweb_py.core.models import Person, Family, Date, Genealogy
+    from geneweb_py.core.models import Date, Family, Genealogy, Person
 
     assert Person is not None
     assert Family is not None
@@ -51,11 +50,11 @@ def test_parser_imports():
 def test_exceptions_imports():
     """Test import des exceptions"""
     from geneweb_py.core.exceptions import (
+        GeneWebConversionError,
+        GeneWebEncodingError,
         GeneWebError,
         GeneWebParseError,
         GeneWebValidationError,
-        GeneWebConversionError,
-        GeneWebEncodingError,
     )
 
     assert GeneWebError is not None
@@ -87,12 +86,12 @@ def test_formats_imports():
 def test_models_imports():
     """Test import des modèles de données"""
     from geneweb_py.core.models import (
-        Person,
-        Family,
         Date,
-        Genealogy,
+        Family,
         Gender,
+        Genealogy,
         MarriageStatus,
+        Person,
     )
 
     assert Person is not None
@@ -114,14 +113,15 @@ def test_version_available():
 
 def test_version_format():
     """Test que la version suit le format semver"""
-    import geneweb_py
     import re
+
+    import geneweb_py
 
     # Format semver: MAJOR.MINOR.PATCH
     version_pattern = r"^\d+\.\d+\.\d+(?:[-+][a-zA-Z0-9.]+)?$"
-    assert re.match(
-        version_pattern, geneweb_py.__version__
-    ), f"Version {geneweb_py.__version__} ne suit pas le format semver"
+    assert re.match(version_pattern, geneweb_py.__version__), (
+        f"Version {geneweb_py.__version__} ne suit pas le format semver"
+    )
 
 
 def test_no_internal_imports_leak():
@@ -138,14 +138,14 @@ def test_no_internal_imports_leak():
     ]
 
     for internal in internal_modules:
-        assert not hasattr(
-            geneweb_py, internal
-        ), f"Module interne {internal} exposé au niveau package"
+        assert not hasattr(geneweb_py, internal), (
+            f"Module interne {internal} exposé au niveau package"
+        )
 
 
 def test_basic_usage_pattern():
     """Test un pattern d'utilisation basique"""
-    from geneweb_py import GeneWebParser, Person, Date
+    from geneweb_py import Date, GeneWebParser, Person
 
     # Pattern classique : parser un fichier
     parser = GeneWebParser()
@@ -162,11 +162,11 @@ def test_basic_usage_pattern():
 def test_all_public_classes_have_docstrings():
     """Vérifier que toutes les classes publiques ont des docstrings"""
     from geneweb_py import (
-        GeneWebParser,
-        Genealogy,
-        Person,
-        Family,
         Date,
+        Family,
+        Genealogy,
+        GeneWebParser,
+        Person,
     )
 
     public_classes = [GeneWebParser, Genealogy, Person, Family, Date]
@@ -179,10 +179,10 @@ def test_all_public_classes_have_docstrings():
 def test_exceptions_hierarchy():
     """Test hiérarchie des exceptions"""
     from geneweb_py.core.exceptions import (
+        GeneWebConversionError,
         GeneWebError,
         GeneWebParseError,
         GeneWebValidationError,
-        GeneWebConversionError,
     )
 
     # Toutes les exceptions doivent hériter de GeneWebError
@@ -196,15 +196,14 @@ def test_exceptions_hierarchy():
 
 def test_import_speed():
     """Test que l'import du package est rapide"""
-    import time
     import sys
+    import time
 
     # Supprimer le module s'il est déjà importé
     if "geneweb_py" in sys.modules:
         del sys.modules["geneweb_py"]
 
     start = time.time()
-    import geneweb_py
 
     duration = time.time() - start
 

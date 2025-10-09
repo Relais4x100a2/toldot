@@ -2,17 +2,15 @@
 Tests complets pour le router genealogy (couverture 29% → 90%).
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch, MagicMock
-from pathlib import Path
-import tempfile
-import os
 
-from geneweb_py.api.main import app
 from geneweb_py.api.dependencies import get_genealogy_service
-from geneweb_py.core.models import Genealogy, Person, Family, Gender
+from geneweb_py.api.main import app
 from geneweb_py.api.services.genealogy_service import GenealogyService
+from geneweb_py.core.models import Gender, Genealogy, Person
 
 
 @pytest.fixture
@@ -50,60 +48,72 @@ class TestExportGenealogyComplete:
     def test_export_json_success(self, client, mock_service, populated_genealogy):
         """Test export JSON avec données."""
         mock_service.genealogy = populated_genealogy
-        
-        with patch('geneweb_py.api.routers.genealogy.JSONExporter') as MockExporter:
+
+        with patch("geneweb_py.api.routers.genealogy.JSONExporter") as MockExporter:
             mock_exporter = MagicMock()
             MockExporter.return_value = mock_exporter
             mock_exporter.export.return_value = None
-            
-            with patch('geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile') as mock_temp:
-                mock_temp.return_value.__enter__.return_value.name = '/tmp/test.json'
+
+            with patch(
+                "geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile"
+            ) as mock_temp:
+                mock_temp.return_value.__enter__.return_value.name = "/tmp/test.json"
                 mock_temp.return_value.close.return_value = None
-                
-                with patch('geneweb_py.api.routers.genealogy.FileResponse') as MockResponse:
+
+                with patch(
+                    "geneweb_py.api.routers.genealogy.FileResponse"
+                ) as MockResponse:
                     MockResponse.return_value = MagicMock()
-                    
-                    response = client.get("/api/v1/genealogy/export/json")
-                    
+
+                    client.get("/api/v1/genealogy/export/json")
+
                     # Vérifier que l'export a été appelé
                     mock_exporter.export.assert_called_once()
 
     def test_export_xml_success(self, client, mock_service, populated_genealogy):
         """Test export XML avec données."""
         mock_service.genealogy = populated_genealogy
-        
-        with patch('geneweb_py.api.routers.genealogy.XMLExporter') as MockExporter:
+
+        with patch("geneweb_py.api.routers.genealogy.XMLExporter") as MockExporter:
             mock_exporter = MagicMock()
             MockExporter.return_value = mock_exporter
             mock_exporter.export.return_value = None
-            
-            with patch('geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile') as mock_temp:
-                mock_temp.return_value.__enter__.return_value.name = '/tmp/test.xml'
+
+            with patch(
+                "geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile"
+            ) as mock_temp:
+                mock_temp.return_value.__enter__.return_value.name = "/tmp/test.xml"
                 mock_temp.return_value.close.return_value = None
-                
-                with patch('geneweb_py.api.routers.genealogy.FileResponse') as MockResponse:
+
+                with patch(
+                    "geneweb_py.api.routers.genealogy.FileResponse"
+                ) as MockResponse:
                     MockResponse.return_value = MagicMock()
-                    
-                    response = client.get("/api/v1/genealogy/export/xml")
+
+                    client.get("/api/v1/genealogy/export/xml")
                     mock_exporter.export.assert_called_once()
 
     def test_export_gedcom_success(self, client, mock_service, populated_genealogy):
         """Test export GEDCOM avec données."""
         mock_service.genealogy = populated_genealogy
-        
-        with patch('geneweb_py.api.routers.genealogy.GEDCOMExporter') as MockExporter:
+
+        with patch("geneweb_py.api.routers.genealogy.GEDCOMExporter") as MockExporter:
             mock_exporter = MagicMock()
             MockExporter.return_value = mock_exporter
             mock_exporter.export.return_value = None
-            
-            with patch('geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile') as mock_temp:
-                mock_temp.return_value.__enter__.return_value.name = '/tmp/test.ged'
+
+            with patch(
+                "geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile"
+            ) as mock_temp:
+                mock_temp.return_value.__enter__.return_value.name = "/tmp/test.ged"
                 mock_temp.return_value.close.return_value = None
-                
-                with patch('geneweb_py.api.routers.genealogy.FileResponse') as MockResponse:
+
+                with patch(
+                    "geneweb_py.api.routers.genealogy.FileResponse"
+                ) as MockResponse:
                     MockResponse.return_value = MagicMock()
-                    
-                    response = client.get("/api/v1/genealogy/export/gedcom")
+
+                    client.get("/api/v1/genealogy/export/gedcom")
                     mock_exporter.export.assert_called_once()
 
     def test_export_gw_not_implemented(self, client, mock_service):
@@ -119,16 +129,18 @@ class TestExportGenealogyComplete:
     def test_export_json_error_cleanup(self, client, mock_service, populated_genealogy):
         """Test nettoyage en cas d'erreur export JSON."""
         mock_service.genealogy = populated_genealogy
-        
-        with patch('geneweb_py.api.routers.genealogy.JSONExporter') as MockExporter:
+
+        with patch("geneweb_py.api.routers.genealogy.JSONExporter") as MockExporter:
             MockExporter.return_value.export.side_effect = Exception("Export failed")
-            
-            with patch('geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile') as mock_temp:
+
+            with patch(
+                "geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile"
+            ) as mock_temp:
                 temp_file = MagicMock()
-                temp_file.name = '/tmp/test.json'
+                temp_file.name = "/tmp/test.json"
                 mock_temp.return_value = temp_file
-                
-                with patch('geneweb_py.api.routers.genealogy.os.unlink') as mock_unlink:
+
+                with patch("geneweb_py.api.routers.genealogy.os.unlink"):
                     response = client.get("/api/v1/genealogy/export/json")
                     assert response.status_code == 500
 
@@ -139,9 +151,9 @@ class TestSearchGenealogyComplete:
     def test_search_persons_by_name(self, client, mock_service, populated_genealogy):
         """Test recherche de personnes par nom."""
         mock_service.genealogy = populated_genealogy
-        
+
         response = client.get("/api/v1/genealogy/search?query=Jean")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["message"]
@@ -154,9 +166,9 @@ class TestSearchGenealogyComplete:
         p.birth_place = "Paris"
         gen.add_person(p)
         mock_service.genealogy = gen
-        
+
         response = client.get("/api/v1/genealogy/search?query=Paris")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]["results"]["persons"]) >= 0
@@ -164,9 +176,9 @@ class TestSearchGenealogyComplete:
     def test_search_all_types(self, client, mock_service, populated_genealogy):
         """Test recherche tous types."""
         mock_service.genealogy = populated_genealogy
-        
+
         response = client.get("/api/v1/genealogy/search?query=test&search_type=all")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "persons" in data["data"]["results"]
@@ -176,33 +188,35 @@ class TestSearchGenealogyComplete:
     def test_search_persons_only(self, client, mock_service, populated_genealogy):
         """Test recherche personnes uniquement."""
         mock_service.genealogy = populated_genealogy
-        
+
         response = client.get("/api/v1/genealogy/search?query=Jean&search_type=persons")
-        
+
         assert response.status_code == 200
 
     def test_search_families_only(self, client, mock_service, populated_genealogy):
         """Test recherche familles uniquement."""
         mock_service.genealogy = populated_genealogy
-        
-        response = client.get("/api/v1/genealogy/search?query=Dupont&search_type=families")
-        
+
+        response = client.get(
+            "/api/v1/genealogy/search?query=Dupont&search_type=families"
+        )
+
         assert response.status_code == 200
 
     def test_search_with_limit(self, client, mock_service, populated_genealogy):
         """Test recherche avec limite de résultats."""
         mock_service.genealogy = populated_genealogy
-        
+
         response = client.get("/api/v1/genealogy/search?query=test&limit=5")
-        
+
         assert response.status_code == 200
 
     def test_search_case_insensitive(self, client, mock_service, populated_genealogy):
         """Test recherche insensible à la casse."""
         mock_service.genealogy = populated_genealogy
-        
+
         response = client.get("/api/v1/genealogy/search?query=JEAN")
-        
+
         assert response.status_code == 200
 
 
@@ -212,7 +226,7 @@ class TestValidateGenealogy:
     def test_validate_success(self, client, mock_service):
         """Test validation réussie."""
         response = client.post("/api/v1/genealogy/validate")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "is_valid" in data["data"]
@@ -230,9 +244,9 @@ class TestClearGenealogy:
     def test_clear_success(self, client, mock_service):
         """Test suppression réussie."""
         mock_service.create_empty.return_value = Genealogy()
-        
+
         response = client.delete("/api/v1/genealogy/")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "supprimée" in data["message"] or "vidée" in data["message"]
@@ -240,9 +254,9 @@ class TestClearGenealogy:
     def test_clear_error(self, client, mock_service):
         """Test erreur lors de la suppression."""
         mock_service.create_empty.side_effect = Exception("Clear failed")
-        
+
         response = client.delete("/api/v1/genealogy/")
-        
+
         assert response.status_code == 500
 
 
@@ -253,7 +267,6 @@ class TestHealthCheck:
         """Test health check avec service fonctionnel."""
         # Le health check devrait retourner OK
         response = client.get("/api/v1/genealogy/health")
-        
+
         # Devrait retourner 200 ou un statut de santé
         assert response.status_code in [200, 503]
-

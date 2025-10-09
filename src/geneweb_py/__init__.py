@@ -9,7 +9,7 @@ __version__ = "0.1.0"
 __author__ = "Guillaume Cayeux"
 __email__ = "guillaume.cayeux@relais4x100a2.fr"
 
-from .core.models import Person, Family, Event, Date, Genealogy
+from .core.models import Date, Event, Family, Genealogy, Person
 from .core.parser import GeneWebParser
 
 __all__ = [

@@ -7,24 +7,24 @@ plusieurs erreurs au lieu de s'arrêter à la première.
 
 import pytest
 
-from geneweb_py.core.person import Person, Gender
-from geneweb_py.core.family import Family, MarriageStatus
-from geneweb_py.core.genealogy import Genealogy
 from geneweb_py.core.date import Date
+from geneweb_py.core.exceptions import (
+    ErrorSeverity,
+    GeneWebValidationError,
+)
+from geneweb_py.core.family import Family
+from geneweb_py.core.genealogy import Genealogy
+from geneweb_py.core.person import Gender, Person
 from geneweb_py.core.validation import (
-    validate_person_basic,
-    validate_person_relationships,
+    ValidationContext,
+    create_partial_family,
+    create_partial_person,
+    validate_bidirectional_references,
     validate_family_basic,
     validate_family_members,
     validate_genealogy_consistency,
-    validate_bidirectional_references,
-    ValidationContext,
-    create_partial_person,
-    create_partial_family,
-)
-from geneweb_py.core.exceptions import (
-    GeneWebValidationError,
-    ErrorSeverity,
+    validate_person_basic,
+    validate_person_relationships,
 )
 
 
@@ -421,11 +421,11 @@ class TestValidationContextErrorConversion:
     def test_add_generic_exception(self):
         """Test ajout d'une exception générique (non GeneWebError)."""
         context = ValidationContext()
-        
+
         # Ajouter une exception standard Python
         generic_error = ValueError("Invalid value")
         context.add_error(generic_error)
-        
+
         # L'erreur doit être convertie en GeneWebValidationError
         assert context.has_errors()
         errors = context.get_errors()
@@ -445,13 +445,13 @@ class TestPersonRelationshipsValidation:
             gender=Gender.MALE,
         )
         person.families_as_spouse.append("fam_missing")
-        
+
         genealogy = Genealogy()
         genealogy.add_person(person)
-        
+
         # Valider sans fournir de contexte (teste ligne 164)
         result = validate_person_relationships(person, genealogy)
-        
+
         assert not result.is_valid()
         assert len(result.errors) == 1
         assert "fam_missing" in str(result.errors[0])
@@ -464,12 +464,12 @@ class TestPersonRelationshipsValidation:
             gender=Gender.FEMALE,
         )
         person.families_as_child.append("fam_nonexistent")
-        
+
         genealogy = Genealogy()
         genealogy.add_person(person)
-        
+
         result = validate_person_relationships(person, genealogy)
-        
+
         assert not result.is_valid()
         assert len(result.errors) == 1
         assert "fam_nonexistent" in str(result.errors[0])
@@ -482,9 +482,9 @@ class TestFamilyBasicValidation:
         """Test famille sans parents ni enfants."""
         family = Family(family_id="fam_empty")
         # Pas de husband, wife, ni children
-        
+
         result = validate_family_basic(family)
-        
+
         assert not result.is_valid()
         assert len(result.errors) == 1
         assert "au moins un parent ou un enfant" in str(result.errors[0]).lower()
@@ -501,7 +501,7 @@ class TestBidirectionalValidation:
             first_name="Pierre",
             gender=Gender.MALE,
         )
-        
+
         # Créer les parents
         father = Person(
             last_name="Dupont",
@@ -513,7 +513,7 @@ class TestBidirectionalValidation:
             first_name="Marie",
             gender=Gender.FEMALE,
         )
-        
+
         # Créer la famille
         family = Family(
             family_id="fam001",
@@ -521,23 +521,24 @@ class TestBidirectionalValidation:
             wife_id=mother.unique_id,
         )
         from geneweb_py.core.family import Child
+
         family.children.append(Child(person_id=child.unique_id))
-        
+
         # Parents référencent la famille, mais PAS l'enfant
         father.families_as_spouse.append(family.family_id)
         mother.families_as_spouse.append(family.family_id)
         # child.families_as_child.append(family.family_id)  # VOLONTAIREMENT omis
-        
+
         # Construire la généalogie
         genealogy = Genealogy()
         genealogy.add_person(father)
         genealogy.add_person(mother)
         genealogy.add_person(child)
         genealogy.add_family(family)
-        
+
         # Valider les références bidirectionnelles sans contexte (teste ligne 348)
         result = validate_bidirectional_references(genealogy)
-        
+
         # Doit avoir un warning pour l'enfant manquant
         assert len(result.warnings) >= 1
         warnings_str = " ".join([str(w) for w in result.warnings])

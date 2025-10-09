@@ -5,9 +5,10 @@ Ce module fournit les dépendances communes utilisées dans les routers
 pour l'injection de dépendances et la gestion des services.
 """
 
-from typing import Generator, Optional, Tuple
-from fastapi import Depends, HTTPException, status
 from contextlib import asynccontextmanager
+from typing import Generator, Tuple
+
+from fastapi import Depends, HTTPException, status
 
 from .services.genealogy_service import GenealogyService
 

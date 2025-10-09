@@ -8,8 +8,8 @@ sont correctement configurés.
 
 def test_imports():
     """Test que tous les imports principaux fonctionnent"""
-    from geneweb_py.core.models import Person, Family, Date, Genealogy
     from geneweb_py.core.exceptions import GeneWebError, GeneWebParseError
+    from geneweb_py.core.models import Date, Family, Genealogy, Person
 
     # Vérifier que les classes sont bien importées
     assert Person is not None
@@ -22,7 +22,7 @@ def test_imports():
 
 def test_basic_functionality():
     """Test fonctionnalité de base"""
-    from geneweb_py.core.models import Person, Date, Genealogy
+    from geneweb_py.core.models import Genealogy, Person
     from geneweb_py.core.person import Gender
 
     # Créer une personne simple

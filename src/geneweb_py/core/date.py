@@ -5,10 +5,10 @@ Ce module implémente la représentation et le parsing des dates dans le format 
 avec support des calendriers multiples, préfixes et dates textuelles.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, Union, List
-from enum import Enum
 import re
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import List, Optional
 
 # Regex précompilée pour les dates textuelles 0(texte)
 TEXT_DATE_RE = re.compile(r"^0\((.+)\)$")
@@ -73,7 +73,7 @@ class Date:
     # Date inconnue mais obligatoire
     is_unknown: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validation et normalisation après initialisation"""
         if self.is_unknown:
             self.day = self.month = self.year = None

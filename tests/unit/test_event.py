@@ -2,7 +2,7 @@
 Tests unitaires pour le module Event (core/event.py).
 """
 
-import pytest
+from geneweb_py.core.date import Date
 from geneweb_py.core.event import (
     Event,
     EventType,
@@ -10,7 +10,6 @@ from geneweb_py.core.event import (
     FamilyEventType,
     PersonalEvent,
 )
-from geneweb_py.core.date import Date
 
 
 class TestEvent:
@@ -47,7 +46,7 @@ class TestEvent:
         """Test ajout d'un témoin."""
         event = Event(event_type=EventType.MARRIAGE)
         event.add_witness("wit001", "m")
-        
+
         assert len(event.witnesses) == 1
         assert event.witnesses[0]["person_id"] == "wit001"
         assert event.witnesses[0]["type"] == "m"
@@ -56,7 +55,7 @@ class TestEvent:
         """Test ajout d'un témoin sans type."""
         event = Event(event_type=EventType.MARRIAGE)
         event.add_witness("wit002")
-        
+
         assert len(event.witnesses) == 1
         assert event.witnesses[0]["person_id"] == "wit002"
         assert event.witnesses[0]["type"] is None
@@ -66,7 +65,7 @@ class TestEvent:
         event = Event(event_type=EventType.DEATH)
         event.add_note("Décès à l'hôpital")
         event.add_note("Certificat médical joint")
-        
+
         assert len(event.notes) == 2
         assert event.notes[0] == "Décès à l'hôpital"
         assert event.notes[1] == "Certificat médical joint"
@@ -76,7 +75,7 @@ class TestEvent:
         event = Event(event_type=EventType.OCCUPATION)
         event.set_metadata("profession", "Ingénieur")
         event.set_metadata("years", 10)
-        
+
         assert event.metadata["profession"] == "Ingénieur"
         assert event.metadata["years"] == 10
 
@@ -84,7 +83,7 @@ class TestEvent:
         """Test nom d'affichage de l'événement."""
         event = Event(event_type=EventType.BIRTH)
         assert event.display_name == "BIRT"
-        
+
         event2 = Event(event_type=EventType.MARRIAGE)
         assert event2.display_name == "MARR"
 
@@ -92,10 +91,10 @@ class TestEvent:
         """Test détection des événements familiaux."""
         marriage = Event(event_type=EventType.MARRIAGE)
         assert marriage.is_family_event is True
-        
+
         divorce = Event(event_type=EventType.DIVORCE)
         assert divorce.is_family_event is True
-        
+
         engagement = Event(event_type=EventType.ENGAGEMENT)
         assert engagement.is_family_event is True
 
@@ -103,7 +102,7 @@ class TestEvent:
         """Test détection des événements non-familiaux."""
         birth = Event(event_type=EventType.BIRTH)
         assert birth.is_family_event is False
-        
+
         death = Event(event_type=EventType.DEATH)
         assert death.is_family_event is False
 
@@ -111,7 +110,7 @@ class TestEvent:
         """Test conversion en dictionnaire (minimal)."""
         event = Event(event_type=EventType.BIRTH)
         result = event.to_dict()
-        
+
         assert result["type"] == "birt"
         assert result["date"] is None
         assert result["place"] is None
@@ -132,9 +131,9 @@ class TestEvent:
         event.add_witness("wit001")
         event.add_note("Mariage religieux")
         event.set_metadata("church", "Notre-Dame")
-        
+
         result = event.to_dict()
-        
+
         assert result["type"] == "marr"
         assert result["date"] == date.display_text
         assert result["place"] == "Paris"
@@ -244,4 +243,3 @@ class TestEventTypes:
         """Test que les FamilyEventType ont des valeurs uniques."""
         values = [e.value for e in FamilyEventType]
         assert len(values) == len(set(values))  # Pas de doublons
-

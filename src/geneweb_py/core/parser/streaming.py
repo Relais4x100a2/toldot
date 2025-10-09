@@ -5,13 +5,13 @@ Ce module implémente un parsing en mode streaming pour réduire l'utilisation m
 lors du traitement de gros fichiers .gw (>10MB).
 """
 
-import chardet
 from pathlib import Path
 from typing import Iterator, Optional, TextIO, Union
-from io import StringIO
 
-from .lexical import Token, TokenType, LexicalParser
-from ..exceptions import GeneWebParseError, GeneWebEncodingError
+import chardet
+
+from ..exceptions import GeneWebEncodingError, GeneWebParseError
+from .lexical import LexicalParser, Token, TokenType
 
 
 class StreamingLexicalParser:
@@ -189,7 +189,7 @@ class StreamingGeneWebParser:
         encoding = self._detect_encoding(file_path)
 
         # Ouvrir le fichier et créer un parser streaming
-        with open(file_path, "r", encoding=encoding, buffering=self.buffer_size) as f:
+        with open(file_path, encoding=encoding, buffering=self.buffer_size) as f:
             parser = StreamingLexicalParser(f, str(file_path), self.buffer_size)
             yield from parser.tokenize_lazy()
 

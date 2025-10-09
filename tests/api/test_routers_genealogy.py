@@ -2,14 +2,15 @@
 Tests pour le router genealogy de l'API geneweb-py.
 """
 
+from unittest.mock import Mock
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import Mock, MagicMock
 
-from geneweb_py.api.main import app
 from geneweb_py.api.dependencies import get_genealogy_service
-from geneweb_py.core.models import Genealogy
+from geneweb_py.api.main import app
 from geneweb_py.api.services.genealogy_service import GenealogyService
+from geneweb_py.core.models import Genealogy
 
 
 @pytest.fixture
@@ -73,17 +74,23 @@ class TestImportGenealogy:
 class TestExportGenealogy:
     """Tests pour l'export de généalogies."""
 
-    @pytest.mark.skip(reason="Export nécessite une implémentation complète avec fichiers temporaires")
+    @pytest.mark.skip(
+        reason="Export nécessite une implémentation complète avec fichiers temporaires"
+    )
     def test_export_gedcom_success(self, client, mock_service, sample_genealogy):
         """Test export au format GEDCOM."""
         pass
 
-    @pytest.mark.skip(reason="Export nécessite une implémentation complète avec fichiers temporaires")
+    @pytest.mark.skip(
+        reason="Export nécessite une implémentation complète avec fichiers temporaires"
+    )
     def test_export_json_success(self, client, mock_service, sample_genealogy):
         """Test export au format JSON."""
         pass
 
-    @pytest.mark.skip(reason="Export nécessite une implémentation complète avec fichiers temporaires")
+    @pytest.mark.skip(
+        reason="Export nécessite une implémentation complète avec fichiers temporaires"
+    )
     def test_export_xml_success(self, client, mock_service, sample_genealogy):
         """Test export au format XML."""
         pass
@@ -100,7 +107,7 @@ class TestGetStats:
     def test_get_stats_success(self, client, mock_service):
         """Test récupération des statistiques."""
         from datetime import datetime
-        
+
         mock_service.get_stats.return_value = {
             "total_persons": 100,
             "total_families": 50,
@@ -146,7 +153,7 @@ class TestSearchGlobal:
 class TestHealthCheck:
     """Tests pour le health check."""
 
-    @pytest.mark.skip(reason="health_check non implémenté dans le service")  
+    @pytest.mark.skip(reason="health_check non implémenté dans le service")
     def test_health_check_success(self, client, mock_service):
         """Test health check avec succès."""
         pass

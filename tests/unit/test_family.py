@@ -5,9 +5,8 @@ Ces tests vérifient la création et manipulation des familles
 dans le format GeneWeb.
 """
 
-import pytest
-from geneweb_py.core.family import Family, Child, MarriageStatus, ChildSex
 from geneweb_py.core.date import Date
+from geneweb_py.core.family import Child, ChildSex, Family, MarriageStatus
 
 
 class TestFamilyCreation:
@@ -328,7 +327,7 @@ class TestFamilyMissingCoverage:
 
     def test_add_event(self):
         """Test ajout d'un événement familial."""
-        from geneweb_py.core.event import FamilyEvent, FamilyEventType, EventType
+        from geneweb_py.core.event import EventType, FamilyEvent, FamilyEventType
 
         family = Family(family_id="FAM001")
         event = FamilyEvent(
@@ -336,30 +335,30 @@ class TestFamilyMissingCoverage:
             family_event_type=FamilyEventType.MARRIAGE,
         )
         family.add_event(event)
-        
+
         assert len(family.events) == 1
         assert family.events[0] == event
 
     def test_get_events_by_event_type(self):
         """Test récupération d'événements par EventType."""
-        from geneweb_py.core.event import FamilyEvent, FamilyEventType, EventType
+        from geneweb_py.core.event import EventType, FamilyEvent, FamilyEventType
 
         family = Family(family_id="FAM001")
-        
+
         # Ajouter événement de mariage
         marriage_event = FamilyEvent(
             event_type=EventType.MARRIAGE,
             family_event_type=FamilyEventType.MARRIAGE,
         )
         family.add_event(marriage_event)
-        
+
         # Ajouter événement de divorce
         divorce_event = FamilyEvent(
             event_type=EventType.DIVORCE,
             family_event_type=FamilyEventType.DIVORCE,
         )
         family.add_event(divorce_event)
-        
+
         # Récupérer les événements de mariage via EventType
         marriage_events = family.get_events_by_type(EventType.MARRIAGE)
         assert len(marriage_events) == 1
@@ -367,17 +366,17 @@ class TestFamilyMissingCoverage:
 
     def test_get_events_by_family_event_type(self):
         """Test récupération d'événements par FamilyEventType."""
-        from geneweb_py.core.event import FamilyEvent, FamilyEventType, EventType
+        from geneweb_py.core.event import EventType, FamilyEvent, FamilyEventType
 
         family = Family(family_id="FAM001")
-        
+
         # Ajouter événement avec FamilyEventType
         event = FamilyEvent(
             event_type=EventType.ENGAGEMENT,
             family_event_type=FamilyEventType.ENGAGEMENT,
         )
         family.add_event(event)
-        
+
         # Récupérer via FamilyEventType
         events = family.get_events_by_type(FamilyEventType.ENGAGEMENT)
         assert len(events) == 1
@@ -388,7 +387,7 @@ class TestFamilyMissingCoverage:
         from geneweb_py.core.event import EventType
 
         family = Family(family_id="FAM001")
-        
+
         # Pas d'événements de mariage
         marriage_events = family.get_events_by_type(EventType.MARRIAGE)
         assert len(marriage_events) == 0
@@ -401,17 +400,17 @@ class TestFamilyMissingCoverage:
             family_id="FAM001",
             husband_id="husband001",  # Avoir au moins un époux pour éviter validation auto
         )
-        
+
         # Ajouter une erreur
         error = GeneWebValidationError("Test error")
         family.add_validation_error(error)
-        
+
         assert not family.is_valid
         assert len(family.validation_errors) >= 1
-        
+
         # Effacer les erreurs
         family.clear_validation_errors()
-        
+
         assert family.is_valid
         assert len(family.validation_errors) == 0
 
@@ -424,9 +423,9 @@ class TestFamilyMissingCoverage:
         )
         family.add_child("child001", ChildSex.MALE)
         family.add_child("child002", ChildSex.FEMALE)
-        
+
         result = str(family)
-        
+
         assert "husband001" in result
         assert "wife001" in result
         assert "2 enfants" in result
@@ -437,9 +436,9 @@ class TestFamilyMissingCoverage:
             family_id="FAM001",
             husband_id="husband001",
         )
-        
+
         result = str(family)
-        
+
         assert "husband001" in result
         assert "0 enfants" in result
 
@@ -449,8 +448,8 @@ class TestFamilyMissingCoverage:
             family_id="FAM001",
             wife_id="wife001",
         )
-        
+
         result = str(family)
-        
+
         assert "wife001" in result
         assert "0 enfants" in result

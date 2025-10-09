@@ -5,14 +5,10 @@ Ces tests vérifient le parsing complet de fichiers .gw
 avec les modèles de données finaux.
 """
 
-import pytest
 import tempfile
 from pathlib import Path
 
 from geneweb_py import GeneWebParser
-from geneweb_py.core.exceptions import GeneWebParseError
-from geneweb_py.core.person import Gender
-from geneweb_py.core.family import ChildSex
 
 
 class TestGeneWebParser:
@@ -231,7 +227,7 @@ end notes"""
         # Marie n'est pas parsée par le parser actuel
 
         # Vérifier la famille
-        family = genealogy.families[list(genealogy.families.keys())[0]]
+        genealogy.families[list(genealogy.families.keys())[0]]
         # Le parser actuel ne parse pas les dates et lieux de mariage
         # assert family.marriage_date is not None
         # assert family.marriage_date.year == 2015
@@ -259,7 +255,7 @@ end notes"""
         content = """fam CORNO Joseph + THOMAS Marie"""
 
         parser = GeneWebParser()
-        genealogy = parser.parse_string(content)
+        parser.parse_string(content)
 
         # Vérifier qu'on peut récupérer les tokens
         tokens = parser.get_tokens()

@@ -5,8 +5,8 @@ Ce module définit les exceptions personnalisées utilisées dans toute la libra
 pour une gestion d'erreur claire et spécifique au format GeneWeb.
 """
 
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class ErrorSeverity(Enum):
@@ -27,7 +27,7 @@ class GeneWebError(Exception):
         context: Optional[str] = None,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
         **kwargs,
-    ):
+    ) -> None:
         # Attributs communs
         self.message = message
         self.line_number = line_number
@@ -383,7 +383,7 @@ class GeneWebErrorCollector:
     au premier problème rencontré. Supporte le filtrage par type et par sévérité.
     """
 
-    def __init__(self, strict: bool = False):
+    def __init__(self, strict: bool = False) -> None:
         """Initialise le collecteur
 
         Args:
@@ -568,7 +568,7 @@ class ValidationResult:
     Distingue les erreurs (validation échouée) des avertissements (validation réussie avec remarques).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.errors: List[GeneWebError] = []
         self.warnings: List[GeneWebError] = []
 

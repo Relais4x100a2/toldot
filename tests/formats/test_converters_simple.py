@@ -2,20 +2,21 @@
 Tests simples pour les convertisseurs - tests qui fonctionnent
 """
 
-import pytest
 import json
-import xml.etree.ElementTree as ET
-import tempfile
 import os
-from pathlib import Path
+import tempfile
+import xml.etree.ElementTree as ET
+
+import pytest
+
+from geneweb_py.core.date import Date
+from geneweb_py.core.family import Family, MarriageStatus
+from geneweb_py.core.genealogy import Genealogy
+from geneweb_py.core.person import Gender, Person
+from geneweb_py.formats.base import ConversionError
+from geneweb_py.formats.gedcom import GEDCOMExporter, GEDCOMImporter
 from geneweb_py.formats.json import JSONExporter, JSONImporter
 from geneweb_py.formats.xml import XMLExporter, XMLImporter
-from geneweb_py.formats.gedcom import GEDCOMExporter, GEDCOMImporter
-from geneweb_py.formats.base import ConversionError
-from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person, Gender
-from geneweb_py.core.family import Family, MarriageStatus
-from geneweb_py.core.date import Date
 
 
 @pytest.fixture
@@ -73,7 +74,7 @@ class TestJSONConverter:
             assert os.path.exists(temp_path)
 
             # Vérifier le contenu JSON
-            with open(temp_path, "r", encoding="utf-8") as f:
+            with open(temp_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             assert "persons" in data
@@ -259,7 +260,7 @@ class TestGEDCOMConverter:
             assert os.path.exists(temp_path)
 
             # Vérifier le contenu GEDCOM
-            with open(temp_path, "r", encoding="utf-8") as f:
+            with open(temp_path, encoding="utf-8") as f:
                 content = f.read()
 
             assert "0 HEAD" in content

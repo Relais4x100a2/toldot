@@ -36,8 +36,7 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "black>=23.0.0",
-    "flake8>=6.0.0",
+    "ruff>=0.1.0",      # Remplace black + flake8
     "mypy>=1.0.0",
     "hypothesis>=6.0.0",
     "httpx>=0.24.0",  # Requis pour TestClient de FastAPI
@@ -74,35 +73,10 @@ Documentation = "https://geneweb-py.readthedocs.io"
 where = ["src"]
 include = ["geneweb_py*"]
 
-[tool.black]
-line-length = 88
-target-version = ['py38']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
-
-[tool.flake8]
-max-line-length = 88
-extend-ignore = ["E203", "W503"]
-exclude = [
-    ".git",
-    "__pycache__",
-    "build",
-    "dist",
-    ".venv",
-    ".eggs",
-]
+# ===================================================================
+# Configuration Ruff (remplace Black + Flake8 + isort)
+# ===================================================================
+# Les anciennes configs Black/Flake8 ont été supprimées - Ruff fait tout !
 
 [tool.mypy]
 python_version = "3.8"
@@ -168,3 +142,42 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
+[tool.ruff]
+# Compatibilité avec Black
+line-length = 88
+target-version = "py38"
+
+# Exclure les mêmes répertoires que Black
+extend-exclude = [
+    ".eggs",
+    ".git",
+    ".mypy_cache",
+    ".venv",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+# Activer les règles (équivalent flake8 + extras)
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (tri des imports)
+    "UP",  # pyupgrade (modernisation)
+    "B",   # flake8-bugbear
+]
+
+# E203 : whitespace before ':' (incompatible avec Black/Ruff format)
+# Note : W503 (line break before binary operator) est obsolète dans Ruff
+ignore = ["E203"]
+
+[tool.ruff.lint.isort]
+# Configuration des imports
+known-first-party = ["geneweb_py"]
+
+[tool.ruff.format]
+# Options de formatage (compatibles Black)
+quote-style = "double"
+indent-style = "space"

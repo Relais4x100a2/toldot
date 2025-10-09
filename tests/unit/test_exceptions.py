@@ -5,14 +5,13 @@ Ces tests vérifient que toutes les exceptions personnalisées
 fonctionnent correctement avec leurs messages d'erreur.
 """
 
-import pytest
 from geneweb_py.core.exceptions import (
-    GeneWebError,
-    GeneWebParseError,
-    GeneWebValidationError,
     GeneWebConversionError,
     GeneWebEncodingError,
+    GeneWebError,
     GeneWebErrorCollector,
+    GeneWebParseError,
+    GeneWebValidationError,
     ValidationResult,
 )
 

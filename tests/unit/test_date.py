@@ -6,7 +6,8 @@ au format GeneWeb.
 """
 
 import pytest
-from geneweb_py.core.date import Date, DatePrefix, CalendarType, DeathType
+
+from geneweb_py.core.date import CalendarType, Date, DatePrefix, DeathType
 
 
 class TestDateParsing:

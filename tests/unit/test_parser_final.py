@@ -2,11 +2,13 @@
 Tests finaux pour les parsers - tests qui fonctionnent
 """
 
-import pytest
-import tempfile
 import os
-from geneweb_py.core.parser.gw_parser import GeneWebParser
+import tempfile
+
+import pytest
+
 from geneweb_py.core.genealogy import Genealogy
+from geneweb_py.core.parser.gw_parser import GeneWebParser
 
 
 class TestParserFinal:

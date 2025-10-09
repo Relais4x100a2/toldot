@@ -7,15 +7,15 @@ et l'échange de données généalogiques.
 """
 
 import json
-from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, Optional, Union
 
-from .base import BaseExporter, BaseImporter, ConversionError
+from ..core.date import Date
+from ..core.event import Event
+from ..core.family import Family
 from ..core.genealogy import Genealogy
 from ..core.person import Person
-from ..core.family import Family
-from ..core.event import Event
-from ..core.date import Date
+from .base import BaseExporter, BaseImporter, ConversionError
 
 
 class JSONExporter(BaseExporter):
@@ -223,7 +223,7 @@ class JSONImporter(BaseImporter):
         path = self._validate_file_path(input_path)
 
         try:
-            with open(path, "r", encoding=self.encoding) as f:
+            with open(path, encoding=self.encoding) as f:
                 content = f.read()
 
             return self.import_from_string(content)

@@ -2,13 +2,13 @@
 Tests unitaires pour les classes de base des convertisseurs.
 """
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock
 
-from geneweb_py.formats.base import BaseExporter, BaseImporter, ConversionError
+import pytest
+
 from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person, Gender
+from geneweb_py.core.person import Person
+from geneweb_py.formats.base import BaseExporter, BaseImporter, ConversionError
 
 
 class ConcreteExporter(BaseExporter):

@@ -5,9 +5,7 @@ Ces tests vérifient la tokenisation correcte des fichiers .gw
 avec tous les types de tokens supportés.
 """
 
-import pytest
 from geneweb_py.core.parser.lexical import LexicalParser, Token, TokenType
-from geneweb_py.core.exceptions import GeneWebParseError
 
 
 class TestLexicalParser:

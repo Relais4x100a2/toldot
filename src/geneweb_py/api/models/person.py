@@ -2,11 +2,11 @@
 Schémas Pydantic pour les personnes dans l'API geneweb-py.
 """
 
-from typing import Optional, List, Dict, Any, Union
-from pydantic import BaseModel, Field, field_validator
-from datetime import datetime
+from typing import Dict, List, Optional, Union
 
-from ...core.models import Person, Gender, AccessLevel, Title
+from pydantic import BaseModel, Field, field_validator
+
+from ...core.models import AccessLevel, Gender
 
 
 class TitleSchema(BaseModel):

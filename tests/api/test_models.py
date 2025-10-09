@@ -5,27 +5,25 @@ Tests pour les modèles Pydantic de l'API.
 import pytest
 from pydantic import ValidationError
 
-from geneweb_py.api.models.person import (
-    PersonSchema,
-    PersonCreateSchema,
-    PersonUpdateSchema,
-    TitleSchema,
-)
-from geneweb_py.api.models.family import (
-    FamilySchema,
-    FamilyCreateSchema,
-)
 from geneweb_py.api.models.event import (
     EventSchema,
     PersonalEventCreateSchema,
 )
+from geneweb_py.api.models.family import (
+    FamilyCreateSchema,
+)
+from geneweb_py.api.models.person import (
+    PersonCreateSchema,
+    PersonSchema,
+    TitleSchema,
+)
 from geneweb_py.api.models.responses import (
-    SuccessResponse,
     ErrorResponse,
     PaginatedResponse,
     PaginationInfo,
+    SuccessResponse,
 )
-from geneweb_py.core.models import Gender, AccessLevel
+from geneweb_py.core.models import Gender
 
 
 class TestPersonModels:
@@ -99,6 +97,7 @@ class TestEventModels:
         assert event.person_id == "p001"
         # event_type est converti en enum
         from geneweb_py.core.models import EventType
+
         assert event.event_type == EventType.BIRTH
 
     def test_personal_event_with_all_fields(self):
@@ -122,7 +121,7 @@ class TestEventModels:
         """Test création d'événement familial."""
         from geneweb_py.api.models.event import FamilyEventCreateSchema
         from geneweb_py.core.models import FamilyEventType
-        
+
         event = FamilyEventCreateSchema(
             family_id="f001",
             event_type=FamilyEventType.MARRIAGE,
@@ -133,7 +132,7 @@ class TestEventModels:
     def test_event_update_schema(self):
         """Test schéma de mise à jour événement."""
         from geneweb_py.api.models.event import EventUpdateSchema
-        
+
         update = EventUpdateSchema(
             place="New Place",
             reason="New Reason",
@@ -142,9 +141,8 @@ class TestEventModels:
 
     def test_event_schema_complete(self):
         """Test schéma événement complet."""
-        from geneweb_py.api.models.event import EventSchema
         from geneweb_py.core.models import EventType
-        
+
         event = EventSchema(
             id="evt_001",
             event_type=EventType.BIRTH,
@@ -175,7 +173,7 @@ class TestResponseModels:
     def test_error_response(self):
         """Test réponse d'erreur."""
         from geneweb_py.api.models.responses import ErrorDetail
-        
+
         response = ErrorResponse(
             message="Erreur",
             code="ERR_001",
@@ -201,4 +199,3 @@ class TestResponseModels:
         assert len(response.items) == 2
         assert response.pagination.total == 100
         assert response.pagination.has_next is True
-

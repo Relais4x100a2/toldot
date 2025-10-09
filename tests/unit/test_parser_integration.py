@@ -2,11 +2,11 @@
 Tests d'intégration pour les parsers
 """
 
-import pytest
-import tempfile
 import os
-from geneweb_py.core.parser.gw_parser import GeneWebParser
+import tempfile
+
 from geneweb_py.core.genealogy import Genealogy
+from geneweb_py.core.parser.gw_parser import GeneWebParser
 
 
 class TestParserIntegration:

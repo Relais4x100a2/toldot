@@ -6,17 +6,16 @@ Ce script permet de lancer l'API FastAPI avec uvicorn pour le développement
 et la production.
 """
 
-import uvicorn
 import argparse
 import sys
-import os
 from pathlib import Path
+
+import uvicorn
 
 # Ajout du répertoire src au path Python (structure src/)
 root_dir = Path(__file__).parent
 sys.path.insert(0, str(root_dir / "src"))
 
-from geneweb_py.api.main import app
 
 
 def main():
@@ -24,49 +23,41 @@ def main():
     parser = argparse.ArgumentParser(
         description="Lance l'API GeneWeb-py avec FastAPI et uvicorn"
     )
-    
+
     parser.add_argument(
-        "--host",
-        default="0.0.0.0",
-        help="Adresse IP du serveur (défaut: 0.0.0.0)"
+        "--host", default="0.0.0.0", help="Adresse IP du serveur (défaut: 0.0.0.0)"
     )
-    
+
     parser.add_argument(
-        "--port",
-        type=int,
-        default=8000,
-        help="Port du serveur (défaut: 8000)"
+        "--port", type=int, default=8000, help="Port du serveur (défaut: 8000)"
     )
-    
+
     parser.add_argument(
         "--reload",
         action="store_true",
-        help="Active le rechargement automatique en cas de modification des fichiers"
+        help="Active le rechargement automatique en cas de modification des fichiers",
     )
-    
+
     parser.add_argument(
         "--log-level",
         choices=["critical", "error", "warning", "info", "debug", "trace"],
         default="info",
-        help="Niveau de logging (défaut: info)"
+        help="Niveau de logging (défaut: info)",
     )
-    
+
     parser.add_argument(
-        "--workers",
-        type=int,
-        default=1,
-        help="Nombre de workers uvicorn (défaut: 1)"
+        "--workers", type=int, default=1, help="Nombre de workers uvicorn (défaut: 1)"
     )
-    
+
     parser.add_argument(
         "--env",
         choices=["dev", "prod", "test"],
         default="dev",
-        help="Environnement d'exécution (défaut: dev)"
+        help="Environnement d'exécution (défaut: dev)",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Configuration selon l'environnement
     if args.env == "prod":
         # Configuration de production
@@ -83,8 +74,8 @@ def main():
         reload = args.reload
         log_level = args.log_level
         workers = 1
-    
-    print(f"🚀 Lancement de l'API GeneWeb-py")
+
+    print("🚀 Lancement de l'API GeneWeb-py")
     print(f"📍 Environnement: {args.env}")
     print(f"🌐 Serveur: http://{args.host}:{args.port}")
     print(f"📚 Documentation: http://{args.host}:{args.port}/docs")
@@ -93,7 +84,7 @@ def main():
     print(f"👥 Workers: {workers}")
     print(f"📝 Log level: {log_level}")
     print("-" * 50)
-    
+
     try:
         # Lancement du serveur
         uvicorn.run(

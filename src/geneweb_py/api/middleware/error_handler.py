@@ -6,14 +6,14 @@ standardisées et un logging approprié.
 """
 
 import logging
-from typing import Union
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ...core.exceptions import GeneWebParseError, GeneWebValidationError
-from ..models.responses import ErrorResponse, ErrorDetail
+from ..models.responses import ErrorDetail, ErrorResponse
 
 logger = logging.getLogger(__name__)
 

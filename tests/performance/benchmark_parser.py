@@ -5,12 +5,11 @@ Ce module mesure les performances du parser sur différentes tailles de fichiers
 et compare les modes normal et streaming.
 """
 
+import sys
 import time
 import tracemalloc
-import sys
 from pathlib import Path
-from typing import Dict, Any
-import io
+from typing import Any, Dict
 
 # Ajouter le chemin du projet (structure src/)
 project_root = Path(__file__).parent.parent.parent
@@ -132,17 +131,17 @@ def run_benchmark_suite():
         print(f"{'─' * 80}")
 
         # Générer le fichier de test
-        print(f"  Génération du fichier de test...", end="")
+        print("  Génération du fichier de test...", end="")
         content = generate_test_file(size_kb)
         actual_size_kb = len(content.encode("utf-8")) / 1024
         print(f" OK ({actual_size_kb:.1f} KB)")
 
         # Test en mode normal
-        print(f"  Parsing en mode NORMAL...", end="")
+        print("  Parsing en mode NORMAL...", end="")
         sys.stdout.flush()
         try:
             stats_normal = benchmark_parsing(content, mode="normal", validate=False)
-            print(f" OK")
+            print(" OK")
             print(f"    Temps: {stats_normal['time_seconds']}s")
             print(f"    Mémoire pic: {stats_normal['memory_peak_mb']} MB")
             print(f"    Personnes: {stats_normal['num_persons']}")
@@ -152,13 +151,13 @@ def run_benchmark_suite():
 
         # Test en mode streaming (seulement pour les gros fichiers)
         if size_kb >= 1024:
-            print(f"  Parsing en mode STREAMING...", end="")
+            print("  Parsing en mode STREAMING...", end="")
             sys.stdout.flush()
             try:
                 stats_streaming = benchmark_parsing(
                     content, mode="streaming", validate=False
                 )
-                print(f" OK")
+                print(" OK")
                 print(f"    Temps: {stats_streaming['time_seconds']}s")
                 print(f"    Mémoire pic: {stats_streaming['memory_peak_mb']} MB")
                 print(f"    Personnes: {stats_streaming['num_persons']}")
@@ -229,9 +228,7 @@ def run_benchmark_suite():
                     1 - stats["memory_peak_mb"] / result["normal"]["memory_peak_mb"]
                 ) * 100
                 print(
-                    f"{'':<10} {'Gain (%)':<12} "
-                    f"{time_gain:<12.1f} "
-                    f"{memory_gain:<15.1f}"
+                    f"{'':<10} {'Gain (%)':<12} {time_gain:<12.1f} {memory_gain:<15.1f}"
                 )
 
     print(f"\n{'═' * 80}\n")
@@ -268,20 +265,20 @@ def benchmark_real_file(file_path: str):
 
     # Estimation mémoire
     memory_est = estimate_memory_usage(file_path)
-    print(f"\nEstimations mémoire:")
+    print("\nEstimations mémoire:")
     print(f"  Mode normal: {memory_est['estimated_normal_memory_mb']:.2f} MB")
     print(f"  Mode streaming: {memory_est['estimated_streaming_memory_mb']:.2f} MB")
     print(f"  Économie: {memory_est['memory_saving_percent']:.1f}%")
     print(f"  Mode recommandé: {memory_est['recommended_mode']}")
 
     # Lire le fichier
-    print(f"\nLecture du fichier...", end="")
-    with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+    print("\nLecture du fichier...", end="")
+    with open(file_path, encoding="utf-8", errors="replace") as f:
         content = f.read()
     print(" OK")
 
     # Test en mode normal
-    print(f"\nParsing en mode NORMAL...")
+    print("\nParsing en mode NORMAL...")
     stats_normal = benchmark_parsing(content, mode="normal", validate=False)
     print(f"  Temps: {stats_normal['time_seconds']}s")
     print(f"  Mémoire pic: {stats_normal['memory_peak_mb']} MB")
@@ -290,7 +287,7 @@ def benchmark_real_file(file_path: str):
 
     # Test en mode streaming si recommandé
     if should_use_streaming(file_path):
-        print(f"\nParsing en mode STREAMING...")
+        print("\nParsing en mode STREAMING...")
         stats_streaming = benchmark_parsing(content, mode="streaming", validate=False)
         print(f"  Temps: {stats_streaming['time_seconds']}s")
         print(f"  Mémoire pic: {stats_streaming['memory_peak_mb']} MB")
@@ -305,7 +302,7 @@ def benchmark_real_file(file_path: str):
             1 - stats_streaming["memory_peak_mb"] / stats_normal["memory_peak_mb"]
         ) * 100
 
-        print(f"\nGains avec le streaming:")
+        print("\nGains avec le streaming:")
         print(f"  Temps: {time_gain:+.1f}%")
         print(f"  Mémoire: {memory_gain:+.1f}%")
 

@@ -5,9 +5,8 @@ Ces tests vérifient la création et manipulation des personnes
 dans le format GeneWeb.
 """
 
-import pytest
-from geneweb_py.core.person import Person, Title, Gender, AccessLevel
 from geneweb_py.core.date import Date
+from geneweb_py.core.person import Gender, Person, Title
 
 
 class TestPersonCreation:

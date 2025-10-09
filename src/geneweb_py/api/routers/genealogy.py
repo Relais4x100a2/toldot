@@ -2,19 +2,17 @@
 Router FastAPI pour la gestion de la généalogie dans l'API geneweb-py.
 """
 
-from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
-from fastapi.responses import JSONResponse, FileResponse
-import tempfile
 import os
+import tempfile
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
 
 from ...formats import GEDCOMExporter, JSONExporter, XMLExporter
-
 from ..models.responses import (
-    SuccessResponse,
     StatsResponse,
-    HealthResponse,
-    ErrorResponse,
+    SuccessResponse,
 )
 from ..services.genealogy_service import GenealogyService
 
@@ -48,8 +46,8 @@ async def import_genealogy_file(
             )
 
         # Sauvegarde temporaire du fichier
-        import tempfile
         import os
+        import tempfile
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".gw") as temp_file:
             content = await file.read()
@@ -58,7 +56,7 @@ async def import_genealogy_file(
 
         try:
             # Chargement de la généalogie
-            genealogy = service.load_from_file(temp_file_path)
+            service.load_from_file(temp_file_path)
 
             # Récupération des statistiques
             stats = service.get_stats()
@@ -117,7 +115,7 @@ async def export_genealogy(
 
                 return FileResponse(
                     path=temp_file.name,
-                    filename=f"genealogy.json",
+                    filename="genealogy.json",
                     media_type="application/json",
                 )
             except Exception as exc:
@@ -141,7 +139,7 @@ async def export_genealogy(
 
                 return FileResponse(
                     path=temp_file.name,
-                    filename=f"genealogy.xml",
+                    filename="genealogy.xml",
                     media_type="application/xml",
                 )
             except Exception as exc:
@@ -165,7 +163,7 @@ async def export_genealogy(
 
                 return FileResponse(
                     path=temp_file.name,
-                    filename=f"genealogy.ged",
+                    filename="genealogy.ged",
                     media_type="application/octet-stream",
                 )
             except Exception as exc:
@@ -278,7 +276,6 @@ async def search_genealogy(
                         person.death_place and query_lower in person.death_place.lower()
                     )
                 ):
-
                     person_data = {
                         "id": person.unique_id,
                         "first_name": person.first_name,
@@ -336,7 +333,6 @@ async def search_genealogy(
                         or query_lower in (event.reason or "").lower()
                         or query_lower in (event.notes or "").lower()
                     ):
-
                         event_data = {
                             "id": getattr(event, "unique_id", "unknown"),
                             "event_type": (
@@ -356,7 +352,6 @@ async def search_genealogy(
                         or query_lower in (event.reason or "").lower()
                         or query_lower in (event.notes or "").lower()
                     ):
-
                         event_data = {
                             "id": getattr(event, "unique_id", "unknown"),
                             "event_type": (

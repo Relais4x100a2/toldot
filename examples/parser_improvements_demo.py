@@ -15,7 +15,7 @@ from geneweb_py import GeneWebParser
 
 def main():
     """Démonstration des nouvelles fonctionnalités du parser"""
-    
+
     # Contenu de test avec toutes les nouvelles fonctionnalités
     content = """
 fam d'Arc Jean-Marie .1 #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement + O'Brien Marie-Claire .2
@@ -40,39 +40,43 @@ Note générée par le wizard pour Marie-Claire
 Informations supplémentaires
 end wizard-note
 """
-    
+
     print("🚀 Démonstration des nouvelles fonctionnalités du parser GeneWeb")
     print("=" * 70)
-    
+
     # Créer le parser
     parser = GeneWebParser()
-    
+
     # Parser le contenu
     print("📖 Parsing du contenu...")
     genealogy = parser.parse_string(content)
-    
-    print(f"✅ Parsing réussi !")
+
+    print("✅ Parsing réussi !")
     print(f"   - {len(genealogy.persons)} personnes trouvées")
     print(f"   - {len(genealogy.families)} familles trouvées")
     print()
-    
+
     # Afficher les personnes avec leurs informations
     print("👥 Personnes parsées :")
     print("-" * 50)
-    
-    for person_id, person in genealogy.persons.items():
+
+    for _person_id, person in genealogy.persons.items():
         print(f"• {person.first_name} {person.last_name}")
         print(f"  - Occurrence : {person.occurrence_number}")
         print(f"  - Occupation : {person.occupation or 'Non spécifiée'}")
-        
+
         # Afficher les métadonnées si présentes
         if person.metadata:
-            if 'extended_page' in person.metadata:
-                print(f"  - Page étendue : {len(person.metadata['extended_page'])} élément(s)")
-            if 'wizard_note' in person.metadata:
-                print(f"  - Note wizard : {len(person.metadata['wizard_note'])} élément(s)")
+            if "extended_page" in person.metadata:
+                print(
+                    f"  - Page étendue : {len(person.metadata['extended_page'])} élément(s)"
+                )
+            if "wizard_note" in person.metadata:
+                print(
+                    f"  - Note wizard : {len(person.metadata['wizard_note'])} élément(s)"
+                )
         print()
-    
+
     # Afficher les notes de base de données
     if genealogy.metadata.database_notes:
         print("📝 Notes de base de données :")
@@ -80,17 +84,21 @@ end wizard-note
         for note in genealogy.metadata.database_notes:
             print(f"• {note}")
         print()
-    
+
     # Afficher les statistiques
     print("📊 Statistiques :")
     print("-" * 50)
     stats = genealogy.get_statistics()
     print(f"• Total personnes : {stats['total_persons']}")
     print(f"• Total familles : {stats['total_families']}")
-    print(f"• Personnes avec occupation : {sum(1 for p in genealogy.persons.values() if p.occupation)}")
-    print(f"• Personnes avec numéros d'occurrence : {sum(1 for p in genealogy.persons.values() if p.occurrence_number > 0)}")
+    print(
+        f"• Personnes avec occupation : {sum(1 for p in genealogy.persons.values() if p.occupation)}"
+    )
+    print(
+        f"• Personnes avec numéros d'occurrence : {sum(1 for p in genealogy.persons.values() if p.occurrence_number > 0)}"
+    )
     print()
-    
+
     # Démonstration des fonctionnalités spécifiques
     print("🎯 Fonctionnalités démontrées :")
     print("-" * 50)
@@ -101,7 +109,7 @@ end wizard-note
     print("✅ Parsing des enfants avec sexes et occupations")
     print("✅ Parsing des témoins avec toutes leurs informations")
     print()
-    
+
     print("🎉 Toutes les nouvelles fonctionnalités fonctionnent correctement !")
 
 

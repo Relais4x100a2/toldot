@@ -5,6 +5,7 @@ Vérifie que le code fonctionne sur toutes les versions Python supportées.
 """
 
 import sys
+
 import pytest
 
 
@@ -19,7 +20,7 @@ def test_minimum_python_version():
 @pytest.mark.skipif(sys.version_info < (3, 7), reason="Python 3.7+ requis")
 def test_python37_compatible():
     """Test compatibilité Python 3.7"""
-    from geneweb_py import GeneWebParser, Person, Date
+    from geneweb_py import GeneWebParser, Person
 
     # Features Python 3.7
     parser = GeneWebParser()
@@ -35,10 +36,10 @@ def test_typing_extensions_compatibility():
     # typing_extensions fournit des backports pour Python 3.7
     try:
         # Python 3.8+
-        from typing import Literal, TypedDict, Protocol
+        from typing import Literal, Protocol, TypedDict
     except ImportError:
         # Python 3.7 fallback
-        from typing_extensions import Literal, TypedDict, Protocol
+        from typing_extensions import Literal
 
     # Vérifier qu'on peut utiliser ces types
     assert Literal is not None
@@ -46,7 +47,7 @@ def test_typing_extensions_compatibility():
 
 def test_dataclasses_compatibility():
     """Test compatibilité dataclasses"""
-    from dataclasses import dataclass, field
+    from dataclasses import dataclass
 
     @dataclass
     class TestClass:
@@ -71,7 +72,6 @@ def test_python38_features():
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="Python 3.9+ features")
 def test_python39_features():
     """Test compatibilité features Python 3.9+"""
-    from geneweb_py import Person
 
     # Type hints avec collections built-in (Python 3.9+)
     # dict[str, str] au lieu de Dict[str, str]
@@ -82,7 +82,6 @@ def test_python39_features():
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="Python 3.10+ features")
 def test_python310_features():
     """Test compatibilité features Python 3.10+"""
-    from geneweb_py import Person
 
     # Union types avec | (Python 3.10+)
     value: str | None = None
@@ -119,10 +118,10 @@ def test_no_deprecated_features():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always", DeprecationWarning)
 
-        from geneweb_py import GeneWebParser, Person, Date
+        from geneweb_py import GeneWebParser, Person
 
-        parser = GeneWebParser()
-        person = Person(last_name="TEST", first_name="User")
+        GeneWebParser()
+        Person(last_name="TEST", first_name="User")
 
         # Vérifier qu'il n'y a pas de DeprecationWarning
         deprecation_warnings = [
@@ -155,9 +154,10 @@ def test_encoding_compatibility():
 
 def test_pathlib_compatibility():
     """Test compatibilité avec pathlib (Python 3.4+)"""
-    from pathlib import Path
-    from geneweb_py import GeneWebParser
     import tempfile
+    from pathlib import Path
+
+    from geneweb_py import GeneWebParser
 
     parser = GeneWebParser()
 
@@ -177,6 +177,7 @@ def test_pathlib_compatibility():
 def test_asyncio_compatibility():
     """Test que le package n'interfère pas avec asyncio"""
     import asyncio
+
     from geneweb_py import GeneWebParser
 
     async def async_parse():
