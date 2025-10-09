@@ -2,7 +2,6 @@
 Tests pour l'application principale FastAPI.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 from geneweb_py.api.main import app, get_global_genealogy_service
@@ -26,7 +25,7 @@ class TestMainApp:
         """Test endpoint racine."""
         client = TestClient(app)
         response = client.get("/")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "Bienvenue sur l'API GeneWeb-py"
@@ -37,7 +36,7 @@ class TestMainApp:
         """Test endpoint de santé."""
         client = TestClient(app)
         response = client.get("/health")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
@@ -48,7 +47,7 @@ class TestMainApp:
         """Test que l'OpenAPI est disponible."""
         client = TestClient(app)
         response = client.get("/openapi.json")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "openapi" in data
@@ -58,13 +57,12 @@ class TestMainApp:
         """Test que la documentation Swagger est disponible."""
         client = TestClient(app)
         response = client.get("/docs")
-        
+
         assert response.status_code == 200
 
     def test_redoc_endpoint(self):
         """Test que ReDoc est disponible."""
         client = TestClient(app)
         response = client.get("/redoc")
-        
-        assert response.status_code == 200
 
+        assert response.status_code == 200

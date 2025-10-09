@@ -2,16 +2,17 @@
 Tests unitaires pour les convertisseurs XML.
 """
 
-import pytest
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
-from geneweb_py.formats.xml import XMLExporter, XMLImporter, ConversionError
-from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person, Gender
-from geneweb_py.core.family import Family
+import pytest
+
 from geneweb_py.core.date import Date
 from geneweb_py.core.event import Event, EventType
+from geneweb_py.core.family import Family
+from geneweb_py.core.genealogy import Genealogy
+from geneweb_py.core.person import Gender, Person
+from geneweb_py.formats.xml import ConversionError, XMLExporter, XMLImporter
 
 
 class TestXMLExporter:
@@ -219,13 +220,13 @@ class TestXMLImporter:
     </family>
   </families>
 </genealogy>"""
-        
+
         xml_file = tmp_path / "family.xml"
         xml_file.write_text(xml_content)
-        
+
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
-        
+
         assert len(genealogy.families) >= 1
         # Vérifier attributs de famille
         family = list(genealogy.families.values())[0]
@@ -248,13 +249,13 @@ class TestXMLImporter:
     </family>
   </families>
 </genealogy>"""
-        
+
         xml_file = tmp_path / "divorce.xml"
         xml_file.write_text(xml_content)
-        
+
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
-        
+
         assert len(genealogy.families) >= 1
 
     @pytest.mark.skip(reason="Désérialisation événement à corriger - issue #XXX")
@@ -282,13 +283,13 @@ class TestXMLImporter:
   </persons>
   <families/>
 </genealogy>"""
-        
+
         xml_file = tmp_path / "event.xml"
         xml_file.write_text(xml_content)
-        
+
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
-        
+
         assert len(genealogy.persons) >= 1
 
     def test_import_date_with_prefix(self, tmp_path):
@@ -302,13 +303,13 @@ class TestXMLImporter:
   </persons>
   <families/>
 </genealogy>"""
-        
+
         xml_file = tmp_path / "date_prefix.xml"
         xml_file.write_text(xml_content)
-        
+
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
-        
+
         assert len(genealogy.persons) >= 1
 
     def test_import_date_with_calendar(self, tmp_path):
@@ -322,13 +323,13 @@ class TestXMLImporter:
   </persons>
   <families/>
 </genealogy>"""
-        
+
         xml_file = tmp_path / "date_calendar.xml"
         xml_file.write_text(xml_content)
-        
+
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
-        
+
         assert len(genealogy.persons) >= 1
 
     @pytest.mark.skip(reason="Désérialisation événement à corriger - issue #XXX")
@@ -347,13 +348,13 @@ class TestXMLImporter:
   </persons>
   <families/>
 </genealogy>"""
-        
+
         xml_file = tmp_path / "event_no_type.xml"
         xml_file.write_text(xml_content)
-        
+
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
-        
+
         assert len(genealogy.persons) >= 1
 
     def test_import_from_string_simple(self):

@@ -17,10 +17,10 @@ Classes principales :
 - XMLImporter : Import depuis format XML
 """
 
+from .base import BaseExporter, BaseImporter, ConversionError
 from .gedcom import GEDCOMExporter, GEDCOMImporter
 from .json import JSONExporter, JSONImporter
 from .xml import XMLExporter, XMLImporter
-from .base import BaseExporter, BaseImporter, ConversionError
 
 __all__ = [
     # Classes de base

@@ -9,11 +9,11 @@ Lignes manquantes principales :
 - 460, 567-568, etc. : Parsing de blocs spécifiques
 """
 
+
 import pytest
-from pathlib import Path
+
+from geneweb_py.core.exceptions import GeneWebEncodingError, GeneWebParseError
 from geneweb_py.core.parser.gw_parser import GeneWebParser
-from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.exceptions import GeneWebParseError, GeneWebEncodingError
 
 
 class TestParserFileOperations:
@@ -644,7 +644,7 @@ end"""
         """Test récupération des tokens et nodes (ligne 890-891)"""
         content = "fam DUPONT Jean\n"
         parser = GeneWebParser()
-        genealogy = parser.parse_string(content)
+        parser.parse_string(content)
 
         # Vérifier que les tokens et nodes sont accessibles
         assert hasattr(parser, "tokens")

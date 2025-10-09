@@ -11,8 +11,7 @@ from fastapi.responses import JSONResponse
 
 from .middleware.error_handler import setup_error_handlers
 from .middleware.logging import setup_logging_middleware
-from .routers import persons, families, events, genealogy
-from .dependencies import get_genealogy_service
+from .routers import events, families, genealogy, persons
 from .services.genealogy_service import GenealogyService
 
 # Service global partagé pour l'application

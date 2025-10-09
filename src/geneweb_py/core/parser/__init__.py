@@ -15,14 +15,14 @@ Optimisations de performance :
 - Dictionnaires pré-compilés pour lookups O(1)
 """
 
-from .lexical import LexicalParser, Token, TokenType
-from .syntax import SyntaxParser, BlockParser
 from .gw_parser import GeneWebParser
+from .lexical import LexicalParser, Token, TokenType
 from .streaming import (
     StreamingGeneWebParser,
-    should_use_streaming,
     estimate_memory_usage,
+    should_use_streaming,
 )
+from .syntax import BlockParser, SyntaxParser
 
 __all__ = [
     "LexicalParser",

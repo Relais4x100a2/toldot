@@ -2,22 +2,32 @@
 Tests pour les services de l'API geneweb-py.
 """
 
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 
+import pytest
+
+from geneweb_py.api.models.event import (
+    FamilyEventCreateSchema,
+    PersonalEventCreateSchema,
+)
+from geneweb_py.api.models.family import (
+    FamilyCreateSchema,
+    FamilySearchSchema,
+    FamilyUpdateSchema,
+)
+from geneweb_py.api.models.person import (
+    PersonCreateSchema,
+    PersonSearchSchema,
+    PersonUpdateSchema,
+)
 from geneweb_py.api.services.genealogy_service import GenealogyService
-from geneweb_py.api.models.person import PersonCreateSchema, PersonUpdateSchema, PersonSearchSchema
-from geneweb_py.api.models.family import FamilyCreateSchema, FamilyUpdateSchema, FamilySearchSchema
-from geneweb_py.api.models.event import PersonalEventCreateSchema, FamilyEventCreateSchema
 from geneweb_py.core.models import (
-    Genealogy,
-    Person,
+    AccessLevel,
+    EventType,
     Family,
     Gender,
-    AccessLevel,
+    Genealogy,
     MarriageStatus,
-    EventType,
+    Person,
 )
 
 
@@ -128,7 +138,7 @@ class TestPersonOperations:
             access_level="public",
         )
         created_person = service.create_person(person_data)
-        
+
         # Récupérer la personne
         person = service.get_person(created_person.unique_id)
         assert person is not None
@@ -149,11 +159,11 @@ class TestPersonOperations:
             access_level="public",
         )
         created_person = service.create_person(person_data)
-        
+
         # Mettre à jour
         update_data = PersonUpdateSchema(first_name="Jean-Pierre")
         updated_person = service.update_person(created_person.unique_id, update_data)
-        
+
         assert updated_person is not None
         assert updated_person.first_name == "Jean-Pierre"
 
@@ -173,11 +183,11 @@ class TestPersonOperations:
             access_level="public",
         )
         created_person = service.create_person(person_data)
-        
+
         # Supprimer
         result = service.delete_person(created_person.unique_id)
         assert result is True
-        
+
         # Vérifier que la personne n'existe plus
         person = service.get_person(created_person.unique_id)
         assert person is None
@@ -206,10 +216,13 @@ class TestPersonOperations:
         )
         service.create_person(
             PersonCreateSchema(
-                first_name="Marie", surname="Martin", sex="female", access_level="public"
+                first_name="Marie",
+                surname="Martin",
+                sex="female",
+                access_level="public",
             )
         )
-        
+
         search_params = PersonSearchSchema()
         persons, total = service.search_persons(search_params)
         assert total == 2
@@ -228,7 +241,7 @@ class TestPersonOperations:
                     access_level="public",
                 )
             )
-        
+
         search_params = PersonSearchSchema(page=1, size=2)
         persons, total = service.search_persons(search_params)
         assert total == 5
@@ -248,10 +261,13 @@ class TestFamilyOperations:
         )
         wife = service.create_person(
             PersonCreateSchema(
-                first_name="Marie", surname="Martin", sex="female", access_level="public"
+                first_name="Marie",
+                surname="Martin",
+                sex="female",
+                access_level="public",
             )
         )
-        
+
         family_data = FamilyCreateSchema(
             husband_id=husband.unique_id,
             wife_id=wife.unique_id,
@@ -271,7 +287,10 @@ class TestFamilyOperations:
         )
         wife = service.create_person(
             PersonCreateSchema(
-                first_name="Marie", surname="Martin", sex="female", access_level="public"
+                first_name="Marie",
+                surname="Martin",
+                sex="female",
+                access_level="public",
             )
         )
         family_data = FamilyCreateSchema(
@@ -280,7 +299,7 @@ class TestFamilyOperations:
             marriage_status="married",
         )
         created_family = service.create_family(family_data)
-        
+
         # Récupérer
         family = service.get_family(created_family.family_id)
         assert family is not None
@@ -299,7 +318,10 @@ class TestFamilyOperations:
         )
         wife = service.create_person(
             PersonCreateSchema(
-                first_name="Marie", surname="Martin", sex="female", access_level="public"
+                first_name="Marie",
+                surname="Martin",
+                sex="female",
+                access_level="public",
             )
         )
         family = service.create_family(
@@ -309,7 +331,7 @@ class TestFamilyOperations:
                 marriage_status="married",
             )
         )
-        
+
         # Mise à jour
         update_data = FamilyUpdateSchema(marriage_status="divorced")
         updated = service.update_family(family.family_id, update_data)
@@ -331,7 +353,10 @@ class TestFamilyOperations:
         )
         wife = service.create_person(
             PersonCreateSchema(
-                first_name="Marie", surname="Martin", sex="female", access_level="public"
+                first_name="Marie",
+                surname="Martin",
+                sex="female",
+                access_level="public",
             )
         )
         family_data = FamilyCreateSchema(
@@ -340,7 +365,7 @@ class TestFamilyOperations:
             marriage_status="married",
         )
         created_family = service.create_family(family_data)
-        
+
         # Supprimer
         result = service.delete_family(created_family.family_id)
         assert result is True
@@ -368,7 +393,10 @@ class TestFamilyOperations:
         )
         wife = service.create_person(
             PersonCreateSchema(
-                first_name="Marie", surname="Martin", sex="female", access_level="public"
+                first_name="Marie",
+                surname="Martin",
+                sex="female",
+                access_level="public",
             )
         )
         service.create_family(
@@ -378,7 +406,7 @@ class TestFamilyOperations:
                 marriage_status="married",
             )
         )
-        
+
         search_params = FamilySearchSchema(
             husband_id=husband.unique_id,
             wife_id=wife.unique_id,
@@ -398,7 +426,7 @@ class TestEventOperations:
                 first_name="Jean", surname="Dupont", sex="male", access_level="public"
             )
         )
-        
+
         event_data = PersonalEventCreateSchema(
             person_id=person.unique_id,
             event_type="birth",
@@ -429,7 +457,10 @@ class TestEventOperations:
         )
         wife = service.create_person(
             PersonCreateSchema(
-                first_name="Marie", surname="Martin", sex="female", access_level="public"
+                first_name="Marie",
+                surname="Martin",
+                sex="female",
+                access_level="public",
             )
         )
         family = service.create_family(
@@ -439,9 +470,10 @@ class TestEventOperations:
                 marriage_status="married",
             )
         )
-        
+
         # Le schéma attend une string qui sera convertie en FamilyEventType
         from geneweb_py.core.models import FamilyEventType
+
         event_data = FamilyEventCreateSchema(
             family_id=family.family_id,
             event_type=FamilyEventType.MARRIAGE,
@@ -457,14 +489,14 @@ class TestEventOperations:
                 first_name="Jean", surname="Dupont", sex="male", access_level="public"
             )
         )
-        event = service.create_personal_event(
+        service.create_personal_event(
             PersonalEventCreateSchema(
                 person_id=person.unique_id,
                 event_type="birth",
                 place="Paris",
             )
         )
-        
+
         # Pour l'instant get_event retourne None car les events n'ont pas d'unique_id
         # Test que la méthode fonctionne
         result = service.get_event("any_id")
@@ -473,6 +505,7 @@ class TestEventOperations:
     def test_update_event_not_found(self, service):
         """Test mise à jour événement inexistant."""
         from geneweb_py.api.models.event import EventUpdateSchema
+
         result = service.update_event("non_existent", EventUpdateSchema())
         assert result is None
 
@@ -503,7 +536,7 @@ class TestEventOperations:
                 place="Paris",
             )
         )
-        
+
         search_params = {"query": "Paris"}
         events, total = service.search_events(search_params)
         assert isinstance(events, list)
@@ -528,7 +561,7 @@ class TestEventOperations:
                 first_name="Jean", surname="Dupont", sex="male", access_level="public"
             )
         )
-        
+
         search_params = {"person_id": person.unique_id}
         events, total = service.search_events(search_params)
         assert isinstance(events, list)
@@ -565,7 +598,7 @@ class TestStatistics:
         """Test statistiques sur généalogie vide."""
         service.create_empty()
         stats = service.get_stats()
-        
+
         assert "total_persons" in stats
         assert "total_families" in stats
         assert stats["total_persons"] == 0
@@ -582,10 +615,13 @@ class TestStatistics:
         )
         service.create_person(
             PersonCreateSchema(
-                first_name="Marie", surname="Martin", sex="female", access_level="public"
+                first_name="Marie",
+                surname="Martin",
+                sex="female",
+                access_level="public",
             )
         )
-        
+
         stats = service.get_stats()
         assert stats["total_persons"] == 2
         assert "persons_by_sex" in stats
@@ -596,7 +632,7 @@ class TestStatistics:
     def test_get_stats_structure(self, service):
         """Test structure des statistiques."""
         stats = service.get_stats()
-        
+
         # Vérifier les clés essentielles
         required_keys = [
             "total_persons",
@@ -607,4 +643,3 @@ class TestStatistics:
         ]
         for key in required_keys:
             assert key in stats, f"Missing key: {key}"
-

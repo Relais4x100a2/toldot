@@ -6,6 +6,7 @@ pour une publication PyPI réussie.
 """
 
 import sys
+
 import pytest
 
 
@@ -38,8 +39,8 @@ def test_author_info():
 
     # Ces attributs peuvent être optionnels, mais c'est mieux de les avoir
     # On vérifie juste qu'ils existent ou pas
-    has_author = hasattr(geneweb_py, "__author__")
-    has_email = hasattr(geneweb_py, "__email__")
+    hasattr(geneweb_py, "__author__")
+    hasattr(geneweb_py, "__email__")
     # Au moins un des deux devrait être présent
     # (pour l'instant, on accepte qu'ils ne soient pas là)
 
@@ -106,12 +107,12 @@ def test_classifiers_present():
 
         if classifiers:
             # Vérifier présence de classifiers importants
-            assert any(
-                "Programming Language :: Python" in c for c in classifiers
-            ), "Manque classifier Programming Language"
-            assert any(
-                "License ::" in c for c in classifiers
-            ), "Manque classifier License"
+            assert any("Programming Language :: Python" in c for c in classifiers), (
+                "Manque classifier Programming Language"
+            )
+            assert any("License ::" in c for c in classifiers), (
+                "Manque classifier License"
+            )
 
     except metadata.PackageNotFoundError:
         pytest.skip("Package non installé (mode développement)")
@@ -143,8 +144,9 @@ def test_dependencies_listed():
 
 def test_package_structure():
     """Test que la structure du package est correcte"""
-    import geneweb_py
     from pathlib import Path
+
+    import geneweb_py
 
     # Le package doit avoir ces sous-modules
     expected_modules = ["core", "formats", "api"]
@@ -160,7 +162,6 @@ def test_package_structure():
 
 def test_no_dev_dependencies_in_core():
     """Vérifier qu'aucune dépendance de dev n'est requise pour l'utilisation basique"""
-    import geneweb_py
     from geneweb_py import GeneWebParser
 
     # Ces imports ne doivent PAS nécessiter pytest, black, etc.

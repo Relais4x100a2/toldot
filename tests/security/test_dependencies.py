@@ -5,9 +5,9 @@ Vérifie que les dépendances n'ont pas de vulnérabilités connues
 et que les versions sont appropriées.
 """
 
-import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 def test_minimal_dependencies():
@@ -35,9 +35,9 @@ def test_minimal_dependencies():
             dep_count += 1
 
     # Maximum 10 dépendances obligatoires pour une lib
-    assert (
-        dep_count <= 10
-    ), f"Trop de dépendances obligatoires ({dep_count}), limite: 10"
+    assert dep_count <= 10, (
+        f"Trop de dépendances obligatoires ({dep_count}), limite: 10"
+    )
 
 
 def test_dependencies_have_versions():
@@ -102,7 +102,6 @@ def test_dependencies_licenses_compatible():
     # chardet: LGPL (compatible avec MIT pour usage)
 
     # Licences incompatibles avec MIT pour distribution
-    incompatible_licenses = ["GPL-3.0", "AGPL"]
 
     # Pour l'instant, test simple : vérifier qu'on n'a pas de dépendances GPL
     # (nécessiterait pip-licenses pour un test complet)
@@ -150,9 +149,9 @@ def test_no_test_dependencies_in_main():
     main_deps_str = "\n".join(main_deps_content)
 
     for pkg in test_packages:
-        assert (
-            pkg not in main_deps_str
-        ), f"Package de test {pkg} trouvé dans dependencies principales"
+        assert pkg not in main_deps_str, (
+            f"Package de test {pkg} trouvé dans dependencies principales"
+        )
 
 
 def test_secure_imports():
@@ -179,9 +178,9 @@ def test_secure_imports():
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Import):
                         for alias in node.names:
-                            assert (
-                                alias.name not in dangerous_modules
-                            ), f"Import dangereux '{alias.name}' dans {py_file}"
+                            assert alias.name not in dangerous_modules, (
+                                f"Import dangereux '{alias.name}' dans {py_file}"
+                            )
 
                     elif isinstance(node, ast.ImportFrom):
                         if node.module in dangerous_modules:

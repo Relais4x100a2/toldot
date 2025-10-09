@@ -6,11 +6,11 @@ de formats généalogiques.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, Optional, Union
 
-from ..core.genealogy import Genealogy
 from ..core.exceptions import GeneWebConversionError
+from ..core.genealogy import Genealogy
 
 
 class ConversionError(GeneWebConversionError):

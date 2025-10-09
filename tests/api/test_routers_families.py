@@ -2,14 +2,15 @@
 Tests pour le router families de l'API geneweb-py.
 """
 
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import Mock
 
-from geneweb_py.api.main import app
+import pytest
+from fastapi.testclient import TestClient
+
 from geneweb_py.api.dependencies import get_genealogy_service
-from geneweb_py.core.models import Family, MarriageStatus
+from geneweb_py.api.main import app
 from geneweb_py.api.services.genealogy_service import GenealogyService
+from geneweb_py.core.models import Family, MarriageStatus
 
 
 @pytest.fixture
@@ -123,7 +124,9 @@ class TestUpdateFamily:
         """Test mise à jour d'une famille inexistante."""
         mock_service.update_family.return_value = None
 
-        response = client.put("/api/v1/families/unknown", json={"marriage_status": "married"})
+        response = client.put(
+            "/api/v1/families/unknown", json={"marriage_status": "married"}
+        )
 
         assert response.status_code == 404
 

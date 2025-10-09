@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint:
-    name: Linting (flake8, mypy, black)
+    name: Linting (ruff, mypy)
     runs-on: ubuntu-latest
     
     steps:
@@ -25,19 +25,17 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e ".[dev,api,validation]"
-        pip install black flake8 mypy
+        pip install ruff mypy
     
-    - name: Check formatting with Black
+    - name: Check formatting with Ruff
       run: |
-        echo "Vérification du formatage avec Black..."
-        black --check --diff src/geneweb_py/ tests/
-      continue-on-error: true
+        echo "Vérification du formatage avec Ruff..."
+        ruff format --check --diff .
     
-    - name: Lint with flake8
+    - name: Lint with Ruff
       run: |
-        echo "Linting avec flake8..."
-        flake8 src/geneweb_py/ --count --statistics --show-source
-      continue-on-error: true
+        echo "Linting avec Ruff..."
+        ruff check . --output-format=github
     
     - name: Type checking with mypy
       run: |
@@ -51,8 +49,8 @@ jobs:
         echo "================================================"
         echo "  RÉSUMÉ LINTING"
         echo "================================================"
-        echo "✅ Black : Vérifier les logs ci-dessus"
-        echo "✅ Flake8 : Vérifier les logs ci-dessus"
+        echo "✅ Ruff Format : Vérifier les logs ci-dessus"
+        echo "✅ Ruff Check : Vérifier les logs ci-dessus"
         echo "✅ Mypy : Vérifier les logs ci-dessus"
         echo "================================================"
 

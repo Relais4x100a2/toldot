@@ -5,17 +5,18 @@ Ces tests vérifient que le parser peut gérer les erreurs de manière gracieuse
 et continuer le parsing au lieu de s'arrêter à la première erreur.
 """
 
-import pytest
 from pathlib import Path
 
-from geneweb_py.core.parser.gw_parser import GeneWebParser
+import pytest
+
 from geneweb_py.core.exceptions import (
+    ErrorSeverity,
+    GeneWebErrorCollector,
     GeneWebParseError,
     GeneWebValidationError,
-    GeneWebErrorCollector,
     ParseWarning,
-    ErrorSeverity,
 )
+from geneweb_py.core.parser.gw_parser import GeneWebParser
 
 
 class TestErrorCollector:
@@ -216,7 +217,6 @@ class TestErrorRecovery:
 
     def test_simple_valid_content(self):
         """Test avec contenu simple et valide - utilise une fixture existante"""
-        from pathlib import Path
 
         # Utiliser une fixture existante qui fonctionne
         fixture_file = Path(__file__).parent.parent / "fixtures" / "simple_test.gw"

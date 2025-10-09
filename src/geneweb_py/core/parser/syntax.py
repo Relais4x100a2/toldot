@@ -6,11 +6,11 @@ l'arbre syntaxique des blocs structurés GeneWeb.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any, Iterator, Tuple
 from enum import Enum
+from typing import Any, Dict, List, Tuple
 
-from .lexical import Token, TokenType, LexicalParser
 from ..exceptions import GeneWebParseError
+from .lexical import Token, TokenType
 
 
 class BlockType(Enum):
@@ -47,7 +47,7 @@ class SyntaxNode:
 class BlockParser:
     """Parser pour un type de bloc spécifique"""
 
-    def __init__(self, block_type: BlockType):
+    def __init__(self, block_type: BlockType) -> None:
         self.block_type = block_type
 
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
@@ -69,7 +69,7 @@ class BlockParser:
 class FamilyBlockParser(BlockParser):
     """Parser spécialisé pour les blocs famille (fam)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(BlockType.FAMILY)
 
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
@@ -433,7 +433,7 @@ class FamilyBlockParser(BlockParser):
 class PersonEventsBlockParser(BlockParser):
     """Parser spécialisé pour les blocs événements personnels (pevt)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(BlockType.PERSON_EVENTS)
 
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
@@ -597,7 +597,7 @@ class PersonEventsBlockParser(BlockParser):
 class FamilyEventsBlockParser(BlockParser):
     """Parser spécialisé pour les blocs événements familiaux (fevt)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(BlockType.FAMILY_EVENTS)
 
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
@@ -733,7 +733,7 @@ class FamilyEventsBlockParser(BlockParser):
 class NotesBlockParser(BlockParser):
     """Parser spécialisé pour les blocs notes"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(BlockType.NOTES)
 
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
@@ -806,7 +806,7 @@ class NotesBlockParser(BlockParser):
 class RelationsBlockParser(BlockParser):
     """Parser spécialisé pour les blocs relations (rel)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(BlockType.RELATIONS)
 
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
@@ -923,7 +923,7 @@ class RelationsBlockParser(BlockParser):
 class DatabaseNotesBlockParser(BlockParser):
     """Parser spécialisé pour les blocs notes de base de données (notes-db)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(BlockType.DATABASE_NOTES)
 
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
@@ -974,7 +974,7 @@ class DatabaseNotesBlockParser(BlockParser):
 class ExtendedPageBlockParser(BlockParser):
     """Parser spécialisé pour les blocs pages étendues (page-ext)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(BlockType.EXTENDED_PAGE)
 
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
@@ -1040,7 +1040,7 @@ class ExtendedPageBlockParser(BlockParser):
 class WizardNoteBlockParser(BlockParser):
     """Parser spécialisé pour les blocs notes de wizard (wizard-note)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(BlockType.WIZARD_NOTE)
 
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
@@ -1106,7 +1106,7 @@ class WizardNoteBlockParser(BlockParser):
 class SyntaxParser:
     """Parser syntaxique principal pour les fichiers .gw"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.block_parsers = {
             TokenType.FAM: FamilyBlockParser(),
             TokenType.NOTES: NotesBlockParser(),

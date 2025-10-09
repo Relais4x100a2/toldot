@@ -103,25 +103,25 @@ echo ""
 echo "3. Qualité du code"
 echo "=================="
 
-# Black
-check "Vérification formatage (black)"
-if black --check geneweb_py/ tests/ > /dev/null 2>&1; then
+# Ruff format
+check "Vérification formatage (ruff format)"
+if ruff format --check . > /dev/null 2>&1; then
     pass
 else
-    fail "Formatage incorrect, exécuter: black geneweb_py/ tests/"
+    fail "Formatage incorrect, exécuter: ruff format ."
 fi
 
-# Flake8
-check "Vérification linting (flake8)"
-if flake8 geneweb_py/ tests/ --count --statistics > /dev/null 2>&1; then
+# Ruff check
+check "Vérification linting (ruff check)"
+if ruff check . > /dev/null 2>&1; then
     pass
 else
-    warn "Quelques warnings flake8"
+    warn "Quelques warnings ruff"
 fi
 
 # Mypy
 check "Vérification types (mypy)"
-if mypy geneweb_py/ --ignore-missing-imports > /dev/null 2>&1; then
+if mypy src/geneweb_py/ --ignore-missing-imports > /dev/null 2>&1; then
     pass
 else
     warn "Quelques erreurs de typage"

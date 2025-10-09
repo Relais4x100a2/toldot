@@ -6,12 +6,12 @@ familles et métadonnées d'une base généalogique GeneWeb.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Any, Tuple
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .person import Person
+from .exceptions import GeneWebError, GeneWebValidationError
 from .family import Family
-from .exceptions import GeneWebValidationError, GeneWebError
+from .person import Person
 
 
 @dataclass

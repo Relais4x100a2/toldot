@@ -8,6 +8,7 @@ le monitoring et le debugging.
 import logging
 import time
 from typing import Callable
+
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 

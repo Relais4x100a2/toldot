@@ -6,12 +6,13 @@ avec support des événements gwplus.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from enum import Enum
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from .date import Date
 
 if TYPE_CHECKING:
-    from .person import Person
+    pass
 
 
 class EventType(Enum):
@@ -155,7 +156,7 @@ class FamilyEvent(Event):
 
     family_event_type: FamilyEventType = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialisation post-création"""
         if self.family_event_type:
             # Mapper le type familial vers le type générique
@@ -179,7 +180,7 @@ class FamilyEvent(Event):
 class PersonalEvent(Event):
     """Événement personnel spécifique (format gwplus)"""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialisation post-création"""
         # Les événements personnels ne sont jamais familiaux
         pass

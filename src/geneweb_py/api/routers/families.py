@@ -2,23 +2,22 @@
 Router FastAPI pour la gestion des familles dans l'API geneweb-py.
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, Query
-from fastapi.responses import JSONResponse
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..models.family import (
-    FamilySchema,
     FamilyCreateSchema,
-    FamilyUpdateSchema,
-    FamilySearchSchema,
     FamilyListSchema,
+    FamilySchema,
+    FamilySearchSchema,
     FamilyStatsSchema,
+    FamilyUpdateSchema,
 )
 from ..models.responses import (
-    SuccessResponse,
     PaginatedResponse,
     PaginationInfo,
-    ErrorResponse,
+    SuccessResponse,
 )
 from ..services.genealogy_service import GenealogyService
 

@@ -5,31 +5,25 @@ Ce service fournit les opérations CRUD et la logique métier pour manipuler
 les données généalogiques.
 """
 
-from typing import List, Dict, Any, Optional, Tuple
-import uuid
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
 from ...core.models import (
+    Event,
+    Family,
+    FamilyEvent,
     Genealogy,
     Person,
-    Family,
-    Event,
     PersonalEvent,
-    FamilyEvent,
-    Gender,
-    AccessLevel,
-    MarriageStatus,
-    EventType,
-    FamilyEventType,
 )
 from ...core.parser import GeneWebParser
-from ..models.person import PersonCreateSchema, PersonUpdateSchema, PersonSearchSchema
-from ..models.family import FamilyCreateSchema, FamilyUpdateSchema, FamilySearchSchema
 from ..models.event import (
-    PersonalEventCreateSchema,
-    FamilyEventCreateSchema,
     EventUpdateSchema,
+    FamilyEventCreateSchema,
+    PersonalEventCreateSchema,
 )
+from ..models.family import FamilyCreateSchema, FamilySearchSchema, FamilyUpdateSchema
+from ..models.person import PersonCreateSchema, PersonSearchSchema, PersonUpdateSchema
 
 
 class GenealogyService:
@@ -44,7 +38,6 @@ class GenealogyService:
 
     def _initialize_empty_genealogy(self) -> None:
         """Initialise une généalogie avec des données de test."""
-        import os
         from pathlib import Path
 
         # Essayer de charger un fichier de test

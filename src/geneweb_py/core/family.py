@@ -6,14 +6,14 @@ enfants et événements familiaux.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Set, Any, Union, TYPE_CHECKING
 from enum import Enum
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from .date import Date
-from .event import FamilyEvent, EventType, FamilyEventType
+from .event import EventType, FamilyEvent, FamilyEventType
 
 if TYPE_CHECKING:
-    from .person import Person
+    pass
 
 
 class MarriageStatus(Enum):

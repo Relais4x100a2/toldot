@@ -2,17 +2,17 @@
 Tests pour le convertisseur JSON
 """
 
-import pytest
 import json
-import tempfile
 import os
-from pathlib import Path
-from geneweb_py.formats.json import JSONExporter, JSONImporter, ConversionError
-from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person, Gender
-from geneweb_py.core.family import Family, MarriageStatus
-from geneweb_py.core.event import Event, EventType
+import tempfile
+
+import pytest
+
 from geneweb_py.core.date import Date
+from geneweb_py.core.family import Family, MarriageStatus
+from geneweb_py.core.genealogy import Genealogy
+from geneweb_py.core.person import Gender, Person
+from geneweb_py.formats.json import ConversionError, JSONExporter, JSONImporter
 
 
 @pytest.fixture
@@ -70,7 +70,7 @@ class TestJSONExporter:
             assert os.path.exists(temp_path)
 
             # Vérifier le contenu JSON
-            with open(temp_path, "r", encoding="utf-8") as f:
+            with open(temp_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             assert "persons" in data

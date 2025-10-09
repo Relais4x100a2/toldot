@@ -5,9 +5,9 @@ Focus sur les lignes : 296-297, 340-350, 460, 628-633, 686-688, 782-784, 1075-10
 """
 
 import pytest
-from geneweb_py.core.parser.gw_parser import GeneWebParser
-from geneweb_py.core.genealogy import Genealogy
+
 from geneweb_py.core.exceptions import GeneWebParseError
+from geneweb_py.core.parser.gw_parser import GeneWebParser
 
 
 class TestParserFamilyBuilding:

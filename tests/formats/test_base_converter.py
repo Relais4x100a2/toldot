@@ -3,10 +3,10 @@ Tests pour les classes de base des convertisseurs
 """
 
 import pytest
-from geneweb_py.formats.base import BaseExporter, BaseImporter, ConversionError
+
 from geneweb_py.core.genealogy import Genealogy
-from geneweb_py.core.person import Person, Gender
-from geneweb_py.core.date import Date
+from geneweb_py.core.person import Gender, Person
+from geneweb_py.formats.base import BaseExporter, BaseImporter, ConversionError
 
 
 class TestConversionError:

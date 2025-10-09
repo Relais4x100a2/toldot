@@ -6,11 +6,11 @@ personnelles, événements et relations familiales.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Set, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from .date import Date
-from .event import Event, PersonalEvent
+from .event import PersonalEvent
 
 
 class Gender(Enum):
@@ -142,7 +142,7 @@ class Person:
         default_factory=list
     )  # List[GeneWebError] mais évite import circulaire
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validation après initialisation"""
         # Normaliser les noms (remplacer espaces par underscores)
         self.last_name = self.last_name.replace(" ", "_")

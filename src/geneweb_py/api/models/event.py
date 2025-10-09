@@ -2,10 +2,11 @@
 Schémas Pydantic pour les événements dans l'API geneweb-py.
 """
 
-from typing import Optional, List, Dict, Any, Union
+from typing import Dict, List, Optional, Union
+
 from pydantic import BaseModel, Field, field_validator
 
-from ...core.models import Event, EventType, FamilyEventType
+from ...core.models import EventType, FamilyEventType
 
 
 class EventBaseSchema(BaseModel):

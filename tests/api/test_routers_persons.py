@@ -2,14 +2,15 @@
 Tests pour le router persons de l'API geneweb-py.
 """
 
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import Mock
 
-from geneweb_py.api.main import app
+import pytest
+from fastapi.testclient import TestClient
+
 from geneweb_py.api.dependencies import get_genealogy_service
-from geneweb_py.core.models import Person, Gender, AccessLevel, Date
+from geneweb_py.api.main import app
 from geneweb_py.api.services.genealogy_service import GenealogyService
+from geneweb_py.core.models import AccessLevel, Gender, Person
 
 
 @pytest.fixture
@@ -246,9 +247,7 @@ class TestListPersons:
         """Test liste avec filtres."""
         mock_service.search_persons.return_value = ([sample_person], 1)
 
-        response = client.get(
-            "/api/v1/persons/?first_name=Jean&surname=Dupont"
-        )
+        response = client.get("/api/v1/persons/?first_name=Jean&surname=Dupont")
 
         assert response.status_code == 200
         data = response.json()

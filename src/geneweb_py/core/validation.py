@@ -5,21 +5,20 @@ Ce module fournit des outils pour valider les données généalogiques de maniè
 gracieuse, en collectant toutes les erreurs au lieu de s'arrêter à la première.
 """
 
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, List, Optional
 
 from .exceptions import (
-    GeneWebValidationError,
-    GeneWebErrorCollector,
-    ValidationResult,
     ErrorSeverity,
-    ParseWarning,
+    GeneWebErrorCollector,
+    GeneWebValidationError,
+    ValidationResult,
 )
 
 if TYPE_CHECKING:
-    from .person import Person
     from .family import Family
     from .genealogy import Genealogy
+    from .person import Person
 
 
 @dataclass
@@ -397,7 +396,7 @@ def create_partial_person(
     Returns:
         Objet Person avec is_valid=False et validation_errors rempli
     """
-    from .person import Person, Gender
+    from .person import Gender, Person
 
     person = Person(
         last_name=last_name or "UNKNOWN",
