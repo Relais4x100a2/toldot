@@ -2,7 +2,6 @@
 Tests d'intégration pour vérifier la capture complète des personnes
 """
 
-
 import pytest
 
 from geneweb_py import GeneWebParser

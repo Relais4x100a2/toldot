@@ -2,7 +2,6 @@
 Tests pour les services de l'API geneweb-py.
 """
 
-
 import pytest
 
 from geneweb_py.api.models.event import (
