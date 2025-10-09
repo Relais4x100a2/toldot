@@ -75,9 +75,9 @@ geneweb-py est une librairie Python pour parser, manipuler et convertir les fich
 
 ## 🧪 Qualité et tests
 
-### Couverture de tests : **83.4%** ✅
+### Couverture de tests : **85.7%** ✅
 
-**Dernière mise à jour** : 9 octobre 2025 - **Tests complets ajoutés** ✨
+**Dernière mise à jour** : 9 octobre 2025 - **Approche perfectionniste en cours** 🎯
 
 | Catégorie | Couverture | État |
 |-----------|-----------|------|
@@ -91,7 +91,7 @@ geneweb-py est une librairie Python pour parser, manipuler et convertir les fich
 | **Formats** | 75-90% | 🟡 Bon |
 | **TOTAL** | **83.4%** | ⭐ Excellent |
 
-**558 tests passants** ✅ - +93 nouveaux tests ajoutés
+**635 tests passants** ✅ - +170 nouveaux tests depuis v0.1.0
 
 **Consolidation accomplie** : 
 - **Réduction de 42 à 18 fichiers** de tests unitaires
@@ -123,8 +123,8 @@ tests/
 ```
 
 ### Tests disponibles
-- **558 tests passants** (93.5%) - Tous les tests critiques sont verts
-- **39 tests skippés** (6.5%) - Documentés avec raisons (fixtures manquantes, fonctionnalités non implémentées)
+- **635 tests passants** (92.4%) - Tous les tests critiques sont verts
+- **52 tests skippés** (7.6%) - Documentés avec raisons (fonctionnalités non implémentées, bugs à corriger)
 - Tests de récupération d'erreurs (`test_error_recovery.py`)
 - Tests de validation gracieuse (`test_validation_graceful.py`)
 - Tests de parsing complet avec vrais fichiers
@@ -139,12 +139,15 @@ tests/
 - **Traceback court** : Pour des rapports concis
 - Seuil CI défini à 80% dans `pyproject.toml`
 
-### Améliorations récentes
-- ✨ **Tests API complets** : 108 nouveaux tests (routers, models, middleware, services)
-- 🚀 **Tests streaming** : 32 nouveaux tests (17% → 97% couverture)
-- 📈 **Couverture API** : De 0% à 65-68%
-- 🎯 **Couverture globale** : De 64% à 83.4%
-- 🧪 **Total tests** : 558 passants (+93 tests)
+### Améliorations récentes (Session Perfectionniste)
+- ✨ **Tests API massifs** : 140+ tests (routers, services, models, middleware)
+- 🚀 **Tests streaming** : 32 tests (17% → 97% couverture)
+- 🎯 **Router genealogy** : 29% → 69% (+40 points)
+- 📈 **Services API** : 54% → 67% (+13 points)
+- 🌟 **Main API** : 88% → 100% (couverture parfaite)
+- 🧪 **Total tests** : 635 passants (+170 depuis v0.1.0)
+- 🎯 **Progression** : 64% → 85.7% (+21.7 points)
+- 📋 **Objectif 90%** : Plus que 4.3 points
 
 ## 🚧 Travaux en cours
 - **Tests API REST** ✅ (Complété)
