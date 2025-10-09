@@ -101,6 +101,63 @@ class TestEventModels:
         from geneweb_py.core.models import EventType
         assert event.event_type == EventType.BIRTH
 
+    def test_personal_event_with_all_fields(self):
+        """Test événement avec tous les champs."""
+        event = PersonalEventCreateSchema(
+            person_id="p001",
+            event_type="birth",
+            date="1950-01-01",
+            place="Paris",
+            reason="Raison",
+            note="Note de test",
+            witnesses=["Témoin 1"],
+            sources=["Source 1"],
+        )
+        assert event.person_id == "p001"
+        assert event.date == "1950-01-01"
+        assert event.place == "Paris"
+        assert len(event.witnesses) == 1
+
+    def test_family_event_create(self):
+        """Test création d'événement familial."""
+        from geneweb_py.api.models.event import FamilyEventCreateSchema
+        from geneweb_py.core.models import FamilyEventType
+        
+        event = FamilyEventCreateSchema(
+            family_id="f001",
+            event_type=FamilyEventType.MARRIAGE,
+            place="Lyon",
+        )
+        assert event.family_id == "f001"
+
+    def test_event_update_schema(self):
+        """Test schéma de mise à jour événement."""
+        from geneweb_py.api.models.event import EventUpdateSchema
+        
+        update = EventUpdateSchema(
+            place="New Place",
+            reason="New Reason",
+        )
+        assert update.place == "New Place"
+
+    def test_event_schema_complete(self):
+        """Test schéma événement complet."""
+        from geneweb_py.api.models.event import EventSchema
+        from geneweb_py.core.models import EventType
+        
+        event = EventSchema(
+            id="evt_001",
+            event_type=EventType.BIRTH,
+            date="1950-01-01",
+            place="Paris",
+            reason="Raison",
+            notes=["Note 1"],
+            witnesses=["Témoin 1"],
+            sources=["Source 1"],
+            person_id="p001",
+        )
+        assert event.id == "evt_001"
+
 
 class TestResponseModels:
     """Tests pour les modèles de réponse."""
