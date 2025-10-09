@@ -30,19 +30,19 @@ jobs:
     - name: Check formatting with Black
       run: |
         echo "Vérification du formatage avec Black..."
-        black --check --diff geneweb_py/ tests/
+        black --check --diff src/geneweb_py/ tests/
       continue-on-error: true
     
     - name: Lint with flake8
       run: |
         echo "Linting avec flake8..."
-        flake8 geneweb_py/ --count --statistics --show-source
+        flake8 src/geneweb_py/ --count --statistics --show-source
       continue-on-error: true
     
     - name: Type checking with mypy
       run: |
         echo "Vérification des types avec mypy..."
-        mypy geneweb_py/ --ignore-missing-imports
+        mypy src/geneweb_py/ --ignore-missing-imports
       continue-on-error: true
     
     - name: Summary

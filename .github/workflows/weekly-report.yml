@@ -30,7 +30,7 @@ jobs:
     
     - name: Generate coverage report
       run: |
-        pytest tests/ --cov=geneweb_py --cov-report=json --cov-report=term || true
+        pytest tests/ --cov=src/geneweb_py --cov-report=json --cov-report=term || true
     
     - name: Generate weekly summary
       run: |

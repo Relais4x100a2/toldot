@@ -32,7 +32,7 @@ jobs:
     - name: Generate detailed coverage report
       run: |
         pytest tests/ \
-          --cov=geneweb_py \
+          --cov=src/geneweb_py \
           --cov-report=html \
           --cov-report=json \
           --cov-report=term-missing \
@@ -57,7 +57,7 @@ jobs:
         # Trier les fichiers par couverture
         files = []
         for filename, file_data in data['files'].items():
-            if filename.startswith('geneweb_py/'):
+            if filename.startswith('src/geneweb_py/'):
                 coverage = file_data['summary']['percent_covered']
                 files.append((filename, coverage, file_data['summary']['missing_lines']))
         
@@ -130,10 +130,10 @@ jobs:
         print("|--------|-----------|------|")
         
         # Modules core
-        core_modules = [f for f in data['files'].keys() if 'geneweb_py/core/' in f and '__pycache__' not in f]
+        core_modules = [f for f in data['files'].keys() if 'src/geneweb_py/core/' in f and '__pycache__' not in f]
         for module in sorted(core_modules):
             cov = data['files'][module]['summary']['percent_covered']
-            name = module.replace('geneweb_py/core/', '')
+            name = module.replace('src/geneweb_py/core/', '')
             if cov >= 95:
                 status = "⭐ Excellent"
             elif cov >= 90:

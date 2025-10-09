@@ -30,7 +30,7 @@ jobs:
     - name: Run tests on changed files
       run: |
         pytest tests/ \
-          --cov=geneweb_py \
+          --cov=src/geneweb_py \
           --cov-report=term-missing \
           --cov-fail-under=84 \
           -v
