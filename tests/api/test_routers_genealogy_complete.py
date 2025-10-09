@@ -45,9 +45,13 @@ def populated_genealogy():
 class TestExportGenealogyComplete:
     """Tests complets pour l'export de généalogies."""
 
-    def test_export_json_success(self, client, mock_service, populated_genealogy):
+    def test_export_json_success(self, client, mock_service, populated_genealogy, tmp_path):
         """Test export JSON avec données."""
         mock_service.genealogy = populated_genealogy
+
+        # Créer un vrai fichier temporaire
+        temp_file = tmp_path / "test.json"
+        temp_file.write_text("{}")  # Fichier vide valide
 
         with patch("geneweb_py.api.routers.genealogy.JSONExporter") as MockExporter:
             mock_exporter = MagicMock()
@@ -57,22 +61,24 @@ class TestExportGenealogyComplete:
             with patch(
                 "geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile"
             ) as mock_temp:
-                mock_temp.return_value.__enter__.return_value.name = "/tmp/test.json"
-                mock_temp.return_value.close.return_value = None
+                # Mock qui retourne notre vrai fichier
+                temp_mock = MagicMock()
+                temp_mock.name = str(temp_file)
+                mock_temp.return_value = temp_mock
 
-                with patch(
-                    "geneweb_py.api.routers.genealogy.FileResponse"
-                ) as MockResponse:
-                    MockResponse.return_value = MagicMock()
+                response = client.get("/api/v1/genealogy/export/json")
 
-                    client.get("/api/v1/genealogy/export/json")
+                # Vérifier que l'export a été appelé
+                assert response.status_code == 200
+                mock_exporter.export.assert_called_once()
 
-                    # Vérifier que l'export a été appelé
-                    mock_exporter.export.assert_called_once()
-
-    def test_export_xml_success(self, client, mock_service, populated_genealogy):
+    def test_export_xml_success(self, client, mock_service, populated_genealogy, tmp_path):
         """Test export XML avec données."""
         mock_service.genealogy = populated_genealogy
+
+        # Créer un vrai fichier temporaire
+        temp_file = tmp_path / "test.xml"
+        temp_file.write_text("<genealogy/>")  # Fichier XML vide valide
 
         with patch("geneweb_py.api.routers.genealogy.XMLExporter") as MockExporter:
             mock_exporter = MagicMock()
@@ -82,20 +88,23 @@ class TestExportGenealogyComplete:
             with patch(
                 "geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile"
             ) as mock_temp:
-                mock_temp.return_value.__enter__.return_value.name = "/tmp/test.xml"
-                mock_temp.return_value.close.return_value = None
+                # Mock qui retourne notre vrai fichier
+                temp_mock = MagicMock()
+                temp_mock.name = str(temp_file)
+                mock_temp.return_value = temp_mock
 
-                with patch(
-                    "geneweb_py.api.routers.genealogy.FileResponse"
-                ) as MockResponse:
-                    MockResponse.return_value = MagicMock()
+                response = client.get("/api/v1/genealogy/export/xml")
 
-                    client.get("/api/v1/genealogy/export/xml")
-                    mock_exporter.export.assert_called_once()
+                assert response.status_code == 200
+                mock_exporter.export.assert_called_once()
 
-    def test_export_gedcom_success(self, client, mock_service, populated_genealogy):
+    def test_export_gedcom_success(self, client, mock_service, populated_genealogy, tmp_path):
         """Test export GEDCOM avec données."""
         mock_service.genealogy = populated_genealogy
+
+        # Créer un vrai fichier temporaire
+        temp_file = tmp_path / "test.ged"
+        temp_file.write_text("0 HEAD\n0 TRLR")  # Fichier GEDCOM minimal valide
 
         with patch("geneweb_py.api.routers.genealogy.GEDCOMExporter") as MockExporter:
             mock_exporter = MagicMock()
@@ -105,16 +114,15 @@ class TestExportGenealogyComplete:
             with patch(
                 "geneweb_py.api.routers.genealogy.tempfile.NamedTemporaryFile"
             ) as mock_temp:
-                mock_temp.return_value.__enter__.return_value.name = "/tmp/test.ged"
-                mock_temp.return_value.close.return_value = None
+                # Mock qui retourne notre vrai fichier
+                temp_mock = MagicMock()
+                temp_mock.name = str(temp_file)
+                mock_temp.return_value = temp_mock
 
-                with patch(
-                    "geneweb_py.api.routers.genealogy.FileResponse"
-                ) as MockResponse:
-                    MockResponse.return_value = MagicMock()
+                response = client.get("/api/v1/genealogy/export/gedcom")
 
-                    client.get("/api/v1/genealogy/export/gedcom")
-                    mock_exporter.export.assert_called_once()
+                assert response.status_code == 200
+                mock_exporter.export.assert_called_once()
 
     def test_export_gw_not_implemented(self, client, mock_service):
         """Test export GW non implémenté."""
