@@ -75,9 +75,9 @@ geneweb-py est une librairie Python pour parser, manipuler et convertir les fich
 
 ## 🧪 Qualité et tests
 
-### Couverture de tests : **85.5%** ✅
+### Couverture de tests : **85.4%** ✅
 
-**Dernière mise à jour** : 9 octobre 2025 - **Session perfectionniste - 4/6 modules prioritaires améliorés** 🎯
+**Dernière mise à jour** : 9 octobre 2025 - **Sessions perfectionnistes complètes + Autofix CI/CD** 🎯
 
 | Catégorie | Couverture | État |
 |-----------|-----------|------|
@@ -139,14 +139,16 @@ tests/
 - **Traceback court** : Pour des rapports concis
 - Seuil CI défini à 80% dans `pyproject.toml`
 
-### Améliorations récentes (Session Perfectionniste - Suite)
+### Améliorations récentes (Sessions Perfectionnistes 1 & 2)
 - 🌟 **4 modules à 99%** : `core/event.py`, `core/family.py`, `core/validation.py` (98%), `api/routers/events.py` (91%)
 - ✨ **+75 nouveaux tests** : Couvrant méthodes utilitaires et cas edge
 - 📝 **Nouveau fichier** : `test_event.py` (23 tests) pour couvrir Event/FamilyEvent/PersonalEvent
-- 🎯 **Couverture améliorée** : 83.3% → 85.5% (+2.2 points)
-- 🧪 **Total tests** : 671 passants (+75 depuis dernière session)
-- 📋 **Objectif 90%** : Plus que 4.5 points (213 lignes)
-- 🔥 **Méthodologie validée** : "Commit-Verify-Iterate" avec push fréquents
+- 🎯 **Couverture améliorée** : 83.3% → 85.4% (+2.1 points)
+- 🧪 **Total tests** : 671 passants (+75)
+- 🔧 **Autofix massif** : 310 erreurs Ruff corrigées, 31 fichiers reformatés
+- 🏗️ **Modernisation** : Configuration Ruff only (Black/Flake8 supprimés)
+- 📋 **Objectif 90%** : Plus que 4.6 points (684 lignes, estimé 4-5h)
+- 🔥 **Méthodologie validée** : "Commit-Verify-Iterate" + alignement CI/CD parfait
 
 ## 🚧 Travaux en cours
 - **Tests API REST** ✅ (Complété)
