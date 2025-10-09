@@ -7,7 +7,7 @@ généalogiques au format GeneWeb (.gw).
 
 __version__ = "0.1.0"
 __author__ = "Guillaume Cayeux"
-__email__ = "guillaume@example.com"
+__email__ = "guillaume.cayeux@relais4x100a2.fr"
 
 from .core.models import Person, Family, Event, Date, Genealogy
 from .core.parser import GeneWebParser

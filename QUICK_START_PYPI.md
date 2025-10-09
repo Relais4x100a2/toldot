@@ -128,9 +128,9 @@ python -m build
 
 ```bash
 # Vérifier les __init__.py
-cat geneweb_py/__init__.py
-cat geneweb_py/core/__init__.py
-cat geneweb_py/formats/__init__.py
+cat src/geneweb_py/__init__.py
+cat src/geneweb_py/core/__init__.py
+cat src/geneweb_py/formats/__init__.py
 ```
 
 ## 💡 Conseils

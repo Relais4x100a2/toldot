@@ -271,16 +271,24 @@ parser = GeneWebParser(validate=False)
 
 ## 📚 Documentation
 
-- [Statut du projet](doc/status.md)
-- [Guide de performance](doc/PERFORMANCE.md) ⚡ **Nouveau**
-- [Roadmap](doc/roadmap.md)
-- [Documentation complète](https://geneweb-py.readthedocs.io)
-- [Documentation de l'API](http://localhost:8000/docs) (Swagger UI)
-- [Exemples d'utilisation](examples/)
-- [Format GeneWeb](doc/geneweb/gw_format_documentation.md)
-- [Améliorations du parser](doc/status.md#-r%C3%A9sum%C3%A9)
-- [Changelog](CHANGELOG.md)
-- [Geneweb documentation by the community](https://web.archive.org/web/20250802144922/https://geneweb.tuxfamily.org/wiki/GeneWeb)
+**→ [Guide complet de la documentation](DOCUMENTATION.md)** - Index central et parcours recommandés
+
+### Essentiel
+- **[README.md](README.md)** - 👈 Vous êtes ici - Guide d'utilisation
+- **[CHANGELOG.md](CHANGELOG.md)** - Historique des versions
+- **[doc/status.md](doc/status.md)** - État du projet et métriques
+- **[doc/roadmap.md](doc/roadmap.md)** - Vision à long terme
+
+### Guides spécialisés
+- **[doc/PERFORMANCE.md](doc/PERFORMANCE.md)** ⚡ - Optimisations et benchmarks
+- **[QUICK_START_PYPI.md](QUICK_START_PYPI.md)** 📦 - Publication PyPI
+- **[doc/geneweb/gw_format_documentation.md](doc/geneweb/gw_format_documentation.md)** - Format .gw
+
+### Ressources
+- **[examples/](examples/)** - Scripts de démonstration
+- **[tests/](tests/)** - Suite de tests (858 tests, 84% couverture)
+- **[Documentation API](http://localhost:8000/docs)** - Swagger UI (API REST)
+- **[GeneWeb Community](https://web.archive.org/web/20250802144922/https://geneweb.tuxfamily.org/wiki/GeneWeb)** - Documentation communautaire
 
 ## 🧪 Tests
 
