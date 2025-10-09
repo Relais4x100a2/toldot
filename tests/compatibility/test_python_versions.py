@@ -36,7 +36,7 @@ def test_typing_extensions_compatibility():
     # typing_extensions fournit des backports pour Python 3.7
     try:
         # Python 3.8+
-        from typing import Literal, Protocol, TypedDict
+        from typing import Literal
     except ImportError:
         # Python 3.7 fallback
         from typing_extensions import Literal

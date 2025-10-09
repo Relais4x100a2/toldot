@@ -94,7 +94,9 @@ class TestGenealogyServiceLoad:
 
     def test_load_from_invalid_file(self, service):
         """Test chargement d'un fichier invalide."""
-        with pytest.raises(Exception):
+        from geneweb_py.core.exceptions import GeneWebError
+        
+        with pytest.raises(GeneWebError):
             service.load_from_file("/path/does/not/exist.gw")
 
     def test_create_empty(self, service):

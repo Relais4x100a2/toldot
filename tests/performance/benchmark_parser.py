@@ -31,7 +31,7 @@ def generate_test_file(size_kb: int) -> str:
         Contenu du fichier
     """
     # Taille approximative d'une famille avec 3 enfants: ~500 bytes
-    family_template = """fam Dupont Jean 15/03/1950 #bp Paris #occu Ingénieur 10/02/2020 #dp Lyon + Durand Marie 20/05/1952 #bp Marseille
+    family_template = """fam Dupont Jean 15/03/1950 #bp Paris #occu Ingénieur 10/02/2020 #dp Lyon + Durand Marie 20/05/1952 #bp Marseille  # noqa: E501
 beg
 - h Dupont Pierre 10/01/1975 #bp Paris #occu Médecin
 - f Dupont Sophie 15/06/1978 #bp Lyon #occu Professeur
@@ -196,7 +196,7 @@ def run_benchmark_suite():
     print(f"{'═' * 80}\n")
 
     print(
-        f"{'Taille':<10} {'Mode':<12} {'Temps (s)':<12} {'Mémoire (MB)':<15} {'Personnes':<12}"
+        f"{'Taille':<10} {'Mode':<12} {'Temps (s)':<12} {'Mémoire (MB)':<15} {'Personnes':<12}"  # noqa: E501
     )
     print(f"{'─' * 10} {'─' * 12} {'─' * 12} {'─' * 15} {'─' * 12}")
 

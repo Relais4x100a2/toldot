@@ -14,7 +14,7 @@ def main():
     print("=== Exemple d'utilisation du parser GeneWeb ===\n")
 
     # Contenu .gw d'exemple
-    gw_content = """fam CORNO Joseph_Marie_Vincent 25/12/1990 #bp Paris + 10/08/2015 #mp Paris THOMAS Marie_Julienne 15/06/1992 #bp Lyon
+    gw_content = """fam CORNO Joseph_Marie_Vincent 25/12/1990 #bp Paris + 10/08/2015 #mp Paris THOMAS Marie_Julienne 15/06/1992 #bp Lyon  # noqa: E501
 wit m: DUPONT Pierre
 wit f: MARTIN Claire
 src "Acte de mariage, mairie de Paris"
@@ -70,7 +70,7 @@ end notes"""
         print(f"   - {person.display_name}")
         if person.birth_date:
             print(
-                f"     * Naissance: {person.birth_date} à {person.birth_place or 'lieu inconnu'}"
+                f"     * Naissance: {person.birth_date} à {person.birth_place or 'lieu inconnu'}"  # noqa: E501
             )
         if person.gender.value != "?":
             print(f"     * Sexe: {person.gender.value}")
@@ -85,7 +85,7 @@ end notes"""
         print(f"   - {husband.last_name} + {wife.last_name}")
         if family.marriage_date:
             print(
-                f"     * Mariage: {family.marriage_date} à {family.marriage_place or 'lieu inconnu'}"
+                f"     * Mariage: {family.marriage_date} à {family.marriage_place or 'lieu inconnu'}"  # noqa: E501
             )
         if family.witnesses:
             print(f"     * Témoins: {len(family.witnesses)}")

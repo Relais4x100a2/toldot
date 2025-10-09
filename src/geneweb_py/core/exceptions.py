@@ -42,7 +42,7 @@ class GeneWebError(Exception):
         super().__init__(self._format_message())
 
     def _format_message(self) -> str:
-        """Formate le message d'erreur avec le numéro de ligne et le contexte si disponibles"""
+        """Formate le message d'erreur avec le numéro de ligne et le contexte si disponibles"""  # noqa: E501
         parts = []
 
         # Préfixe de ligne
@@ -387,7 +387,7 @@ class GeneWebErrorCollector:
         """Initialise le collecteur
 
         Args:
-            strict: Si True, les erreurs de sévérité ERROR ou CRITICAL lèvent une exception
+            strict: Si True, les erreurs de sévérité ERROR ou CRITICAL lèvent une exception  # noqa: E501
         """
         self.errors: List[GeneWebError] = []
         self.strict = strict
@@ -565,7 +565,7 @@ class GeneWebErrorCollector:
 class ValidationResult:
     """Résultat de validation avec gestion des erreurs et avertissements
 
-    Distingue les erreurs (validation échouée) des avertissements (validation réussie avec remarques).
+    Distingue les erreurs (validation échouée) des avertissements (validation réussie avec remarques).  # noqa: E501
     """
 
     def __init__(self) -> None:
@@ -641,4 +641,4 @@ class ValidationResult:
 
     def __repr__(self) -> str:
         """Représentation pour debug"""
-        return f"ValidationResult(errors={len(self.errors)}, warnings={len(self.warnings)})"
+        return f"ValidationResult(errors={len(self.errors)}, warnings={len(self.warnings)})"  # noqa: E501

@@ -122,7 +122,7 @@ class TestParserBlockParsing:
 
     def test_parse_family_with_all_fields(self):
         """Test parsing famille avec tous les champs (lignes 296-297)"""
-        content = """fam DUPONT Jean 1950 #bp Paris 2020 #dp Lyon #occu Ingénieur + MARTIN Marie 1955
+        content = """fam DUPONT Jean 1950 #bp Paris 2020 #dp Lyon #occu Ingénieur + MARTIN Marie 1955  # noqa: E501
 #marr 1975 #p Paris
 #div 2010
 beg
@@ -354,7 +354,7 @@ class TestParserPersonalInfo:
 
     def test_parse_person_with_all_info(self):
         """Test parsing personne avec toutes les infos (lignes 861-864)"""
-        content = """fam DUPONT Jean {Johnny} (Jean-Pierre) 1950 #bp Paris 2020 #dp Lyon #occu Ingénieur"""
+        content = """fam DUPONT Jean {Johnny} (Jean-Pierre) 1950 #bp Paris 2020 #dp Lyon #occu Ingénieur"""  # noqa: E501
         parser = GeneWebParser()
         genealogy = parser.parse_string(content)
 
@@ -606,7 +606,7 @@ class TestParserIntegration:
         content = """encoding: utf-8
 gwplus
 
-fam DUPONT Jean .1 {Johnny} (Jean-Pierre) 1950 #bp Paris 2020 #dp Lyon #occu Ingénieur + MARTIN Marie .1 1955 #bp Lyon
+fam DUPONT Jean .1 {Johnny} (Jean-Pierre) 1950 #bp Paris 2020 #dp Lyon #occu Ingénieur + MARTIN Marie .1 1955 #bp Lyon  # noqa: E501
 wit m: TEMOIN_M Pierre #occu Prêtre
 wit f: TEMOIN_F Sophie #occu Religieuse
 #marr 1975 #p Paris

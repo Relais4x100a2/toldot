@@ -47,7 +47,7 @@ def main():
         try:
             genealogy = parser.parse_file(str(gw_file))
             print(
-                f"✅ Fichier .gw parsé : {len(genealogy.persons)} personnes, {len(genealogy.families)} familles"
+                f"✅ Fichier .gw parsé : {len(genealogy.persons)} personnes, {len(genealogy.families)} familles"  # noqa: E501
             )
         except Exception as e:
             print(f"❌ Erreur lors du parsing : {e}")
@@ -120,7 +120,7 @@ def main():
             imported_genealogy = json_importer.import_from_string(json_content)
 
             print(
-                f"✅ Import JSON réussi : {len(imported_genealogy.persons)} personnes, {len(imported_genealogy.families)} familles"
+                f"✅ Import JSON réussi : {len(imported_genealogy.persons)} personnes, {len(imported_genealogy.families)} familles"  # noqa: E501
             )
 
             # Vérifier que les données sont identiques
@@ -144,7 +144,7 @@ def main():
             imported_genealogy = xml_importer.import_from_string(xml_content)
 
             print(
-                f"✅ Import XML réussi : {len(imported_genealogy.persons)} personnes, {len(imported_genealogy.families)} familles"
+                f"✅ Import XML réussi : {len(imported_genealogy.persons)} personnes, {len(imported_genealogy.families)} familles"  # noqa: E501
             )
 
             # Vérifier que les données sont identiques

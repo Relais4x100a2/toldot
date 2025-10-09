@@ -169,7 +169,7 @@ class Date:
         """Parse une chaîne de date au format GeneWeb
 
         Args:
-            date_str: Chaîne de date à parser (ex: "25/12/1990", "~10/5/1990", "0(5_Mai_1990)")
+            date_str: Chaîne de date à parser (ex: "25/12/1990", "~10/5/1990", "0(5_Mai_1990)")  # noqa: E501
 
         Returns:
             Instance de Date parsée

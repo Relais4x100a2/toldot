@@ -66,7 +66,7 @@ def main():
     genealogy.add_person(sophie)
 
     print(
-        f"   - {joseph.display_name} (né le {joseph.birth_date}, décédé le {joseph.death_date})"
+        f"   - {joseph.display_name} (né le {joseph.birth_date}, décédé le {joseph.death_date})"  # noqa: E501
     )
     print(f"   - {marie.display_name} (née le {marie.birth_date})")
     print(f"   - {jean.display_name} (né le {jean.birth_date})")
@@ -123,7 +123,7 @@ def main():
     # Frères et sœurs de Jean
     siblings = genealogy.get_siblings(jean.unique_id)
     print(
-        f"   - Frères et sœurs de {jean.first_name}: {[s.display_name for s in siblings]}"
+        f"   - Frères et sœurs de {jean.first_name}: {[s.display_name for s in siblings]}"  # noqa: E501
     )
 
     # Validation

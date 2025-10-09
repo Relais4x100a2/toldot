@@ -75,7 +75,7 @@ class FamilyBlockParser(BlockParser):
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
         """Parse un bloc famille
 
-        Format: fam HusbandName FirstName [+ WeddingDate] [#mp WeddingPlace] WifeName FirstName
+        Format: fam HusbandName FirstName [+ WeddingDate] [#mp WeddingPlace] WifeName FirstName  # noqa: E501
         """
         node = SyntaxNode(BlockType.FAMILY)
         i = start_index
@@ -194,7 +194,7 @@ class FamilyBlockParser(BlockParser):
         if i < len(tokens) and tokens[i].type == TokenType.OCCU:
             node.add_token(tokens[i])
             i += 1
-            # Consommer tous les tokens de l'occupation jusqu'au prochain modificateur ou fin
+            # Consommer tous les tokens de l'occupation jusqu'au prochain modificateur ou fin  # noqa: E501
             while i < len(tokens) and tokens[i].type in [
                 TokenType.IDENTIFIER,
                 TokenType.STRING,
@@ -884,7 +884,7 @@ class RelationsBlockParser(BlockParser):
     def _parse_relation_line(
         self, tokens: List[Token], start_index: int, node: SyntaxNode
     ) -> int:
-        """Parse une ligne de relation (- adop/reco/cand/godp/fost [fath/moth]: Person)"""
+        """Parse une ligne de relation (- adop/reco/cand/godp/fost [fath/moth]: Person)"""  # noqa: E501
         i = start_index
 
         # Token tire

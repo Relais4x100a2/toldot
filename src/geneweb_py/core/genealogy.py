@@ -260,14 +260,14 @@ class Genealogy:
             if family.husband_id and family.husband_id not in self.persons:
                 errors.append(
                     GeneWebValidationError(
-                        f"Époux '{family.husband_id}' de la famille '{family.family_id}' non trouvé"
+                        f"Époux '{family.husband_id}' de la famille '{family.family_id}' non trouvé"  # noqa: E501
                     )
                 )
 
             if family.wife_id and family.wife_id not in self.persons:
                 errors.append(
                     GeneWebValidationError(
-                        f"Épouse '{family.wife_id}' de la famille '{family.family_id}' non trouvée"
+                        f"Épouse '{family.wife_id}' de la famille '{family.family_id}' non trouvée"  # noqa: E501
                     )
                 )
 
@@ -276,7 +276,7 @@ class Genealogy:
                 if child_id not in self.persons:
                     errors.append(
                         GeneWebValidationError(
-                            f"Enfant '{child_id}' de la famille '{family.family_id}' non trouvé"
+                            f"Enfant '{child_id}' de la famille '{family.family_id}' non trouvé"  # noqa: E501
                         )
                     )
 
@@ -286,7 +286,7 @@ class Genealogy:
                 if family_id not in self.families:
                     errors.append(
                         GeneWebValidationError(
-                            f"Famille '{family_id}' référencée par '{person.unique_id}' non trouvée"
+                            f"Famille '{family_id}' référencée par '{person.unique_id}' non trouvée"  # noqa: E501
                         )
                     )
 
@@ -457,7 +457,7 @@ class Genealogy:
     def __str__(self) -> str:
         """Représentation string de la généalogie"""
         stats = self.get_statistics()
-        return f"Genealogy({stats['total_persons']} personnes, {stats['total_families']} familles)"
+        return f"Genealogy({stats['total_persons']} personnes, {stats['total_families']} familles)"  # noqa: E501
 
     def __repr__(self) -> str:
         """Représentation pour debug"""

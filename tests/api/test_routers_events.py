@@ -107,7 +107,7 @@ class TestCreateFamilyEvent:
     """Tests pour la création d'événements familiaux."""
 
     @pytest.mark.skip(
-        reason="EventType vs FamilyEventType - conflit enums, FastAPI ne peut pas distinguer"
+        reason="EventType vs FamilyEventType - conflit enums, FastAPI ne peut pas distinguer"  # noqa: E501
     )
     def test_create_family_event_success(
         self, client, mock_service, sample_family_event
@@ -116,14 +116,14 @@ class TestCreateFamilyEvent:
         pass
 
     @pytest.mark.skip(
-        reason="EventType vs FamilyEventType - conflit enums, FastAPI ne peut pas distinguer"
+        reason="EventType vs FamilyEventType - conflit enums, FastAPI ne peut pas distinguer"  # noqa: E501
     )
     def test_create_family_event_validation_error(self, client, mock_service):
         """Test erreur de validation."""
         pass
 
     @pytest.mark.skip(
-        reason="EventType vs FamilyEventType - conflit enums, FastAPI ne peut pas distinguer"
+        reason="EventType vs FamilyEventType - conflit enums, FastAPI ne peut pas distinguer"  # noqa: E501
     )
     def test_create_family_event_server_error(self, client, mock_service):
         """Test erreur serveur."""

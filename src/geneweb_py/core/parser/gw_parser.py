@@ -50,9 +50,9 @@ class GeneWebParser:
 
         Args:
             validate: Si True, valide la cohérence des données après parsing
-            stream_mode: Si True, force le mode streaming. Si None, détection automatique.
-            streaming_threshold_mb: Seuil en MB pour activer le streaming automatiquement
-            strict: Si True, lève une exception à la première erreur. Si False, parsing gracieux.
+            stream_mode: Si True, force le mode streaming. Si None, détection automatique.  # noqa: E501
+            streaming_threshold_mb: Seuil en MB pour activer le streaming automatiquement  # noqa: E501
+            strict: Si True, lève une exception à la première erreur. Si False, parsing gracieux.  # noqa: E501
         """
         self.validate = validate
         self.stream_mode = stream_mode
@@ -128,7 +128,7 @@ class GeneWebParser:
         except Exception as e:
             if isinstance(e, (GeneWebParseError, GeneWebEncodingError)):
                 raise
-            raise GeneWebParseError(f"Erreur lors du parsing de {file_path}: {e}") from e
+            raise GeneWebParseError(f"Erreur lors du parsing de {file_path}: {e}") from e  # noqa: E501
 
     def _parse_file_streaming(self, file_path: Path) -> Genealogy:
         """Parse un fichier en mode streaming (pour gros fichiers)
@@ -188,7 +188,7 @@ class GeneWebParser:
                 genealogy.metadata.encoding = encoding
             return genealogy
 
-        # Validation de lignes en tête si validation active (détection de lignes non reconnues)
+        # Validation de lignes en tête si validation active (détection de lignes non reconnues)  # noqa: E501
         if self.validate and content:
             allowed_starts = {
                 "fam",
@@ -315,7 +315,7 @@ class GeneWebParser:
         genealogy: Genealogy,
         gender: Gender = Gender.UNKNOWN,
     ) -> str:
-        """Crée ou récupère une personne avec gestion intelligente des numéros d'occurrence
+        """Crée ou récupère une personne avec gestion intelligente des numéros d'occurrence  # noqa: E501
 
         Args:
             last_name: Nom de famille
@@ -409,14 +409,14 @@ class GeneWebParser:
             except UnicodeDecodeError:
                 pass
 
-            # Si rien ne fonctionne, utiliser l'encodage détecté avec remplacement d'erreurs
+            # Si rien ne fonctionne, utiliser l'encodage détecté avec remplacement d'erreurs  # noqa: E501
             content = raw_data.decode(detected_encoding or "utf-8", errors="replace")
             return content, detected_encoding or "utf-8"
 
         except Exception as e:
             if isinstance(e, GeneWebEncodingError):
                 raise
-            raise GeneWebEncodingError(f"Erreur lors de la lecture du fichier: {e}") from e
+            raise GeneWebEncodingError(f"Erreur lors de la lecture du fichier: {e}") from e  # noqa: E501
 
     def get_memory_estimate(self, file_path: Union[str, Path]) -> dict:
         """Estime l'utilisation mémoire pour parser un fichier
@@ -564,7 +564,7 @@ class GeneWebParser:
     def _parse_family_line(self, tokens: List[Token]) -> dict:
         """Parse une ligne fam et extrait toutes les informations
 
-        Format: fam LastName FirstName [infos personnelles] + LastName FirstName [infos personnelles]
+        Format: fam LastName FirstName [infos personnelles] + LastName FirstName [infos personnelles]  # noqa: E501
 
         Returns:
             Dictionnaire avec toutes les informations extraites
@@ -626,7 +626,7 @@ class GeneWebParser:
                 i += 1
                 continue
 
-            # Si le mari est déjà défini (nom+prénom) et qu'on rencontre un nouvel IDENTIFIER,
+            # Si le mari est déjà défini (nom+prénom) et qu'on rencontre un nouvel IDENTIFIER,  # noqa: E501
             # l'interpréter comme début des infos de l'épouse (format inline sans '+').
             elif (
                 token.type == TokenType.IDENTIFIER
@@ -636,7 +636,7 @@ class GeneWebParser:
                 and not result["wife_name"]
             ):
                 current_person = "wife"
-                # Ne pas consommer ici; la boucle reprendra et tombera sur le cas 'Nom de famille'
+                # Ne pas consommer ici; la boucle reprendra et tombera sur le cas 'Nom de famille'  # noqa: E501
                 continue
 
             # Numéro d'occurrence (après le prénom)
@@ -865,7 +865,7 @@ class GeneWebParser:
     def _parse_person_events_block(
         self, node: SyntaxNode, persons: dict, genealogy: Genealogy
     ) -> None:
-        """Parse un bloc événements personnels et met à jour la personne correspondante"""
+        """Parse un bloc événements personnels et met à jour la personne correspondante"""  # noqa: E501
         tokens = node.tokens
 
         # Extraire le nom de la personne
@@ -893,7 +893,7 @@ class GeneWebParser:
 
             # Parser les événements
             i = 3  # Passer pevt, nom, prénom
-            # Garder une référence au dernier événement construit pour y rattacher les témoins
+            # Garder une référence au dernier événement construit pour y rattacher les témoins  # noqa: E501
             last_event = None
             while i < len(tokens):
                 token = tokens[i]
@@ -985,7 +985,7 @@ class GeneWebParser:
                         person.add_note(" ".join(note_content))
 
                 elif token.type == TokenType.WIT:
-                    # Parser les témoins avec informations complètes et les rattacher à l'événement courant
+                    # Parser les témoins avec informations complètes et les rattacher à l'événement courant  # noqa: E501
                     next_i, witness_id, witness_type = self._parse_witness_person(
                         tokens, i, persons, genealogy
                     )
@@ -1029,7 +1029,7 @@ class GeneWebParser:
                 i = next_i
                 continue
 
-            # Détecter un type d'événement familial simple (ex: #marr déjà géré en syntaxe autrement)
+            # Détecter un type d'événement familial simple (ex: #marr déjà géré en syntaxe autrement)  # noqa: E501
             if token.type in [
                 TokenType.MARR,
                 TokenType.DIV_EVENT,
@@ -1111,7 +1111,7 @@ class GeneWebParser:
             if relations:
                 relations_text = "; ".join(
                     [
-                        f"{rel['type']} {rel['parent_type'] or ''}: {rel['person_name']}"
+                        f"{rel['type']} {rel['parent_type'] or ''}: {rel['person_name']}"  # noqa: E501
                         for rel in relations
                     ]
                 )
@@ -1346,7 +1346,7 @@ class GeneWebParser:
                     TokenType.IDENTIFIER,
                     TokenType.STRING,
                 ]:
-                    # Par défaut, stocker en note pour compat; évitons de créer des personnes
+                    # Par défaut, stocker en note pour compat; évitons de créer des personnes  # noqa: E501
                     source_value = tokens[i].value
                     person.add_note(f"Source: {source_value}")
                     i += 1

@@ -140,7 +140,7 @@ class Token:
 
     def __repr__(self) -> str:
         """Représentation pour debug"""
-        return f"Token({self.type.value}, '{self.value}', {self.line_number}:{self.column})"
+        return f"Token({self.type.value}, '{self.value}', {self.line_number}:{self.column})"  # noqa: E501
 
 
 # Cache LRU pour les patterns regex compilés
@@ -184,7 +184,7 @@ class LexicalParser:
     def _compile_patterns(self) -> None:
         """Compile les expressions régulières pour la tokenisation
 
-        Note: Utilise des dictionnaires pour des lookups O(1) au lieu de conditionnels multiples
+        Note: Utilise des dictionnaires pour des lookups O(1) au lieu de conditionnels multiples  # noqa: E501
         """
 
         # Symboles simples (pre-compilés pour accès rapide)
@@ -376,12 +376,12 @@ class LexicalParser:
             if token and token.type != TokenType.IDENTIFIER:
                 return token
 
-            # Sinon, restaurer la position et traiter comme commentaire si en début de ligne
+            # Sinon, restaurer la position et traiter comme commentaire si en début de ligne  # noqa: E501
             self.position = saved_pos
             self.line_number = saved_line
             self.column = saved_col
 
-            # Si on est en début de ligne et que ce n'est pas un modificateur, c'est un commentaire
+            # Si on est en début de ligne et que ce n'est pas un modificateur, c'est un commentaire  # noqa: E501
             if self.column == 1 or (
                 self.position > 0 and self.text[self.position - 1] == "\n"
             ):

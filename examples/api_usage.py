@@ -122,7 +122,7 @@ def main():
         person_id = person_result["data"]["id"]
         print(f"   ✅ Personne créée avec l'ID: {person_id}")
         print(
-            f"   📝 Nom: {person_result['data']['first_name']} {person_result['data']['surname']}"
+            f"   📝 Nom: {person_result['data']['first_name']} {person_result['data']['surname']}"  # noqa: E501
         )
         print()
 
@@ -130,7 +130,7 @@ def main():
         print("4. Récupération de la personne...")
         person = client.get_person(person_id)
         print(
-            f"   ✅ Personne récupérée: {person['data']['first_name']} {person['data']['surname']}"
+            f"   ✅ Personne récupérée: {person['data']['first_name']} {person['data']['surname']}"  # noqa: E501
         )
         print(f"   🚻 Sexe: {person['data']['sex']}")
         print()
@@ -141,7 +141,7 @@ def main():
         print(f"   ✅ {len(persons_list['items'])} personne(s) trouvée(s)")
         for person_item in persons_list["items"]:
             print(
-                f"   - {person_item['first_name']} {person_item['surname']} ({person_item['id']})"
+                f"   - {person_item['first_name']} {person_item['surname']} ({person_item['id']})"  # noqa: E501
             )
         print()
 
@@ -168,7 +168,7 @@ def main():
         print(f"   ✅ {len(families_list['items'])} famille(s) trouvée(s)")
         for family_item in families_list["items"]:
             print(
-                f"   - Famille {family_item['id']}: {family_item['husband_id']} & {family_item['wife_id']}"
+                f"   - Famille {family_item['id']}: {family_item['husband_id']} & {family_item['wife_id']}"  # noqa: E501
             )
         print()
 

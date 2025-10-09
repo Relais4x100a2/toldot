@@ -84,7 +84,7 @@ end
         assert marie is not None
         assert marie.occurrence_number == 2
 
-        # Note: Les enfants dans beg...end ne sont pas actuellement créés comme personnes séparées
+        # Note: Les enfants dans beg...end ne sont pas actuellement créés comme personnes séparées  # noqa: E501
         # C'est une limitation connue du parser actuel
 
     def test_witness_occurrence_numbers(self):
@@ -245,7 +245,7 @@ class TestComplexScenarios:
         parser = GeneWebParser()
 
         content = """
-fam d'Arc Jean-Marie .1 #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement + O'Brien Marie-Claire .2
+fam d'Arc Jean-Marie .1 #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement + O'Brien Marie-Claire .2  # noqa: E501
 wit m: LEROY Bernard .1 #occu Dominicain,_Aumônier_de_l'enseignement_technique_à_Rouen
 beg
 - h Pierre_Bernard .1 #occu Ingénieur,_éditeur
@@ -266,7 +266,7 @@ end wizard-note
 """
         genealogy = parser.parse_string(content)
 
-        # Vérifier que toutes les personnes sont créées avec les bons numéros d'occurrence
+        # Vérifier que toutes les personnes sont créées avec les bons numéros d'occurrence  # noqa: E501
         persons = list(genealogy.persons.values())
 
         jean_marie = next(
@@ -295,7 +295,7 @@ end wizard-note
         assert bernard is not None
         assert bernard.occurrence_number == 1
 
-        # Note: Les enfants dans beg...end ne sont pas actuellement créés comme personnes séparées
+        # Note: Les enfants dans beg...end ne sont pas actuellement créés comme personnes séparées  # noqa: E501
         # C'est une limitation connue du parser actuel
 
         # Vérifications des occupations avec caractères spéciaux

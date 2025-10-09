@@ -68,7 +68,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 f"après {process_time:.3f}s - {type(exc).__name__}: {exc}"
             )
 
-            # Re-lance l'exception pour qu'elle soit traitée par les gestionnaires d'erreurs
+            # Re-lance l'exception pour qu'elle soit traitée par les gestionnaires d'erreurs  # noqa: E501
             raise
 
 

@@ -66,7 +66,7 @@ def validate_genealogy_loaded(
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Aucune généalogie n'est chargée. Utilisez l'endpoint /api/v1/genealogy/import pour charger un fichier.",
+            detail="Aucune généalogie n'est chargée. Utilisez l'endpoint /api/v1/genealogy/import pour charger un fichier.",  # noqa: E501
         ) from exc
 
 

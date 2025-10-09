@@ -1,7 +1,7 @@
 """
 Tests avancés pour gw_parser.py - Cibler les lignes manquantes restantes
 
-Focus sur les lignes : 296-297, 340-350, 460, 628-633, 686-688, 782-784, 1075-1076, 1118-1119, 1156-1157, 1205-1225
+Focus sur les lignes : 296-297, 340-350, 460, 628-633, 686-688, 782-784, 1075-1076, 1118-1119, 1156-1157, 1205-1225  # noqa: E501
 """
 
 import pytest
@@ -421,7 +421,7 @@ class TestParserIntegrationComplete:
         content = """encoding: utf-8
 gwplus
 
-fam DUPONT Jean-Pierre .1 (JP) {Johnny} 15/3/1950 #bp Paris,75000,France 12/8/2025 #dp Lyon,69000,France #occu Ingénieur_en_chef + MARTIN Marie-Claire .1 22/7/1952 #bp Lyon,69000,France #occu Professeure
+fam DUPONT Jean-Pierre .1 (JP) {Johnny} 15/3/1950 #bp Paris,75000,France 12/8/2025 #dp Lyon,69000,France #occu Ingénieur_en_chef + MARTIN Marie-Claire .1 22/7/1952 #bp Lyon,69000,France #occu Professeure  # noqa: E501
 wit m: TEMOIN Pierre_Paul #occu Prêtre 1/1/1920
 wit f: TEMOIN Anne_Marie #occu Religieuse 1/1/1925
 #marr 10/6/1975 #mp Paris,75000,France
