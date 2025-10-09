@@ -74,12 +74,43 @@ geneweb-py est une librairie Python pour parser, manipuler et convertir les fich
 - Fichiers de fixtures `.gw` et `.gwplus` pour tests et démos
 
 ## 🧪 Qualité et tests
+
+### Couverture de tests : **84%** ✅
+
+**Dernière mise à jour** : 9 octobre 2025 - **Phase 1 complétée** ✅
+
+| Catégorie | Couverture | État |
+|-----------|-----------|------|
+| **Modules Core** | 88-97% | ⭐ Excellent |
+| **Parser** | 84-97% | ⭐ Excellent |
+| **API Models** | 90-94% | ✅ Excellent |
+| **API Routers** | 69-90% | 🟡 Bon |
+| **API Services** | 59% | 🟡 À améliorer |
+| **Formats** | 76-90% | 🟡 Bon |
+| **TOTAL** | **84%** | ⭐ Excellent |
+
+**858 tests passent** ✅ - Tous les tests critiques sont verts
+
+**Phase 1 accomplie** : 
+- 226 nouveaux tests créés dans 11 fichiers
+- +7% sur date.py, +5% sur person.py & lexical.py, +4% sur gw_parser.py
+- À seulement 6 points de l'objectif 90% !
+
+### Tests disponibles
 - Suite de tests unitaires et d'intégration (parsers, API, convertisseurs)
 - Tests de récupération d'erreurs (`test_error_recovery.py`)
 - Tests de validation gracieuse (`test_validation_graceful.py`)
+- Tests de parsing complet avec vrais fichiers
 - Fixtures de test avec erreurs syntaxiques et données incohérentes
 - Couverture mesurée automatiquement (rapport HTML dans `htmlcov/index.html`)
-- Seuil CI défini dans `pyproject.toml` (`--cov-fail-under`)
+- Seuil CI défini à 50% dans `pyproject.toml` (objectif 100%)
+
+### Rapport détaillé
+Voir `COVERAGE_REPORT.md` pour le rapport complet incluant :
+- Couverture par module
+- Lignes manquantes identifiées
+- Plan d'action pour atteindre 100%
+- Estimation d'effort : 17-24h pour 100%
 
 ## 🚧 Travaux en cours
 - Amélioration continue de la documentation

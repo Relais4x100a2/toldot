@@ -124,13 +124,15 @@ class TestPersonValidation:
     
     def test_invalid_birth_death_dates(self):
         """Test dates incohérentes (naissance > décès)"""
-        with pytest.raises(ValueError):
-            Person(
-                last_name="CORNO",
-                first_name="Joseph",
-                birth_date=Date.parse("25/12/1990"),
-                death_date=Date.parse("10/01/1980")  # Avant la naissance
-            )
+        person = Person(
+            last_name="CORNO",
+            first_name="Joseph",
+            birth_date=Date.parse("25/12/1990"),
+            death_date=Date.parse("10/01/1980")  # Avant la naissance
+        )
+        # Vérifier qu'une erreur de validation a été ajoutée
+        assert len(person.validation_errors) > 0
+        assert any("postérieure" in str(err) for err in person.validation_errors)
 
 
 class TestPersonMethods:

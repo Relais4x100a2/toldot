@@ -68,20 +68,24 @@ class TestFamilyValidation:
     """Tests pour la validation des familles"""
     
     def test_family_without_spouses(self):
-        """Test famille sans époux (doit échouer)"""
-        with pytest.raises(ValueError):
-            Family(family_id="FAM001")
+        """Test famille sans époux (doit générer une erreur de validation)"""
+        family = Family(family_id="FAM001")
+        # Vérifier qu'une erreur de validation a été ajoutée
+        assert len(family.validation_errors) > 0
+        assert any("au moins un époux" in str(err) for err in family.validation_errors)
     
     def test_invalid_marriage_divorce_dates(self):
         """Test dates incohérentes (mariage > divorce)"""
-        with pytest.raises(ValueError):
-            Family(
-                family_id="FAM001",
-                husband_id="CORNO_Joseph_0",
-                wife_id="THOMAS_Marie_0",
-                marriage_date=Date.parse("10/08/2015"),
-                divorce_date=Date.parse("10/08/2010")  # Avant le mariage
-            )
+        family = Family(
+            family_id="FAM001",
+            husband_id="CORNO_Joseph_0",
+            wife_id="THOMAS_Marie_0",
+            marriage_date=Date.parse("10/08/2015"),
+            divorce_date=Date.parse("10/08/2010")  # Avant le mariage
+        )
+        # Vérifier qu'une erreur de validation a été ajoutée
+        assert len(family.validation_errors) > 0
+        assert any("postérieure" in str(err) for err in family.validation_errors)
 
 
 class TestFamilyProperties:

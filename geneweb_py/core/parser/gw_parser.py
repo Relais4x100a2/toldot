@@ -173,7 +173,7 @@ class GeneWebParser:
 
         # Validation de lignes en tête si validation active (détection de lignes non reconnues)
         if self.validate and content:
-            allowed_starts = {"fam", "notes", "rel", "pevt", "fevt", "end", "beg", "wit", "src", "comm", "-", "#", "notes-db", "page-ext", "wizard-note"}
+            allowed_starts = {"fam", "notes", "rel", "pevt", "fevt", "end", "beg", "wit", "src", "comm", "-", "#", "notes-db", "page-ext", "wizard-note", "encoding:", "gwplus", "husb", "wife", "cbp", "csrc", "marr", "div", "sep", "eng", "note"}
             inside_block = False
             current_block = None
             
@@ -216,14 +216,16 @@ class GeneWebParser:
         self.syntax_nodes = self.syntax_parser.parse(self.tokens)
         
         # Contenu invalide: aucun bloc reconnu (sauf si seulement des commentaires)
-        has_content_blocks = any(node.type in [BlockType.FAMILY, BlockType.PERSON_EVENTS, BlockType.FAMILY_EVENTS, BlockType.NOTES, BlockType.RELATIONS, BlockType.DATABASE_NOTES, BlockType.EXTENDED_PAGE, BlockType.WIZARD_NOTE]
-                                for node in self.syntax_nodes)
-        
-        # Si pas de blocs de contenu, vérifier s'il y a des commentaires
-        if not has_content_blocks:
-            has_comments = any(token.type == TokenType.COMMENT for token in self.tokens)
-            if not has_comments:
-                raise GeneWebParseError("Contenu .gw invalide: aucun bloc reconnu", line_number=1)
+        # Seulement quand la validation est activée
+        if self.validate:
+            has_content_blocks = any(node.type in [BlockType.FAMILY, BlockType.PERSON_EVENTS, BlockType.FAMILY_EVENTS, BlockType.NOTES, BlockType.RELATIONS, BlockType.DATABASE_NOTES, BlockType.EXTENDED_PAGE, BlockType.WIZARD_NOTE]
+                                    for node in self.syntax_nodes)
+            
+            # Si pas de blocs de contenu, vérifier s'il y a des commentaires
+            if not has_content_blocks:
+                has_comments = any(token.type == TokenType.COMMENT for token in self.tokens)
+                if not has_comments:
+                    raise GeneWebParseError("Contenu .gw invalide: aucun bloc reconnu", line_number=1)
         
         # Construction des modèles de données
         genealogy = self._build_genealogy()
