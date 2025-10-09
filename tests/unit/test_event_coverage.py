@@ -93,7 +93,7 @@ class TestFamilyEvent:
     def test_family_event_post_init_marriage(self):
         """Test __post_init__ pour FamilyEvent avec mariage"""
         event = FamilyEvent(
-            event_type=EventType.CUSTOM,
+            event_type=EventType.BIRTH,
             family_event_type=FamilyEventType.MARRIAGE
         )
         assert event.event_type == EventType.MARRIAGE
@@ -101,7 +101,7 @@ class TestFamilyEvent:
     def test_family_event_post_init_divorce(self):
         """Test __post_init__ pour FamilyEvent avec divorce"""
         event = FamilyEvent(
-            event_type=EventType.CUSTOM,
+            event_type=EventType.BIRTH,
             family_event_type=FamilyEventType.DIVORCE
         )
         assert event.event_type == EventType.DIVORCE
@@ -109,7 +109,7 @@ class TestFamilyEvent:
     def test_family_event_post_init_separation(self):
         """Test __post_init__ pour FamilyEvent avec séparation"""
         event = FamilyEvent(
-            event_type=EventType.CUSTOM,
+            event_type=EventType.BIRTH,
             family_event_type=FamilyEventType.SEPARATION
         )
         assert event.event_type == EventType.SEPARATION
@@ -117,7 +117,7 @@ class TestFamilyEvent:
     def test_family_event_post_init_engagement(self):
         """Test __post_init__ pour FamilyEvent avec fiançailles"""
         event = FamilyEvent(
-            event_type=EventType.CUSTOM,
+            event_type=EventType.BIRTH,
             family_event_type=FamilyEventType.ENGAGEMENT
         )
         assert event.event_type == EventType.ENGAGEMENT
@@ -125,7 +125,7 @@ class TestFamilyEvent:
     def test_family_event_post_init_pacs(self):
         """Test __post_init__ pour FamilyEvent avec PACS"""
         event = FamilyEvent(
-            event_type=EventType.CUSTOM,
+            event_type=EventType.BIRTH,
             family_event_type=FamilyEventType.PACS
         )
         assert event.event_type == EventType.PACS
