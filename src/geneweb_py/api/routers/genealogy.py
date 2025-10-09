@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 
 from ...formats import GEDCOMExporter, JSONExporter, XMLExporter
+from ..dependencies import get_genealogy_service
 from ..models.responses import (
     StatsResponse,
     SuccessResponse,
@@ -17,9 +18,6 @@ from ..models.responses import (
 from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
-
-# Import de la dépendance depuis le module dependencies
-from ..dependencies import get_genealogy_service
 
 
 @router.post("/import", response_model=SuccessResponse)
@@ -123,7 +121,7 @@ async def export_genealogy(
                 if "temp_file" in locals():
                     try:
                         os.unlink(temp_file.name)
-                    except:
+                    except Exception:
                         pass
                 raise HTTPException(
                     status_code=500, detail=f"Erreur lors de l'export JSON: {exc}"
@@ -147,7 +145,7 @@ async def export_genealogy(
                 if "temp_file" in locals():
                     try:
                         os.unlink(temp_file.name)
-                    except:
+                    except Exception:
                         pass
                 raise HTTPException(
                     status_code=500, detail=f"Erreur lors de l'export XML: {exc}"
@@ -171,7 +169,7 @@ async def export_genealogy(
                 if "temp_file" in locals():
                     try:
                         os.unlink(temp_file.name)
-                    except:
+                    except Exception:
                         pass
                 raise HTTPException(
                     status_code=500, detail=f"Erreur lors de l'export GEDCOM: {exc}"

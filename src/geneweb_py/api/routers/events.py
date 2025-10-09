@@ -6,6 +6,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from ..dependencies import get_genealogy_service
 from ..models.event import (
     EventSchema,
     EventUpdateSchema,
@@ -20,9 +21,6 @@ from ..models.responses import (
 from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
-
-# Import de la dépendance depuis le module dependencies
-from ..dependencies import get_genealogy_service
 
 
 @router.post("/personal", response_model=SuccessResponse, status_code=201)
