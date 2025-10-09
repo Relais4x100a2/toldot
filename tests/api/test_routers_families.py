@@ -4,17 +4,12 @@ Tests pour le router families de l'API geneweb-py.
 
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from geneweb_py.api.main import app
+from geneweb_py.api.dependencies import get_genealogy_service
 from geneweb_py.core.models import Family, MarriageStatus
 from geneweb_py.api.services.genealogy_service import GenealogyService
-
-
-@pytest.fixture
-def client():
-    """Client de test FastAPI."""
-    return TestClient(app)
 
 
 @pytest.fixture
@@ -22,6 +17,15 @@ def mock_service():
     """Service mock pour les tests."""
     service = Mock(spec=GenealogyService)
     return service
+
+
+@pytest.fixture
+def client(mock_service):
+    """Client de test FastAPI avec service mocké."""
+    app.dependency_overrides[get_genealogy_service] = lambda: mock_service
+    client = TestClient(app)
+    yield client
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -46,18 +50,14 @@ class TestCreateFamily:
         """Test création d'une famille avec succès."""
         mock_service.create_family.return_value = sample_family
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.post(
-                "/api/v1/families/",
-                json={
-                    "husband_id": "h001",
-                    "wife_id": "w001",
-                    "marriage_status": "married",
-                },
-            )
+        response = client.post(
+            "/api/v1/families/",
+            json={
+                "husband_id": "h001",
+                "wife_id": "w001",
+                "marriage_status": "married",
+            },
+        )
 
         assert response.status_code == 201
         data = response.json()
@@ -69,18 +69,14 @@ class TestCreateFamily:
         """Test erreur lors de la création."""
         mock_service.create_family.side_effect = Exception("Database error")
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.post(
-                "/api/v1/families/",
-                json={
-                    "husband_id": "h001",
-                    "wife_id": "w001",
-                    "marriage_status": "married",
-                },
-            )
+        response = client.post(
+            "/api/v1/families/",
+            json={
+                "husband_id": "h001",
+                "wife_id": "w001",
+                "marriage_status": "married",
+            },
+        )
 
         assert response.status_code == 500
 
@@ -92,11 +88,7 @@ class TestGetFamily:
         """Test récupération d'une famille existante."""
         mock_service.get_family.return_value = sample_family
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.get("/api/v1/families/fam_001")
+        response = client.get("/api/v1/families/fam_001")
 
         assert response.status_code == 200
         data = response.json()
@@ -107,11 +99,7 @@ class TestGetFamily:
         """Test récupération d'une famille inexistante."""
         mock_service.get_family.return_value = None
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.get("/api/v1/families/unknown")
+        response = client.get("/api/v1/families/unknown")
 
         assert response.status_code == 404
 
@@ -123,13 +111,9 @@ class TestUpdateFamily:
         """Test mise à jour réussie."""
         mock_service.update_family.return_value = sample_family
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.put(
-                "/api/v1/families/fam_001", json={"marriage_status": "divorced"}
-            )
+        response = client.put(
+            "/api/v1/families/fam_001", json={"marriage_status": "divorced"}
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -139,11 +123,7 @@ class TestUpdateFamily:
         """Test mise à jour d'une famille inexistante."""
         mock_service.update_family.return_value = None
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.put("/api/v1/families/unknown", json={"marriage_status": "married"})
+        response = client.put("/api/v1/families/unknown", json={"marriage_status": "married"})
 
         assert response.status_code == 404
 
@@ -155,11 +135,7 @@ class TestDeleteFamily:
         """Test suppression réussie."""
         mock_service.delete_family.return_value = True
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.delete("/api/v1/families/fam_001")
+        response = client.delete("/api/v1/families/fam_001")
 
         assert response.status_code == 200
         data = response.json()
@@ -169,11 +145,7 @@ class TestDeleteFamily:
         """Test suppression d'une famille inexistante."""
         mock_service.delete_family.return_value = False
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.delete("/api/v1/families/unknown")
+        response = client.delete("/api/v1/families/unknown")
 
         assert response.status_code == 404
 
@@ -185,11 +157,7 @@ class TestListFamilies:
         """Test liste avec paramètres par défaut."""
         mock_service.search_families.return_value = ([sample_family], 1)
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.get("/api/v1/families/")
+        response = client.get("/api/v1/families/")
 
         assert response.status_code == 200
         data = response.json()
@@ -200,13 +168,9 @@ class TestListFamilies:
         """Test liste avec filtres."""
         mock_service.search_families.return_value = ([sample_family], 1)
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.get(
-                "/api/v1/families/?husband_id=h001&wife_id=w001&has_children=true"
-            )
+        response = client.get(
+            "/api/v1/families/?husband_id=h001&wife_id=w001&has_children=true"
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -216,11 +180,7 @@ class TestListFamilies:
         """Test pagination."""
         mock_service.search_families.return_value = ([sample_family], 10)
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.get("/api/v1/families/?page=2&size=5")
+        response = client.get("/api/v1/families/?page=2&size=5")
 
         assert response.status_code == 200
         data = response.json()
@@ -235,11 +195,7 @@ class TestGetFamilyChildren:
         """Test récupération des enfants."""
         mock_service.get_family.return_value = sample_family
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.get("/api/v1/families/fam_001/children")
+        response = client.get("/api/v1/families/fam_001/children")
 
         assert response.status_code == 200
         data = response.json()
@@ -249,11 +205,7 @@ class TestGetFamilyChildren:
         """Test enfants d'une famille inexistante."""
         mock_service.get_family.return_value = None
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.get("/api/v1/families/unknown/children")
+        response = client.get("/api/v1/families/unknown/children")
 
         assert response.status_code == 404
 
@@ -266,11 +218,7 @@ class TestGetFamilyEvents:
         sample_family.events = []
         mock_service.get_family.return_value = sample_family
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.get("/api/v1/families/fam_001/events")
+        response = client.get("/api/v1/families/fam_001/events")
 
         assert response.status_code == 200
         data = response.json()
@@ -280,11 +228,7 @@ class TestGetFamilyEvents:
         """Test événements d'une famille inexistante."""
         mock_service.get_family.return_value = None
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.get("/api/v1/families/unknown/events")
+        response = client.get("/api/v1/families/unknown/events")
 
         assert response.status_code == 404
 
@@ -301,14 +245,9 @@ class TestGetFamilyStats:
             "families_with_children": 45,
         }
 
-        with patch(
-            "geneweb_py.api.routers.families.get_genealogy_service",
-            return_value=mock_service,
-        ):
-            response = client.get("/api/v1/families/stats/overview")
+        response = client.get("/api/v1/families/stats/overview")
 
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "Statistiques récupérées avec succès"
         assert data["data"]["total"] == 50
-
