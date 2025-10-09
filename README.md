@@ -284,20 +284,44 @@ parser = GeneWebParser(validate=False)
 
 ## 🧪 Tests
 
-geneweb-py dispose d'une suite de tests complète avec **858 tests** et **84% de couverture**.
+geneweb-py dispose d'une suite de tests **consolidée et organisée** avec **377 tests** et **80%+ de couverture**.
+
+### 📁 Structure des Tests
+
+```
+tests/
+├── unit/                    # Tests unitaires par module (18 fichiers)
+│   ├── test_date.py         # Tests pour core.date
+│   ├── test_event.py        # Tests pour core.event  
+│   ├── test_person.py       # Tests pour core.person
+│   ├── test_family.py       # Tests pour core.family
+│   ├── test_exceptions.py   # Tests pour core.exceptions
+│   ├── test_validation.py   # Tests pour core.validation
+│   ├── test_parser*.py      # Tests pour core.parser
+│   └── test_formats*.py     # Tests pour formats.*
+├── integration/             # Tests d'intégration
+├── compatibility/           # Tests de compatibilité Python
+├── packaging/              # Tests de packaging PyPI
+└── security/               # Tests de sécurité
+```
+
+### 🚀 Exécution des Tests
 
 ```bash
 # Exécuter tous les tests
 pytest
 
+# Tests unitaires seulement (recommandé pour le développement)
+pytest tests/unit/
+
 # Tests avec couverture
 pytest --cov=geneweb_py --cov-report=html
 
-# Tests d'intégration seulement
-pytest -m integration
+# Tests sans les tests lents
+pytest -m "not slow"
 
-# Tests de l'API
-pytest tests/api/
+# Tests d'intégration seulement
+pytest tests/integration/
 
 # Tests de packaging (PyPI)
 pytest tests/packaging/
@@ -308,12 +332,30 @@ pytest tests/compatibility/
 # Tests de sécurité
 pytest tests/security/
 
-# Benchmarks de performance
-python tests/performance/benchmark_parser.py
-
-# Démo des optimisations
-python examples/performance_demo.py
+# Voir les tests skippés et leurs raisons
+pytest -rs
 ```
+
+### 📊 Métriques de Qualité
+
+- **Tests unitaires** : 349 passants, 28 skippés
+- **Couverture globale** : 80%+ (objectif atteint)
+- **Modules critiques** : 90%+ (parser, validation, exceptions)
+- **Temps d'exécution** : < 30s pour la suite complète
+
+### 🔧 Configuration des Tests
+
+Les tests sont configurés dans `pyproject.toml` avec :
+- **Couverture minimale** : 80%
+- **Marqueurs** : `slow`, `integration`, `unit`, `coverage`, `parser`, `validation`, `formats`
+- **Filtres d'avertissements** : Déprecations ignorées
+- **Traceback court** : Pour des rapports concis
+
+### 📝 Documentation des Tests
+
+- **[Structure des tests](tests/README.md)** : Organisation et bonnes pratiques
+- **[Tests skippés](tests/SKIPPED_TESTS.md)** : Documentation des tests temporairement désactivés
+- **Couverture** : Rapport HTML généré dans `htmlcov/`
 
 ## 🚀 Développement et Publication
 
