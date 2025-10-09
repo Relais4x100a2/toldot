@@ -11,10 +11,12 @@ import tracemalloc
 from pathlib import Path
 from typing import Any, Dict
 
+# Imports du projet doivent être après manipulation de sys.path
 # Ajouter le chemin du projet (structure src/)
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
+# ruff: noqa: E402
 from geneweb_py.core.parser.gw_parser import GeneWebParser
 from geneweb_py.core.parser.streaming import estimate_memory_usage, should_use_streaming
 
