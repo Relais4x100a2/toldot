@@ -7,7 +7,7 @@ et syntaxique pour créer une représentation complète des données généalogi
 
 import chardet
 from pathlib import Path
-from typing import Optional, Union, TextIO, List
+from typing import Optional, Union, TextIO, List, Tuple
 
 from .lexical import LexicalParser, Token, TokenType
 from .syntax import SyntaxParser, SyntaxNode, BlockType
@@ -297,7 +297,7 @@ class GeneWebParser:
                 pass
         return base_id
     
-    def _read_file_with_encoding(self, file_path: Path) -> tuple[str, str]:
+    def _read_file_with_encoding(self, file_path: Path) -> Tuple[str, str]:
         """Lit un fichier avec détection automatique d'encodage optimisée
         
         Optimisation: Essaye UTF-8 d'abord, utilise chardet seulement si nécessaire
@@ -1021,7 +1021,7 @@ class GeneWebParser:
         
         return None
     
-    def _parse_witness_person(self, tokens: List[Token], start_index: int, persons: dict, genealogy: Genealogy) -> tuple[int, Optional[str], Optional[str]]:
+    def _parse_witness_person(self, tokens: List[Token], start_index: int, persons: dict, genealogy: Genealogy) -> Tuple[int, Optional[str], Optional[str]]:
         """Parse un témoin avec toutes ses informations personnelles
         
         Format: wit [m|f]: LastName FirstName [dates] [#bp place] [#occu occupation] ...

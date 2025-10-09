@@ -6,7 +6,7 @@ le format GEDCOM (Genealogical Data Communication), un standard
 international pour l'échange de données généalogiques.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 from pathlib import Path
 from datetime import datetime
 
@@ -409,14 +409,14 @@ class GEDCOMImporter(BaseImporter):
             i += 1
         return i
     
-    def _parse_individual(self, lines: List[str], start_idx: int) -> tuple[Optional[Person], int]:
+    def _parse_individual(self, lines: List[str], start_idx: int) -> Tuple[Optional[Person], int]:
         """Parse un individu GEDCOM."""
         # Cette implémentation est simplifiée
         # Dans une version complète, il faudrait parser tous les champs
         i = start_idx + 1
         return None, i
     
-    def _parse_family(self, lines: List[str], start_idx: int) -> tuple[Optional[Family], int]:
+    def _parse_family(self, lines: List[str], start_idx: int) -> Tuple[Optional[Family], int]:
         """Parse une famille GEDCOM."""
         # Cette implémentation est simplifiée
         # Dans une version complète, il faudrait parser tous les champs

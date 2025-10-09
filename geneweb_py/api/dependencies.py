@@ -5,7 +5,7 @@ Ce module fournit les dépendances communes utilisées dans les routers
 pour l'injection de dépendances et la gestion des services.
 """
 
-from typing import Generator, Optional
+from typing import Generator, Optional, Tuple
 from fastapi import Depends, HTTPException, status
 from contextlib import asynccontextmanager
 
@@ -70,7 +70,7 @@ def get_pagination_params(
     page: int = 1,
     size: int = 20,
     max_size: int = 100
-) -> tuple[int, int]:
+) -> Tuple[int, int]:
     """
     Valide et retourne les paramètres de pagination.
     
