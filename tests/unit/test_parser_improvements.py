@@ -2,6 +2,8 @@
 Tests unitaires pour les améliorations du parser GeneWeb
 """
 
+import pytest
+
 from geneweb_py.core.parser.gw_parser import GeneWebParser
 from geneweb_py.core.parser.lexical import LexicalParser, TokenType
 
