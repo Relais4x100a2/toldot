@@ -45,7 +45,9 @@ def populated_genealogy():
 class TestExportGenealogyComplete:
     """Tests complets pour l'export de généalogies."""
 
-    def test_export_json_success(self, client, mock_service, populated_genealogy, tmp_path):
+    def test_export_json_success(
+        self, client, mock_service, populated_genealogy, tmp_path
+    ):
         """Test export JSON avec données."""
         mock_service.genealogy = populated_genealogy
 
@@ -72,7 +74,9 @@ class TestExportGenealogyComplete:
                 assert response.status_code == 200
                 mock_exporter.export.assert_called_once()
 
-    def test_export_xml_success(self, client, mock_service, populated_genealogy, tmp_path):
+    def test_export_xml_success(
+        self, client, mock_service, populated_genealogy, tmp_path
+    ):
         """Test export XML avec données."""
         mock_service.genealogy = populated_genealogy
 
@@ -98,7 +102,9 @@ class TestExportGenealogyComplete:
                 assert response.status_code == 200
                 mock_exporter.export.assert_called_once()
 
-    def test_export_gedcom_success(self, client, mock_service, populated_genealogy, tmp_path):
+    def test_export_gedcom_success(
+        self, client, mock_service, populated_genealogy, tmp_path
+    ):
         """Test export GEDCOM avec données."""
         mock_service.genealogy = populated_genealogy
 

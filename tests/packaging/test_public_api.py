@@ -6,7 +6,6 @@ et que l'API est stable.
 """
 
 
-
 def test_main_imports():
     """Test des imports principaux depuis geneweb_py"""
     from geneweb_py import GeneWebParser

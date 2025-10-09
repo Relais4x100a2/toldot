@@ -9,7 +9,6 @@ Lignes manquantes principales :
 - 460, 567-568, etc. : Parsing de blocs spécifiques
 """
 
-
 import pytest
 
 from geneweb_py.core.exceptions import GeneWebEncodingError, GeneWebParseError

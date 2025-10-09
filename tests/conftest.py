@@ -5,7 +5,6 @@ Ce fichier contient les fixtures et configurations partagées
 pour tous les tests.
 """
 
-
 import pytest
 
 from geneweb_py.core.models import (
