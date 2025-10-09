@@ -107,17 +107,35 @@ class Family:
     # Métadonnées
     metadata: Dict[str, Any] = field(default_factory=dict)
     
+    # Validation gracieuse
+    is_valid: bool = field(default=True)
+    validation_errors: List[Any] = field(default_factory=list)  # List[GeneWebError] mais évite import circulaire
+    
     def __post_init__(self):
         """Validation après initialisation"""
-        # Vérifier qu'au moins un époux est défini
+        # Vérifier qu'au moins un époux est défini (validation gracieuse)
         if not self.husband_id and not self.wife_id:
-            raise ValueError("Une famille doit avoir au moins un époux ou une épouse")
+            from .exceptions import GeneWebValidationError
+            error = GeneWebValidationError(
+                "Une famille doit avoir au moins un époux ou une épouse",
+                field="husband_id/wife_id",
+                entity_type="Family",
+                entity_id=self.family_id
+            )
+            self.add_validation_error(error)
         
-        # Validation des dates
+        # Validation gracieuse des dates
         if self.marriage_date and self.divorce_date:
             if self.marriage_date.year and self.divorce_date.year:
                 if self.marriage_date.year > self.divorce_date.year:
-                    raise ValueError(f"Date de mariage ({self.marriage_date}) postérieure à la date de divorce ({self.divorce_date})")
+                    from .exceptions import GeneWebValidationError
+                    error = GeneWebValidationError(
+                        f"Date de mariage ({self.marriage_date}) postérieure à la date de divorce ({self.divorce_date})",
+                        field="marriage_date",
+                        entity_type="Family",
+                        entity_id=self.family_id
+                    )
+                    self.add_validation_error(error)
     
     @property
     def spouse_ids(self) -> List[str]:
@@ -272,6 +290,20 @@ class Family:
         """
         return self.is_parent(person_id) or self.is_child(person_id)
     
+    def add_validation_error(self, error: Any) -> None:
+        """Ajoute une erreur de validation à la famille
+        
+        Args:
+            error: L'erreur à ajouter
+        """
+        self.validation_errors.append(error)
+        self.is_valid = False
+    
+    def clear_validation_errors(self) -> None:
+        """Efface toutes les erreurs de validation"""
+        self.validation_errors.clear()
+        self.is_valid = True
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convertit la famille en dictionnaire pour sérialisation"""
         return {
@@ -294,7 +326,9 @@ class Family:
             'witnesses': self.witnesses,
             'events': [event.to_dict() for event in self.events],
             'comments': self.comments,
-            'family_source': self.family_source
+            'family_source': self.family_source,
+            'is_valid': self.is_valid,
+            'validation_errors': [str(e) for e in self.validation_errors]
         }
     
     def __str__(self) -> str:

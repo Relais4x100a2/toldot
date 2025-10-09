@@ -130,6 +130,10 @@ class Person:
     # Métadonnées personnalisées
     metadata: Dict[str, Any] = field(default_factory=dict)
     
+    # Validation gracieuse
+    is_valid: bool = field(default=True)
+    validation_errors: List[Any] = field(default_factory=list)  # List[GeneWebError] mais évite import circulaire
+    
     def __post_init__(self):
         """Validation après initialisation"""
         # Normaliser les noms (remplacer espaces par underscores)
@@ -139,11 +143,19 @@ class Person:
         if self.public_name:
             self.public_name = self.public_name.replace(" ", "_")
         
-        # Validation des dates
+        # Validation gracieuse des dates
         if self.birth_date and self.death_date:
             if self.birth_date.year and self.death_date.year:
                 if self.birth_date.year > self.death_date.year:
-                    raise ValueError(f"Date de naissance ({self.birth_date}) postérieure à la date de décès ({self.death_date})")
+                    # Au lieu de lever une exception, ajouter une erreur de validation
+                    from .exceptions import GeneWebValidationError
+                    error = GeneWebValidationError(
+                        f"Date de naissance ({self.birth_date}) postérieure à la date de décès ({self.death_date})",
+                        field="birth_date",
+                        entity_type="Person",
+                        entity_id=self.unique_id
+                    )
+                    self.add_validation_error(error)
     
     @property
     def full_name(self) -> str:
@@ -227,6 +239,20 @@ class Person:
         """Retourne toutes les familles liées à cette personne"""
         return self.families_as_child + self.families_as_spouse
     
+    def add_validation_error(self, error: Any) -> None:
+        """Ajoute une erreur de validation à la personne
+        
+        Args:
+            error: L'erreur à ajouter
+        """
+        self.validation_errors.append(error)
+        self.is_valid = False
+    
+    def clear_validation_errors(self) -> None:
+        """Efface toutes les erreurs de validation"""
+        self.validation_errors.clear()
+        self.is_valid = True
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convertit la personne en dictionnaire pour sérialisation"""
         return {
@@ -250,7 +276,9 @@ class Person:
             'families_as_spouse': self.families_as_spouse,
             'events': [event.to_dict() for event in self.events],
             'relations': self.relations,
-            'notes': self.notes
+            'notes': self.notes,
+            'is_valid': self.is_valid,
+            'validation_errors': [str(e) for e in self.validation_errors]
         }
     
     def __str__(self) -> str:

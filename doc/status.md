@@ -17,8 +17,24 @@ geneweb-py est une librairie Python pour parser, manipuler et convertir les fich
 - Person: noms, dates, lieux, événements, relations
 - Family: époux/épouse, enfants (avec sexe), événements
 - Event: événements personnels/familiaux, témoins, notes
-- Genealogy: conteneur principal, validation de cohérence, statistiques
+- Genealogy: conteneur principal, validation de cohérence, statistiques, support de validation gracieuse
 - Exceptions dédiées: `GeneWebError`, `GeneWebParseError`, `GeneWebValidationError`, `GeneWebConversionError`, `GeneWebEncodingError`
+
+#### 🎯 Messages d'erreur enrichis et validation gracieuse (nouveau)
+- **ErrorSeverity** : Classification des erreurs en WARNING, ERROR, CRITICAL
+- **ParseWarning** : Avertissements non-bloquants pour problèmes mineurs
+- **Messages contextuels** : Chaque erreur contient le numéro de ligne, le contexte, les tokens attendus/trouvés
+- **GeneWebErrorCollector** : Collecte multiple d'erreurs au lieu de s'arrêter à la première
+  - Mode strict (`strict=True`) : Lève exception à la première erreur (comportement par défaut)
+  - Mode gracieux (`strict=False`) : Continue le parsing et collecte toutes les erreurs
+  - Filtrage par type et par sévérité
+  - Rapports détaillés avec résumés et statistiques
+- **Validation gracieuse** :
+  - Les objets `Person`, `Family`, `Genealogy` ont des attributs `is_valid` et `validation_errors`
+  - Module `validation.py` avec fonctions de validation non-destructives
+  - Création d'objets partiels en cas d'erreur de parsing
+  - Validation bidirectionnelle des références entre personnes et familles
+- **Intégration parser** : Le `GeneWebParser` supporte `strict=True/False` pour choisir le comportement
 
 ### 3. Parser GeneWeb (lexical, syntaxique, principal)
 - Support des apostrophes dans les identifiants (`d'Arc`, `O'Brien`, `L'Église`)
@@ -59,6 +75,9 @@ geneweb-py est une librairie Python pour parser, manipuler et convertir les fich
 
 ## 🧪 Qualité et tests
 - Suite de tests unitaires et d'intégration (parsers, API, convertisseurs)
+- Tests de récupération d'erreurs (`test_error_recovery.py`)
+- Tests de validation gracieuse (`test_validation_graceful.py`)
+- Fixtures de test avec erreurs syntaxiques et données incohérentes
 - Couverture mesurée automatiquement (rapport HTML dans `htmlcov/index.html`)
 - Seuil CI défini dans `pyproject.toml` (`--cov-fail-under`)
 
@@ -72,15 +91,16 @@ geneweb-py est une librairie Python pour parser, manipuler et convertir les fich
 geneweb_py/
 ├── core/                    # Modèles et logique principale
 │   ├── date.py              # Parser et modèle Date
-│   ├── person.py            # Modèle Person
-│   ├── family.py            # Modèle Family
+│   ├── person.py            # Modèle Person avec validation
+│   ├── family.py            # Modèle Family avec validation
 │   ├── event.py             # Modèle Event
-│   ├── genealogy.py         # Modèle Genealogy
-│   ├── exceptions.py        # Exceptions spécifiques
+│   ├── genealogy.py         # Modèle Genealogy avec validation gracieuse
+│   ├── exceptions.py        # Exceptions avec messages enrichis et collecteur
+│   ├── validation.py        # Système de validation gracieuse
 │   └── parser/              # Parser lexical, syntaxique et principal
 │       ├── lexical.py       # Tokenisation avec cache LRU et __slots__
 │       ├── syntax.py        # Parsing syntaxique optimisé
-│       ├── gw_parser.py     # Parser principal avec mode streaming
+│       ├── gw_parser.py     # Parser principal avec mode streaming et strict
 │       └── streaming.py     # Parsing streaming pour gros fichiers
 ├── api/                     # API REST (FastAPI)
 │   ├── main.py              # Application FastAPI

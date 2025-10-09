@@ -14,6 +14,8 @@ Librairie Python complète pour parser, manipuler et convertir les fichiers gén
 - **Modèles de données** : Représentation structurée des personnes, familles et événements ✅
 - **API REST moderne** : FastAPI avec endpoints complets pour CRUD ✅
 - **Validation** : Vérification de cohérence des données généalogiques ✅
+- **Messages d'erreur enrichis** : Erreurs contextuelles avec numéro de ligne, tokens, et suggestions ✅
+- **Validation gracieuse** : Mode strict/gracieux pour collecter toutes les erreurs ou s'arrêter à la première ✅
 - **Conversion** : Export/import vers GEDCOM, JSON, XML et autres formats ✅
 - **Performance** : Optimisations avancées (streaming, cache LRU, __slots__) ✅
   - Mode streaming automatique pour gros fichiers (>10MB)
@@ -128,6 +130,84 @@ genealogy = parser.parse_string(content)
 # Toutes les personnes sont correctement parsées avec leurs occupations
 for person in genealogy.persons.values():
     print(f"{person.first_name} {person.last_name} - {person.occupation}")
+```
+
+### Validation gracieuse et gestion d'erreurs
+
+Le parser supporte deux modes de gestion d'erreurs :
+
+#### Mode strict (par défaut) - S'arrête à la première erreur
+
+```python
+from geneweb_py import GeneWebParser
+
+parser = GeneWebParser(strict=True)  # Mode par défaut
+try:
+    genealogy = parser.parse_file("fichier_avec_erreur.gw")
+except GeneWebParseError as e:
+    print(f"Erreur de parsing : {e}")
+    # Message enrichi avec ligne, token attendu, contexte
+```
+
+#### Mode gracieux - Collecte toutes les erreurs
+
+```python
+from geneweb_py import GeneWebParser
+
+# Mode gracieux : continue le parsing malgré les erreurs
+parser = GeneWebParser(strict=False, validate=True)
+genealogy = parser.parse_file("fichier_avec_erreurs.gw")
+
+# Vérifier si la généalogie est valide
+if not genealogy.is_valid:
+    print(f"Erreurs détectées : {len(genealogy.validation_errors)}")
+    
+    # Obtenir un résumé
+    print(genealogy.get_validation_summary())
+    
+    # Afficher toutes les erreurs
+    for error in genealogy.validation_errors:
+        print(f"- {error}")  # Messages enrichis avec contexte
+
+# Rapport détaillé des erreurs
+if parser.error_collector.has_errors():
+    print(parser.error_collector.get_detailed_report())
+```
+
+#### Messages d'erreur enrichis
+
+Les erreurs incluent automatiquement :
+- Numéro de ligne
+- Token trouvé vs token attendu
+- Contexte (quelle personne, famille, etc.)
+- Sévérité (WARNING, ERROR, CRITICAL)
+
+```python
+# Exemple de message d'erreur enrichi :
+# Ligne 42: Token inattendu
+#   Token trouvé: 'invalid'
+#   Attendu: fam, nom, ou date
+#   Contexte: Parsing d'une personne
+```
+
+#### Validation des données
+
+```python
+from geneweb_py.core.validation import (
+    validate_person_basic,
+    validate_family_basic,
+    validate_genealogy_consistency
+)
+
+# Valider une personne
+result = validate_person_basic(person)
+if not result.is_valid():
+    print(f"Erreurs : {result.get_error_messages()}")
+    print(f"Avertissements : {result.get_warning_messages()}")
+
+# Valider toute la généalogie
+result = validate_genealogy_consistency(genealogy)
+print(result.get_summary())  # Résumé des erreurs et avertissements
 ```
 
 ### Conversion de formats
