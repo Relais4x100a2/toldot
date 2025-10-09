@@ -39,21 +39,27 @@ class GeneWebParser:
     """
     
     def __init__(self, validate: bool = True, stream_mode: Optional[bool] = None, 
-                 streaming_threshold_mb: float = 10.0):
+                 streaming_threshold_mb: float = 10.0, strict: bool = True):
         """Initialise le parser
         
         Args:
             validate: Si True, valide la cohérence des données après parsing
             stream_mode: Si True, force le mode streaming. Si None, détection automatique.
             streaming_threshold_mb: Seuil en MB pour activer le streaming automatiquement
+            strict: Si True, lève une exception à la première erreur. Si False, parsing gracieux.
         """
         self.validate = validate
         self.stream_mode = stream_mode
         self.streaming_threshold_mb = streaming_threshold_mb
+        self.strict = strict
         self.lexical_parser: Optional[LexicalParser] = None
         self.syntax_parser = SyntaxParser()
         self.tokens: List[Token] = []
         self.syntax_nodes: List[SyntaxNode] = []
+        
+        # Collecteur d'erreurs pour parsing gracieux
+        from ..exceptions import GeneWebErrorCollector
+        self.error_collector = GeneWebErrorCollector(strict=strict)
     
     def parse_file(self, file_path: Union[str, Path]) -> Genealogy:
         """Parse un fichier .gw avec optimisation automatique
@@ -100,6 +106,11 @@ class GeneWebParser:
                 # Ajouter les métadonnées du fichier
                 genealogy.metadata.source_file = str(file_path)
                 genealogy.metadata.encoding = encoding
+                
+                # Transférer les erreurs de parsing à la généalogie
+                if self.error_collector.has_errors():
+                    for error in self.error_collector.get_errors():
+                        genealogy.add_validation_error(error)
                 
                 return genealogy
             

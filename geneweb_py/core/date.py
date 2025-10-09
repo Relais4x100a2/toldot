@@ -338,6 +338,66 @@ class Date:
             # En cas d'erreur, retourner une date inconnue
             return cls(is_unknown=True)
     
+    def is_after(self, other: 'Date') -> bool:
+        """Vérifie si cette date est après une autre date
+        
+        Args:
+            other: L'autre date à comparer
+            
+        Returns:
+            True si cette date est après l'autre
+        """
+        # Si l'une des dates est inconnue, on ne peut pas comparer
+        if self.is_unknown or other.is_unknown:
+            return False
+        
+        # Comparer par année si disponible
+        if self.year and other.year:
+            if self.year != other.year:
+                return self.year > other.year
+            
+            # Si même année, comparer par mois
+            if self.month and other.month:
+                if self.month != other.month:
+                    return self.month > other.month
+                
+                # Si même mois, comparer par jour
+                if self.day and other.day:
+                    return self.day > other.day
+        
+        # Par défaut, on ne peut pas déterminer
+        return False
+    
+    def is_before(self, other: 'Date') -> bool:
+        """Vérifie si cette date est avant une autre date
+        
+        Args:
+            other: L'autre date à comparer
+            
+        Returns:
+            True si cette date est avant l'autre
+        """
+        # Si l'une des dates est inconnue, on ne peut pas comparer
+        if self.is_unknown or other.is_unknown:
+            return False
+        
+        # Comparer par année si disponible
+        if self.year and other.year:
+            if self.year != other.year:
+                return self.year < other.year
+            
+            # Si même année, comparer par mois
+            if self.month and other.month:
+                if self.month != other.month:
+                    return self.month < other.month
+                
+                # Si même mois, comparer par jour
+                if self.day and other.day:
+                    return self.day < other.day
+        
+        # Par défaut, on ne peut pas déterminer
+        return False
+    
     def __str__(self) -> str:
         """Représentation string de la date"""
         return self.display_text

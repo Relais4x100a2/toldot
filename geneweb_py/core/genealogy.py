@@ -11,7 +11,7 @@ from datetime import datetime
 
 from .person import Person
 from .family import Family
-from .exceptions import GeneWebValidationError
+from .exceptions import GeneWebValidationError, GeneWebError
 
 
 @dataclass
@@ -52,6 +52,10 @@ class Genealogy:
     
     # Métadonnées
     metadata: GenealogyMetadata = field(default_factory=GenealogyMetadata)
+    
+    # Validation gracieuse
+    is_valid: bool = field(default=True)
+    validation_errors: List[GeneWebError] = field(default_factory=list)
     
     # Statistiques (calculées automatiquement)
     _stats_cache: Dict[str, Any] = field(default_factory=dict, init=False)
@@ -237,8 +241,11 @@ class Genealogy:
         
         return spouses
     
-    def validate_consistency(self) -> List[GeneWebValidationError]:
+    def validate_consistency(self, strict: bool = True) -> List[GeneWebValidationError]:
         """Valide la cohérence des données généalogiques
+        
+        Args:
+            strict: Si True, met à jour is_valid en fonction des erreurs trouvées
         
         Returns:
             Liste des erreurs de validation trouvées
@@ -273,7 +280,57 @@ class Genealogy:
                         f"Famille '{family_id}' référencée par '{person.unique_id}' non trouvée"
                     ))
         
+        # Mettre à jour les attributs de validation
+        if strict and errors:
+            self.is_valid = False
+            self.validation_errors.extend(errors)
+        
         return errors
+    
+    def add_validation_error(self, error: GeneWebError) -> None:
+        """Ajoute une erreur de validation à la généalogie
+        
+        Args:
+            error: L'erreur à ajouter
+        """
+        self.validation_errors.append(error)
+        self.is_valid = False
+    
+    def clear_validation_errors(self) -> None:
+        """Efface toutes les erreurs de validation"""
+        self.validation_errors.clear()
+        self.is_valid = True
+    
+    def get_validation_summary(self) -> str:
+        """Retourne un résumé des erreurs de validation
+        
+        Returns:
+            Résumé textuel des erreurs
+        """
+        if self.is_valid:
+            return "Généalogie valide"
+        
+        from .exceptions import ErrorSeverity
+        
+        # Compter par sévérité
+        by_severity = {
+            ErrorSeverity.WARNING: 0,
+            ErrorSeverity.ERROR: 0,
+            ErrorSeverity.CRITICAL: 0,
+        }
+        
+        for error in self.validation_errors:
+            by_severity[error.severity] += 1
+        
+        parts = []
+        if by_severity[ErrorSeverity.WARNING] > 0:
+            parts.append(f"{by_severity[ErrorSeverity.WARNING]} avertissement(s)")
+        if by_severity[ErrorSeverity.ERROR] > 0:
+            parts.append(f"{by_severity[ErrorSeverity.ERROR]} erreur(s)")
+        if by_severity[ErrorSeverity.CRITICAL] > 0:
+            parts.append(f"{by_severity[ErrorSeverity.CRITICAL]} erreur(s) critique(s)")
+        
+        return f"Généalogie avec erreurs: {', '.join(parts)}"
     
     def get_statistics(self) -> Dict[str, Any]:
         """Retourne les statistiques de la généalogie
@@ -359,7 +416,12 @@ class Genealogy:
             },
             'persons': {pid: person.to_dict() for pid, person in self.persons.items()},
             'families': {fid: family.to_dict() for fid, family in self.families.items()},
-            'statistics': self.get_statistics()
+            'statistics': self.get_statistics(),
+            'validation': {
+                'is_valid': self.is_valid,
+                'error_count': len(self.validation_errors),
+                'errors': [e.to_dict() for e in self.validation_errors],
+            }
         }
     
     def __len__(self) -> int:
