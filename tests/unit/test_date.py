@@ -251,6 +251,28 @@ class TestDateEmptyFields:
             Date.parse("1990-12")  # Format avec tiret non supporté
 
 
+class TestDateAlternatives:
+    """Tests pour les dates alternatives (OR et BETWEEN)"""
+    
+    def test_or_dates_with_year(self):
+        """Test 'OR' entre une date complète et une année"""
+        date = Date.parse("10/5/1990|1991")
+        assert date.prefix == DatePrefix.OR
+        assert date.day == 10 and date.month == 5 and date.year == 1990
+        assert len(date.alternative_dates) == 1
+        assert date.alternative_dates[0].year == 1991
+        assert date.display_text == "10/05/1990|1991"
+    
+    def test_between_dates_years(self):
+        """Test 'BETWEEN' entre deux années"""
+        date = Date.parse("1990..1995")
+        assert date.prefix == DatePrefix.BETWEEN
+        assert date.year == 1990
+        assert len(date.alternative_dates) == 1
+        assert date.alternative_dates[0].year == 1995
+        assert date.display_text == "1990..1995"
+
+
 class TestDateProperties:
     """Tests pour les propriétés des dates"""
     

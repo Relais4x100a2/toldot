@@ -7,8 +7,9 @@ tous les tokens du format : blocs, mots-clés, identifiants, dates, etc.
 
 import re
 from dataclasses import dataclass
-from typing import Optional, List, Iterator, Union
+from typing import Optional, List, Iterator, Union, Pattern
 from enum import Enum
+from functools import lru_cache
 
 from ..exceptions import GeneWebParseError
 
@@ -125,7 +126,7 @@ class TokenType(Enum):
     UNKNOWN = "unknown"           # Token inconnu
 
 
-@dataclass
+@dataclass(slots=True)
 class Token:
     """Représentation d'un token avec sa position"""
     
@@ -142,6 +143,20 @@ class Token:
     def __repr__(self) -> str:
         """Représentation pour debug"""
         return f"Token({self.type.value}, '{self.value}', {self.line_number}:{self.column})"
+
+
+# Cache LRU pour les patterns regex compilés
+@lru_cache(maxsize=128)
+def _get_compiled_pattern(pattern: str) -> Pattern:
+    """Cache pour les patterns regex compilés
+    
+    Args:
+        pattern: Pattern regex sous forme de chaîne
+        
+    Returns:
+        Pattern compilé
+    """
+    return re.compile(pattern)
 
 
 class LexicalParser:
@@ -169,7 +184,24 @@ class LexicalParser:
         self._compile_patterns()
     
     def _compile_patterns(self) -> None:
-        """Compile les expressions régulières pour la tokenisation"""
+        """Compile les expressions régulières pour la tokenisation
+        
+        Note: Utilise des dictionnaires pour des lookups O(1) au lieu de conditionnels multiples
+        """
+        
+        # Symboles simples (pre-compilés pour accès rapide)
+        self.symbol_map = {
+            ':': TokenType.COLON,
+            '-': TokenType.DASH,
+            '+': TokenType.PLUS,
+            '.': TokenType.DOT,
+            '(': TokenType.PAREN_OPEN,
+            ')': TokenType.PAREN_CLOSE,
+            '[': TokenType.BRACKET_OPEN,
+            ']': TokenType.BRACKET_CLOSE,
+            '{': TokenType.BRACE_OPEN,
+            '}': TokenType.BRACE_CLOSE,
+        }
         
         # Mots-clés de blocs (doivent être en début de ligne)
         self.block_keywords = {
@@ -361,24 +393,11 @@ class LexicalParser:
         if char == '.' and self.position + 1 < len(self.text) and self.text[self.position + 1].isdigit():
             return self._parse_number(start_line, start_col, start_pos)
         
-        # Symboles simples
-        symbol_map = {
-            ':': TokenType.COLON,
-            '-': TokenType.DASH,
-            '+': TokenType.PLUS,
-            '.': TokenType.DOT,
-            '(': TokenType.PAREN_OPEN,
-            ')': TokenType.PAREN_CLOSE,
-            '[': TokenType.BRACKET_OPEN,
-            ']': TokenType.BRACKET_CLOSE,
-            '{': TokenType.BRACE_OPEN,
-            '}': TokenType.BRACE_CLOSE,
-        }
-        
-        if char in symbol_map:
+        # Symboles simples (utilisation du dictionnaire pré-compilé)
+        if char in self.symbol_map:
             self._advance_position()
             return Token(
-                type=symbol_map[char],
+                type=self.symbol_map[char],
                 value=char,
                 line_number=start_line,
                 column=start_col,

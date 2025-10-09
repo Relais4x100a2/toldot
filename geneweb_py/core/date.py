@@ -10,6 +10,9 @@ from typing import Optional, Union, List
 from enum import Enum
 import re
 
+# Regex précompilée pour les dates textuelles 0(texte)
+TEXT_DATE_RE = re.compile(r'^0\((.+)\)$')
+
 
 class DatePrefix(Enum):
     """Préfixes de date supportés par GeneWeb"""
@@ -106,8 +109,8 @@ class Date:
         
         parts = []
         
-        # Ajouter le préfixe
-        if self.prefix:
+        # Ajouter le préfixe (sauf pour OR et BETWEEN qui sont gérés séparément)
+        if self.prefix and self.prefix not in [DatePrefix.OR, DatePrefix.BETWEEN]:
             parts.append(self.prefix.value)
         
         # Ajouter le type de décès
@@ -134,13 +137,22 @@ class Date:
         # Ajouter les dates alternatives
         if self.alternative_dates:
             if self.prefix == DatePrefix.OR:
+                # Pour OR, construire la chaîne avec le séparateur |
                 alt_texts = [alt.display_text for alt in self.alternative_dates]
                 parts.append("|".join(alt_texts))
             elif self.prefix == DatePrefix.BETWEEN:
                 if self.alternative_dates:
                     parts.append(f"..{self.alternative_dates[0].year}")
         
-        return "".join(parts)
+        result = "".join(parts)
+        
+        # Pour OR, reconstruire la chaîne avec le bon format
+        if self.prefix == DatePrefix.OR and self.alternative_dates:
+            main_date = "".join(parts[:-1])  # Tous sauf la dernière partie
+            alt_texts = [alt.display_text for alt in self.alternative_dates]
+            result = f"{main_date}|{'|'.join(alt_texts)}"
+        
+        return result
     
     def to_iso_format(self) -> Optional[str]:
         """Convertit la date au format ISO (YYYY-MM-DD) si possible"""
@@ -150,7 +162,7 @@ class Date:
         return f"{self.year:04d}-{self.month:02d}-{self.day:02d}"
     
     @classmethod
-    def parse(cls, date_str: str) -> 'Date':
+    def parse(cls, date_str: Optional[str]) -> 'Date':
         """Parse une chaîne de date au format GeneWeb
         
         Args:
@@ -162,18 +174,23 @@ class Date:
         Raises:
             ValueError: Si la date ne peut pas être parsée
         """
-        if not date_str or date_str.strip() == "":
-            # Date vide -> date inconnue
+        # Support None → date inconnue
+        if date_str is None:
             return cls(is_unknown=True)
         
+        # Nettoyer la chaîne de date; si vide ⇒ date inconnue
         date_str = date_str.strip()
+
+        # Support des dates vides (ex: "#deat" sans date) → date inconnue
+        if date_str == "":
+            return cls(is_unknown=True)
         
         # Date inconnue
         if date_str == "0":
             return cls(is_unknown=True)
         
         # Date textuelle (0(texte))
-        text_match = re.match(r'^0\((.+)\)$', date_str)
+        text_match = TEXT_DATE_RE.match(date_str)
         if text_match:
             return cls(text_date=text_match.group(1))
         

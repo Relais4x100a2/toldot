@@ -44,8 +44,9 @@ def mock_service():
     
     service.genealogy = genealogy
     service.get_event.return_value = event
-    service.get_events.return_value = [event]
-    service.create_event.return_value = event
+    service.search_events.return_value = ([event], 1)
+    service.create_personal_event.return_value = event
+    service.create_family_event.return_value = event
     service.update_event.return_value = event
     service.delete_event.return_value = True
     
@@ -79,9 +80,9 @@ class TestEventsRouter:
         
         assert response.status_code == 200
         data = response.json()
-        assert data["success"] is True
-        assert "events" in data["data"]
-        assert len(data["data"]["events"]) == 1
+        assert "items" in data
+        assert "pagination" in data
+        assert len(data["items"]) == 1
     
     def test_get_events_with_pagination(self, client_with_mock_service, mock_service):
         """Test récupération avec pagination"""
