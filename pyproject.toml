@@ -128,10 +128,19 @@ addopts = [
     "--cov=geneweb_py",
     "--cov-report=term-missing",
     "--cov-report=html",
-    "--cov-fail-under=50",
+    "--cov-fail-under=80",
+    "--tb=short",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
+    "coverage: marks tests for coverage analysis",
+    "parser: marks parser-specific tests",
+    "validation: marks validation tests",
+    "formats: marks format conversion tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
 ]
