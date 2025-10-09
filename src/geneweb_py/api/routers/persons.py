@@ -97,7 +97,7 @@ async def get_person(
     if person is None:
         raise HTTPException(
             status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
-        ) from exc
+        )
 
     # Conversion vers le schéma de réponse
     person_schema = PersonSchema(
@@ -151,7 +151,7 @@ async def update_person(
     if person is None:
         raise HTTPException(
             status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
-        ) from exc
+        )
 
     # Conversion vers le schéma de réponse
     person_schema = PersonSchema(
@@ -202,7 +202,7 @@ async def delete_person(
     if not success:
         raise HTTPException(
             status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
-        ) from exc
+        )
 
     return SuccessResponse(message="Personne supprimée avec succès")
 
@@ -303,7 +303,7 @@ async def get_person_families(
     if person is None:
         raise HTTPException(
             status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
-        ) from exc
+        )
 
     # TODO: Implémenter la récupération des familles de la personne
     families = []
@@ -330,7 +330,7 @@ async def get_person_events(
     if person is None:
         raise HTTPException(
             status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
-        ) from exc
+        )
 
     # TODO: Implémenter la récupération des événements de la personne
     events = []

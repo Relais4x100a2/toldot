@@ -183,7 +183,7 @@ class StreamingGeneWebParser:
         file_path = Path(file_path)
 
         if not file_path.exists():
-            raise GeneWebParseError(f"Fichier non trouvé: {file_path}") from e
+            raise GeneWebParseError(f"Fichier non trouvé: {file_path}")
 
         # Détection d'encodage
         encoding = self._detect_encoding(file_path)

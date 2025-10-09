@@ -250,13 +250,13 @@ class JSONImporter(BaseImporter):
 
             # Vérifier que le JSON n'est pas vide
             if not json_data or (not isinstance(json_data, dict)):
-                raise ConversionError("JSON vide ou invalide") from e
+                raise ConversionError("JSON vide ou invalide")
 
             # Vérifier qu'il y a au moins des données de généalogie
             if not any(key in json_data for key in ["persons", "families", "metadata"]):
                 raise ConversionError(
                     "JSON ne contient pas de données de généalogie valides"
-                ) from e
+                )
 
             # Réinitialiser les maps
             self._person_map.clear()

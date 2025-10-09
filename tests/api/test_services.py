@@ -499,7 +499,7 @@ class TestEventOperations:
         # Pour l'instant get_event retourne None car les events n'ont pas d'unique_id
         # Test que la méthode fonctionne
         result = service.get_event("any_id")
-        assert result is None or isinstance(result, Event)
+        assert result is None  # or isinstance(result, Event) - Event non importé
 
     def test_update_event_not_found(self, service):
         """Test mise à jour événement inexistant."""
