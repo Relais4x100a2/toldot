@@ -117,13 +117,15 @@ class TestResponseModels:
 
     def test_error_response(self):
         """Test réponse d'erreur."""
+        from geneweb_py.api.models.responses import ErrorDetail
+        
         response = ErrorResponse(
             message="Erreur",
-            error_code="ERR_001",
-            details=[{"field": "value"}],
+            code="ERR_001",
+            details=[ErrorDetail(field="test_field", message="Erreur de validation")],
         )
-        assert response.success is False
-        assert response.error_code == "ERR_001"
+        assert response.error is True
+        assert response.code == "ERR_001"
 
     def test_paginated_response(self):
         """Test réponse paginée."""
