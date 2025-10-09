@@ -31,15 +31,26 @@ def setup_error_handlers(app: FastAPI) -> None:
         """Gestionnaire pour les erreurs de parsing GeneWeb."""
         logger.error(f"Erreur de parsing GeneWeb: {exc}", exc_info=True)
         
+        # Détails enrichis: inclure le contexte utile (ligne, token, attendu)
+        details = [ErrorDetail(
+            message=str(exc),
+            code="PARSE_ERROR"
+        )]
+        if getattr(exc, "line_number", None) is not None:
+            details.append(ErrorDetail(field="line_number", message=str(exc.line_number)))
+        if getattr(exc, "token", None):
+            details.append(ErrorDetail(field="token", message=str(exc.token)))
+        if getattr(exc, "expected", None):
+            details.append(ErrorDetail(field="expected", message=str(exc.expected)))
+        if getattr(exc, "context", None):
+            details.append(ErrorDetail(field="context", message=str(exc.context)))
+
         return JSONResponse(
             status_code=422,
             content=ErrorResponse(
                 error=True,
                 message="Erreur de parsing du fichier GeneWeb",
-                details=[ErrorDetail(
-                    message=str(exc),
-                    code="PARSE_ERROR"
-                )],
+                details=details,
                 code="PARSE_ERROR"
             ).model_dump()
         )

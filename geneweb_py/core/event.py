@@ -84,6 +84,12 @@ class Event:
     # Raison ou cause de l'événement
     reason: Optional[str] = None
     
+    # ID de la personne associée (pour les événements personnels)
+    person_id: Optional[str] = None
+    
+    # ID de la famille associée (pour les événements familiaux)
+    family_id: Optional[str] = None
+    
     # Témoins (pour les événements familiaux)
     witnesses: List[Dict[str, Any]] = field(default_factory=list)
     
