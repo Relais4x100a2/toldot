@@ -13,29 +13,25 @@ from .genealogy import Genealogy, GenealogyMetadata
 __all__ = [
     # Personnes
     "Person",
-    "Title", 
+    "Title",
     "Gender",
     "AccessLevel",
-    
     # Familles
     "Family",
     "Child",
     "MarriageStatus",
     "ChildSex",
-    
     # Événements
     "Event",
-    "FamilyEvent", 
+    "FamilyEvent",
     "PersonalEvent",
     "EventType",
     "FamilyEventType",
-    
     # Dates
     "Date",
     "DatePrefix",
-    "CalendarType", 
+    "CalendarType",
     "DeathType",
-    
     # Généalogie
     "Genealogy",
     "GenealogyMetadata",

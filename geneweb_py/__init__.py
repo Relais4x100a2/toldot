@@ -13,10 +13,10 @@ from .core.models import Person, Family, Event, Date, Genealogy
 from .core.parser import GeneWebParser
 
 __all__ = [
-    "Person", 
-    "Family", 
-    "Event", 
-    "Date", 
+    "Person",
+    "Family",
+    "Event",
+    "Date",
     "Genealogy",
     "GeneWebParser",
 ]

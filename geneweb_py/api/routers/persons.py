@@ -7,11 +7,18 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import JSONResponse
 
 from ..models.person import (
-    PersonSchema, PersonCreateSchema, PersonUpdateSchema, PersonSearchSchema,
-    PersonListSchema, PersonStatsSchema
+    PersonSchema,
+    PersonCreateSchema,
+    PersonUpdateSchema,
+    PersonSearchSchema,
+    PersonListSchema,
+    PersonStatsSchema,
 )
 from ..models.responses import (
-    SuccessResponse, PaginatedResponse, PaginationInfo, ErrorResponse
+    SuccessResponse,
+    PaginatedResponse,
+    PaginationInfo,
+    ErrorResponse,
 )
 from ..services.genealogy_service import GenealogyService
 
@@ -24,21 +31,21 @@ from ..dependencies import get_genealogy_service
 @router.post("/", response_model=SuccessResponse, status_code=201)
 async def create_person(
     person_data: PersonCreateSchema,
-    service: GenealogyService = Depends(get_genealogy_service)
+    service: GenealogyService = Depends(get_genealogy_service),
 ) -> SuccessResponse:
     """
     Crée une nouvelle personne.
-    
+
     Args:
         person_data: Données de la personne à créer
         service: Service de généalogie
-        
+
     Returns:
         SuccessResponse: Réponse de succès avec les données de la personne
     """
     try:
         person = service.create_person(person_data)
-        
+
         # Conversion vers le schéma de réponse
         person_schema = PersonSchema(
             id=person.unique_id,
@@ -61,44 +68,40 @@ async def create_person(
             notes=person.notes,
             sources=[],  # TODO: Récupérer les sources
             families=[],  # TODO: Récupérer les familles
-            events=[]     # TODO: Récupérer les événements
+            events=[],  # TODO: Récupérer les événements
         )
-        
+
         return SuccessResponse(
-            message="Personne créée avec succès",
-            data=person_schema.model_dump()
+            message="Personne créée avec succès", data=person_schema.model_dump()
         )
-        
+
     except Exception as exc:
         raise HTTPException(
-            status_code=500,
-            detail=f"Erreur lors de la création de la personne: {exc}"
+            status_code=500, detail=f"Erreur lors de la création de la personne: {exc}"
         )
 
 
 @router.get("/{person_id}", response_model=SuccessResponse)
 async def get_person(
-    person_id: str,
-    service: GenealogyService = Depends(get_genealogy_service)
+    person_id: str, service: GenealogyService = Depends(get_genealogy_service)
 ) -> SuccessResponse:
     """
     Récupère une personne par son ID.
-    
+
     Args:
         person_id: Identifiant de la personne
         service: Service de généalogie
-        
+
     Returns:
         SuccessResponse: Réponse de succès avec les données de la personne
     """
     person = service.get_person(person_id)
-    
+
     if person is None:
         raise HTTPException(
-            status_code=404,
-            detail=f"Personne avec l'ID '{person_id}' non trouvée"
+            status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
         )
-    
+
     # Conversion vers le schéma de réponse
     person_schema = PersonSchema(
         id=person.unique_id,
@@ -121,12 +124,11 @@ async def get_person(
         notes=person.notes,
         sources=[],  # TODO: Récupérer les sources
         families=[],  # TODO: Récupérer les familles
-        events=[]     # TODO: Récupérer les événements
+        events=[],  # TODO: Récupérer les événements
     )
-    
+
     return SuccessResponse(
-        message="Personne récupérée avec succès",
-        data=person_schema.model_dump()
+        message="Personne récupérée avec succès", data=person_schema.model_dump()
     )
 
 
@@ -134,27 +136,26 @@ async def get_person(
 async def update_person(
     person_id: str,
     person_data: PersonUpdateSchema,
-    service: GenealogyService = Depends(get_genealogy_service)
+    service: GenealogyService = Depends(get_genealogy_service),
 ) -> SuccessResponse:
     """
     Met à jour une personne.
-    
+
     Args:
         person_id: Identifiant de la personne
         person_data: Nouvelles données de la personne
         service: Service de généalogie
-        
+
     Returns:
         SuccessResponse: Réponse de succès avec les données mises à jour
     """
     person = service.update_person(person_id, person_data)
-    
+
     if person is None:
         raise HTTPException(
-            status_code=404,
-            detail=f"Personne avec l'ID '{person_id}' non trouvée"
+            status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
         )
-    
+
     # Conversion vers le schéma de réponse
     person_schema = PersonSchema(
         id=person.unique_id,
@@ -177,41 +178,36 @@ async def update_person(
         notes=person.notes,
         sources=[],  # TODO: Récupérer les sources
         families=[],  # TODO: Récupérer les familles
-        events=[]     # TODO: Récupérer les événements
+        events=[],  # TODO: Récupérer les événements
     )
-    
+
     return SuccessResponse(
-        message="Personne mise à jour avec succès",
-        data=person_schema.model_dump()
+        message="Personne mise à jour avec succès", data=person_schema.model_dump()
     )
 
 
 @router.delete("/{person_id}", response_model=SuccessResponse)
 async def delete_person(
-    person_id: str,
-    service: GenealogyService = Depends(get_genealogy_service)
+    person_id: str, service: GenealogyService = Depends(get_genealogy_service)
 ) -> SuccessResponse:
     """
     Supprime une personne.
-    
+
     Args:
         person_id: Identifiant de la personne
         service: Service de généalogie
-        
+
     Returns:
         SuccessResponse: Réponse de succès
     """
     success = service.delete_person(person_id)
-    
+
     if not success:
         raise HTTPException(
-            status_code=404,
-            detail=f"Personne avec l'ID '{person_id}' non trouvée"
+            status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
         )
-    
-    return SuccessResponse(
-        message="Personne supprimée avec succès"
-    )
+
+    return SuccessResponse(message="Personne supprimée avec succès")
 
 
 @router.get("/", response_model=PaginatedResponse)
@@ -223,11 +219,11 @@ async def list_persons(
     surname: Optional[str] = Query(None, description="Filtrer par nom de famille"),
     sex: Optional[str] = Query(None, description="Filtrer par sexe"),
     access_level: Optional[str] = Query(None, description="Filtrer par niveau d'accès"),
-    service: GenealogyService = Depends(get_genealogy_service)
+    service: GenealogyService = Depends(get_genealogy_service),
 ) -> PaginatedResponse:
     """
     Liste les personnes avec pagination et filtres.
-    
+
     Args:
         page: Numéro de page
         size: Taille de la page
@@ -237,7 +233,7 @@ async def list_persons(
         sex: Filtre par sexe
         access_level: Filtre par niveau d'accès
         service: Service de généalogie
-        
+
     Returns:
         PaginatedResponse: Réponse paginée avec les personnes
     """
@@ -254,11 +250,11 @@ async def list_persons(
         birth_year_to=None,
         death_year_from=None,
         death_year_to=None,
-        place=None
+        place=None,
     )
-    
+
     persons, total = service.search_persons(search_params)
-    
+
     # Conversion vers les schémas de liste
     person_list = []
     for person in persons:
@@ -270,119 +266,105 @@ async def list_persons(
             birth_date=None,  # TODO: Convertir les dates
             death_date=None,
             sex=person.gender,
-            access_level=person.access_level
+            access_level=person.access_level,
         )
         person_list.append(person_schema.model_dump())
-    
+
     # Calcul de la pagination
     total_pages = (total + size - 1) // size
     has_next = page < total_pages
     has_prev = page > 1
-    
+
     pagination = PaginationInfo(
         page=page,
         size=size,
         total=total,
         pages=total_pages,
         has_next=has_next,
-        has_prev=has_prev
+        has_prev=has_prev,
     )
-    
-    return PaginatedResponse(
-        items=person_list,
-        pagination=pagination
-    )
+
+    return PaginatedResponse(items=person_list, pagination=pagination)
 
 
 @router.get("/{person_id}/families", response_model=SuccessResponse)
 async def get_person_families(
-    person_id: str,
-    service: GenealogyService = Depends(get_genealogy_service)
+    person_id: str, service: GenealogyService = Depends(get_genealogy_service)
 ) -> SuccessResponse:
     """
     Récupère les familles d'une personne.
-    
+
     Args:
         person_id: Identifiant de la personne
         service: Service de généalogie
-        
+
     Returns:
         SuccessResponse: Réponse avec les familles de la personne
     """
     person = service.get_person(person_id)
-    
+
     if person is None:
         raise HTTPException(
-            status_code=404,
-            detail=f"Personne avec l'ID '{person_id}' non trouvée"
+            status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
         )
-    
+
     # TODO: Implémenter la récupération des familles de la personne
     families = []
-    
-    return SuccessResponse(
-        message="Familles récupérées avec succès",
-        data=families
-    )
+
+    return SuccessResponse(message="Familles récupérées avec succès", data=families)
 
 
 @router.get("/{person_id}/events", response_model=SuccessResponse)
 async def get_person_events(
-    person_id: str,
-    service: GenealogyService = Depends(get_genealogy_service)
+    person_id: str, service: GenealogyService = Depends(get_genealogy_service)
 ) -> SuccessResponse:
     """
     Récupère les événements d'une personne.
-    
+
     Args:
         person_id: Identifiant de la personne
         service: Service de généalogie
-        
+
     Returns:
         SuccessResponse: Réponse avec les événements de la personne
     """
     person = service.get_person(person_id)
-    
+
     if person is None:
         raise HTTPException(
-            status_code=404,
-            detail=f"Personne avec l'ID '{person_id}' non trouvée"
+            status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
         )
-    
+
     # TODO: Implémenter la récupération des événements de la personne
     events = []
-    
-    return SuccessResponse(
-        message="Événements récupérés avec succès",
-        data=events
-    )
+
+    return SuccessResponse(message="Événements récupérés avec succès", data=events)
 
 
 @router.get("/stats/overview", response_model=SuccessResponse)
 async def get_person_stats(
-    service: GenealogyService = Depends(get_genealogy_service)
+    service: GenealogyService = Depends(get_genealogy_service),
 ) -> SuccessResponse:
     """
     Récupère les statistiques des personnes.
-    
+
     Args:
         service: Service de généalogie
-        
+
     Returns:
         SuccessResponse: Réponse avec les statistiques
     """
     stats = service.get_stats()
-    
+
     person_stats = PersonStatsSchema(
         total=stats["total_persons"],
         by_sex=stats["persons_by_sex"],
         by_access_level=stats["persons_by_access_level"],
         by_century={},  # TODO: Calculer par siècle
         with_birth_date=stats["persons_with_birth_date"],
-        with_death_date=stats["persons_with_death_date"]
+        with_death_date=stats["persons_with_death_date"],
     )
-    
+
     return SuccessResponse(
-        message="Statistiques récupérées avec succès",
-        data=person_stats.model_dump()
+        message="Statistiques récupérées avec succès", data=person_stats.model_dump()
     )

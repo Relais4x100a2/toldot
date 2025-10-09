@@ -25,17 +25,14 @@ from .base import BaseExporter, BaseImporter, ConversionError
 __all__ = [
     # Classes de base
     "BaseExporter",
-    "BaseImporter", 
+    "BaseImporter",
     "ConversionError",
-    
     # GEDCOM
     "GEDCOMExporter",
     "GEDCOMImporter",
-    
     # JSON
-    "JSONExporter", 
+    "JSONExporter",
     "JSONImporter",
-    
     # XML
     "XMLExporter",
     "XMLImporter",

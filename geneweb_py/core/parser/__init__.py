@@ -21,12 +21,12 @@ from .gw_parser import GeneWebParser
 from .streaming import (
     StreamingGeneWebParser,
     should_use_streaming,
-    estimate_memory_usage
+    estimate_memory_usage,
 )
 
 __all__ = [
     "LexicalParser",
-    "Token", 
+    "Token",
     "TokenType",
     "SyntaxParser",
     "BlockParser",

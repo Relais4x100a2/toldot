@@ -7,4 +7,3 @@ Ces tests vérifient que le package peut être correctement :
 - Importé avec une API publique stable
 - Distribué sur PyPI
 """
-
