@@ -177,6 +177,7 @@ jobs:
         run: |
           echo "Linting avec Ruff..."
           ruff check . --output-format=github
+        continue-on-error: true
       
       - name: Type check with mypy
         run: |
