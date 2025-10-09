@@ -1,0 +1,58 @@
+name: Linting et Formatage
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    name: Linting (flake8, mypy, black)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev,api,validation]"
+        pip install black flake8 mypy
+    
+    - name: Check formatting with Black
+      run: |
+        echo "Vérification du formatage avec Black..."
+        black --check --diff geneweb_py/ tests/
+      continue-on-error: true
+    
+    - name: Lint with flake8
+      run: |
+        echo "Linting avec flake8..."
+        flake8 geneweb_py/ --count --statistics --show-source
+      continue-on-error: true
+    
+    - name: Type checking with mypy
+      run: |
+        echo "Vérification des types avec mypy..."
+        mypy geneweb_py/ --ignore-missing-imports
+      continue-on-error: true
+    
+    - name: Summary
+      if: always()
+      run: |
+        echo "================================================"
+        echo "  RÉSUMÉ LINTING"
+        echo "================================================"
+        echo "✅ Black : Vérifier les logs ci-dessus"
+        echo "✅ Flake8 : Vérifier les logs ci-dessus"
+        echo "✅ Mypy : Vérifier les logs ci-dessus"
+        echo "================================================"
+

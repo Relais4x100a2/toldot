@@ -1,0 +1,111 @@
+# GitHub Actions Workflows
+
+Ce dossier contient les workflows CI/CD pour le projet geneweb-py.
+
+## 📋 Workflows Disponibles
+
+### 1. `tests.yml` - Tests et Couverture
+**Déclenchement** : Push/PR sur main et develop
+
+**Actions** :
+- Lance les tests sur Python 3.8, 3.9, 3.10, 3.11, 3.12
+- Génère les rapports de couverture
+- Upload vers Codecov
+- Vérifie le seuil minimum (84%)
+- Commente les PR avec les résultats
+
+**Badges** :
+```markdown
+[![Tests](https://github.com/guillaumecayeux/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/guillaumecayeux/geneweb-py/actions)
+[![Coverage](https://codecov.io/gh/guillaumecayeux/geneweb-py/branch/main/graph/badge.svg)](https://codecov.io/gh/guillaumecayeux/geneweb-py)
+```
+
+### 2. `lint.yml` - Linting et Formatage
+**Déclenchement** : Push/PR sur main et develop
+
+**Actions** :
+- Vérification formatage Black
+- Linting Flake8
+- Type checking mypy
+
+### 3. `coverage-report.yml` - Rapport Détaillé
+**Déclenchement** : Push sur main, tous les lundis à 9h, manuel
+
+**Actions** :
+- Génère un rapport de couverture détaillé
+- Archive les rapports HTML
+- Crée un résumé par module
+
+### 4. `performance.yml` - Tests Performance
+**Déclenchement** : Push sur main, tous les dimanches à 3h
+
+**Actions** :
+- Benchmarks de parsing
+- Tests de performance
+- Mesure temps d'exécution
+
+### 5. `pr-checks.yml` - Vérifications PR
+**Déclenchement** : Ouverture/mise à jour PR
+
+**Actions** :
+- Vérifie non-régression de couverture
+- Détecte nouveaux tests
+- Commente la PR automatiquement
+
+### 6. `weekly-report.yml` - Rapport Hebdomadaire
+**Déclenchement** : Tous les lundis à 8h, manuel
+
+**Actions** :
+- Résumé hebdomadaire
+- Statistiques commits
+- État de la couverture
+
+### 7. `release.yml` - Publication
+**Déclenchement** : Tags v*.*.*
+
+**Actions** :
+- Build du package
+- Création release GitHub
+- Publication sur PyPI (si configuré)
+
+## 🔧 Configuration
+
+### Secrets Requis
+
+Pour activer toutes les fonctionnalités, configurez ces secrets dans GitHub :
+
+1. `PYPI_TOKEN` - Token PyPI pour publication automatique
+2. `CODECOV_TOKEN` - Token Codecov (optionnel)
+
+### Seuils de Couverture
+
+Actuellement configurés dans `tests.yml` :
+- **Minimum** : 84%
+- **Cible court terme** : 90%
+- **Objectif final** : 100%
+
+## 📊 Badges Disponibles
+
+Ajoutez ces badges dans votre README.md :
+
+```markdown
+[![Tests](https://github.com/guillaumecayeux/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/guillaumecayeux/geneweb-py/actions)
+[![Linting](https://github.com/guillaumecayeux/geneweb-py/workflows/Linting%20et%20Formatage/badge.svg)](https://github.com/guillaumecayeux/geneweb-py/actions)
+[![Coverage](https://img.shields.io/badge/coverage-84%25-green)](htmlcov/index.html)
+[![Python](https://img.shields.io/badge/python-3.8+-blue)](https://www.python.org/downloads/)
+```
+
+## 🚀 Utilisation
+
+Les workflows s'exécutent automatiquement. Vous pouvez aussi les déclencher manuellement :
+
+1. Aller dans l'onglet "Actions" sur GitHub
+2. Sélectionner le workflow
+3. Cliquer "Run workflow"
+
+## 📈 Monitoring
+
+Les rapports sont disponibles dans :
+- Artifacts de chaque workflow
+- Résumés dans l'onglet Actions
+- Commentaires automatiques sur les PR

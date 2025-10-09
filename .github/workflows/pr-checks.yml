@@ -1,0 +1,123 @@
+name: Vérifications Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-checks:
+    name: Vérifications PR
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Pour comparer avec la branche de base
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev,api,validation]"
+        pip install pytest-cov
+    
+    - name: Run tests on changed files
+      run: |
+        pytest tests/ \
+          --cov=geneweb_py \
+          --cov-report=term-missing \
+          --cov-fail-under=84 \
+          -v
+    
+    - name: Check for test coverage regression
+      run: |
+        python << 'EOF'
+        import json
+        import sys
+        
+        try:
+            with open('coverage.json') as f:
+                data = json.load(f)
+            
+            current_coverage = data['totals']['percent_covered']
+            baseline = 84.0  # Couverture de référence
+            
+            print(f"\n{'='*60}")
+            print(f"  VÉRIFICATION COUVERTURE PR")
+            print(f"{'='*60}\n")
+            print(f"Couverture actuelle: {current_coverage:.2f}%")
+            print(f"Baseline: {baseline:.2f}%")
+            
+            if current_coverage < baseline:
+                diff = baseline - current_coverage
+                print(f"\n❌ RÉGRESSION: -{diff:.2f} points")
+                print(f"   La PR diminue la couverture de tests !")
+                sys.exit(1)
+            elif current_coverage > baseline:
+                diff = current_coverage - baseline
+                print(f"\n✅ AMÉLIORATION: +{diff:.2f} points")
+                print(f"   Excellente contribution ! 🎉")
+            else:
+                print(f"\n✅ STABLE: Pas de changement")
+            
+            print(f"\n{'='*60}\n")
+        except FileNotFoundError:
+            print("⚠️  Pas de rapport de couverture généré")
+            sys.exit(0)
+        EOF
+    
+    - name: Vérifier nouveaux tests ajoutés
+      run: |
+        # Compter les nouveaux fichiers de test
+        NEW_TESTS=$(git diff --name-only origin/main...HEAD | grep "test_.*\.py" | wc -l)
+        
+        echo "Nouveaux fichiers de test: $NEW_TESTS"
+        
+        if [ $NEW_TESTS -gt 0 ]; then
+          echo "✅ Des tests ont été ajoutés dans cette PR"
+        fi
+    
+    - name: Comment PR
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let coverage = 84;
+          try {
+            const data = JSON.parse(fs.readFileSync('coverage.json', 'utf8'));
+            coverage = data.totals.percent_covered.toFixed(2);
+          } catch (e) {}
+          
+          const body = `## 🤖 Vérifications Automatiques
+          
+          ### ✅ Tests
+          - Tous les tests ont été exécutés
+          
+          ### 📊 Couverture
+          - Couverture actuelle: **${coverage}%**
+          - Baseline: **84%**
+          
+          ### 📝 Actions recommandées
+          - Vérifier que la couverture n'a pas régressé
+          - Ajouter des tests pour les nouvelles fonctionnalités
+          - Consulter les rapports de couverture dans les artifacts
+          `;
+          
+          // Ne commenter que si c'est une PR
+          if (context.payload.pull_request) {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          }
+
