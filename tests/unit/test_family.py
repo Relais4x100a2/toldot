@@ -304,3 +304,153 @@ class TestFamilySerialization:
         assert data["marriage_place"] == "Paris"
         assert len(data["children"]) == 1
         assert data["children"][0]["person_id"] == "CORNO_Jean_0"
+
+
+class TestFamilyMissingCoverage:
+    """Tests pour couvrir les lignes manquantes de family.py."""
+
+    def test_child_with_last_name(self):
+        """Test Child avec nom de famille personnalisé."""
+        child = Child(
+            person_id="child001",
+            sex=ChildSex.MALE,
+            last_name="CUSTOMNAME",
+        )
+        result = str(child)
+        assert "CUSTOMNAME" in result
+        assert "child001" in result
+
+    def test_family_id_property(self):
+        """Test propriété id (alias de family_id)."""
+        family = Family(family_id="FAM123")
+        assert family.id == "FAM123"
+        assert family.id == family.family_id
+
+    def test_add_event(self):
+        """Test ajout d'un événement familial."""
+        from geneweb_py.core.event import FamilyEvent, FamilyEventType, EventType
+
+        family = Family(family_id="FAM001")
+        event = FamilyEvent(
+            event_type=EventType.MARRIAGE,
+            family_event_type=FamilyEventType.MARRIAGE,
+        )
+        family.add_event(event)
+        
+        assert len(family.events) == 1
+        assert family.events[0] == event
+
+    def test_get_events_by_event_type(self):
+        """Test récupération d'événements par EventType."""
+        from geneweb_py.core.event import FamilyEvent, FamilyEventType, EventType
+
+        family = Family(family_id="FAM001")
+        
+        # Ajouter événement de mariage
+        marriage_event = FamilyEvent(
+            event_type=EventType.MARRIAGE,
+            family_event_type=FamilyEventType.MARRIAGE,
+        )
+        family.add_event(marriage_event)
+        
+        # Ajouter événement de divorce
+        divorce_event = FamilyEvent(
+            event_type=EventType.DIVORCE,
+            family_event_type=FamilyEventType.DIVORCE,
+        )
+        family.add_event(divorce_event)
+        
+        # Récupérer les événements de mariage via EventType
+        marriage_events = family.get_events_by_type(EventType.MARRIAGE)
+        assert len(marriage_events) == 1
+        assert marriage_events[0] == marriage_event
+
+    def test_get_events_by_family_event_type(self):
+        """Test récupération d'événements par FamilyEventType."""
+        from geneweb_py.core.event import FamilyEvent, FamilyEventType, EventType
+
+        family = Family(family_id="FAM001")
+        
+        # Ajouter événement avec FamilyEventType
+        event = FamilyEvent(
+            event_type=EventType.ENGAGEMENT,
+            family_event_type=FamilyEventType.ENGAGEMENT,
+        )
+        family.add_event(event)
+        
+        # Récupérer via FamilyEventType
+        events = family.get_events_by_type(FamilyEventType.ENGAGEMENT)
+        assert len(events) == 1
+        assert events[0] == event
+
+    def test_get_events_by_type_no_match(self):
+        """Test récupération d'événements sans correspondance."""
+        from geneweb_py.core.event import EventType
+
+        family = Family(family_id="FAM001")
+        
+        # Pas d'événements de mariage
+        marriage_events = family.get_events_by_type(EventType.MARRIAGE)
+        assert len(marriage_events) == 0
+
+    def test_clear_validation_errors(self):
+        """Test effacement des erreurs de validation."""
+        from geneweb_py.core.exceptions import GeneWebValidationError
+
+        family = Family(
+            family_id="FAM001",
+            husband_id="husband001",  # Avoir au moins un époux pour éviter validation auto
+        )
+        
+        # Ajouter une erreur
+        error = GeneWebValidationError("Test error")
+        family.add_validation_error(error)
+        
+        assert not family.is_valid
+        assert len(family.validation_errors) >= 1
+        
+        # Effacer les erreurs
+        family.clear_validation_errors()
+        
+        assert family.is_valid
+        assert len(family.validation_errors) == 0
+
+    def test_family_str_with_spouses(self):
+        """Test représentation string d'une famille avec époux."""
+        family = Family(
+            family_id="FAM001",
+            husband_id="husband001",
+            wife_id="wife001",
+        )
+        family.add_child("child001", ChildSex.MALE)
+        family.add_child("child002", ChildSex.FEMALE)
+        
+        result = str(family)
+        
+        assert "husband001" in result
+        assert "wife001" in result
+        assert "2 enfants" in result
+
+    def test_family_str_with_only_husband(self):
+        """Test représentation string avec seulement un époux."""
+        family = Family(
+            family_id="FAM001",
+            husband_id="husband001",
+        )
+        
+        result = str(family)
+        
+        assert "husband001" in result
+        assert "0 enfants" in result
+
+    def test_family_str_with_only_wife(self):
+        """Test représentation string avec seulement une épouse."""
+        family = Family(
+            family_id="FAM001",
+            wife_id="wife001",
+        )
+        
+        result = str(family)
+        
+        assert "wife001" in result
+        assert "0 enfants" in result
