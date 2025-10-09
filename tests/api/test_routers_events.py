@@ -9,6 +9,7 @@ from unittest.mock import Mock
 from geneweb_py.api.main import app
 from geneweb_py.api.dependencies import get_genealogy_service
 from geneweb_py.core.models import Event, EventType
+from geneweb_py.core.event import FamilyEventType
 from geneweb_py.api.services.genealogy_service import GenealogyService
 
 
@@ -37,6 +38,19 @@ def sample_event():
     event.notes = ["Note de naissance"]
     event.witnesses = []
     event.source = "Acte de naissance"
+    return event
+
+
+@pytest.fixture
+def sample_family_event():
+    """Événement familial d'exemple pour les tests."""
+    event = Event(event_type=EventType.MARRIAGE)
+    event.place = "Paris"
+    event.reason = None
+    event.notes = ["Mariage religieux"]
+    event.witnesses = ["Jean Dupont", "Marie Martin"]
+    event.source = "Acte de mariage"
+    event.family_id = "fam001"
     return event
 
 
@@ -92,14 +106,25 @@ class TestCreatePersonalEvent:
 class TestCreateFamilyEvent:
     """Tests pour la création d'événements familiaux."""
 
-    @pytest.mark.skip(reason="EventType vs FamilyEventType - validation à corriger")
-    def test_create_family_event_success(self, client, mock_service, sample_event):
+    @pytest.mark.skip(
+        reason="EventType vs FamilyEventType - conflit enums, FastAPI ne peut pas distinguer"
+    )
+    def test_create_family_event_success(self, client, mock_service, sample_family_event):
         """Test création d'un événement familial."""
         pass
 
-    @pytest.mark.skip(reason="EventType vs FamilyEventType - validation à corriger")
+    @pytest.mark.skip(
+        reason="EventType vs FamilyEventType - conflit enums, FastAPI ne peut pas distinguer"
+    )
     def test_create_family_event_validation_error(self, client, mock_service):
         """Test erreur de validation."""
+        pass
+
+    @pytest.mark.skip(
+        reason="EventType vs FamilyEventType - conflit enums, FastAPI ne peut pas distinguer"
+    )
+    def test_create_family_event_server_error(self, client, mock_service):
+        """Test erreur serveur."""
         pass
 
 
@@ -154,6 +179,14 @@ class TestUpdateEvent:
 
         assert response.status_code == 404
 
+    def test_update_event_server_error(self, client, mock_service):
+        """Test erreur serveur lors de la mise à jour."""
+        mock_service.update_event.side_effect = Exception("Database error")
+
+        response = client.put("/api/v1/events/evt_001", json={"place": "Lyon"})
+
+        assert response.status_code == 500
+
 
 class TestDeleteEvent:
     """Tests pour la suppression d'un événement."""
@@ -175,6 +208,14 @@ class TestDeleteEvent:
         response = client.delete("/api/v1/events/unknown")
 
         assert response.status_code == 404
+
+    def test_delete_event_server_error(self, client, mock_service):
+        """Test erreur serveur lors de la suppression."""
+        mock_service.delete_event.side_effect = Exception("Database error")
+
+        response = client.delete("/api/v1/events/evt_001")
+
+        assert response.status_code == 500
 
 
 class TestListEvents:
