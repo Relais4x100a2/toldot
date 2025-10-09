@@ -1,11 +1,11 @@
 # geneweb-py
 
-[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
+[![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)](https://python.org)
+[![PyPI version](https://img.shields.io/badge/pypi-v0.1.0-blue.svg)](https://pypi.org/project/geneweb-py/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
-[![Linting](https://github.com/Relais4x100a2/geneweb-py/workflows/Linting%20et%20Formatage/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
-[![Coverage](https://img.shields.io/badge/coverage-75.79%25-green.svg)](htmlcov/index.html)
-[![Tests Passing](https://img.shields.io/badge/tests-688%20passing-success.svg)](tests/)
+[![Tests](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20PyPI%20et%20Publication/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
+[![Coverage](https://img.shields.io/badge/coverage-84%25-green.svg)](htmlcov/index.html)
+[![Tests Passing](https://img.shields.io/badge/tests-858%20passing-success.svg)](tests/)
 
 Librairie Python complète pour parser, manipuler et convertir les fichiers généalogiques au format GeneWeb (.gw).
 
@@ -284,18 +284,29 @@ parser = GeneWebParser(validate=False)
 
 ## 🧪 Tests
 
+geneweb-py dispose d'une suite de tests complète avec **858 tests** et **84% de couverture**.
+
 ```bash
 # Exécuter tous les tests
 pytest
 
-# Tests avec couverture (72% actuellement)
-pytest --cov=geneweb_py
+# Tests avec couverture
+pytest --cov=geneweb_py --cov-report=html
 
 # Tests d'intégration seulement
 pytest -m integration
 
 # Tests de l'API
 pytest tests/api/
+
+# Tests de packaging (PyPI)
+pytest tests/packaging/
+
+# Tests de compatibilité multi-versions
+pytest tests/compatibility/
+
+# Tests de sécurité
+pytest tests/security/
 
 # Benchmarks de performance
 python tests/performance/benchmark_parser.py
@@ -304,9 +315,78 @@ python tests/performance/benchmark_parser.py
 python examples/performance_demo.py
 ```
 
+## 🚀 Développement et Publication
+
+### Installation en mode développement
+
+```bash
+git clone https://github.com/guillaumecayeux/geneweb-py.git
+cd geneweb-py
+pip install -e .[dev]
+```
+
+### Validation avant publication PyPI
+
+geneweb-py inclut des scripts de validation pour garantir la qualité avant publication :
+
+```bash
+# Validation complète (bash)
+./scripts/validate_pypi.sh
+
+# Vérification avancée (Python)
+python scripts/check_pypi_readiness.py
+
+# Construction du package
+python -m build
+
+# Vérification avec twine
+twine check dist/*
+
+# Tests de packaging
+pytest tests/packaging/ -v
+```
+
+### Publication sur PyPI
+
+```bash
+# 1. Publication sur TestPyPI (pour tester)
+twine upload --repository testpypi dist/*
+
+# 2. Test d'installation depuis TestPyPI
+pip install --index-url https://test.pypi.org/simple/ geneweb-py
+
+# 3. Publication sur PyPI (production)
+twine upload dist/*
+```
+
+**Note** : La publication est automatisée via GitHub Actions. Voir `.github/workflows/test-pypi.yml`
+
+### Compatibilité
+
+geneweb-py est testé et compatible avec :
+- **Python** : 3.7, 3.8, 3.9, 3.10, 3.11, 3.12
+- **OS** : Linux, macOS, Windows
+- **Architectures** : x86_64, arm64
+
 ## 🤝 Contribution
 
 Les contributions sont les bienvenues ! Consultez le [Statut du projet](doc/status.md) et la [Roadmap](doc/roadmap.md) pour comprendre la direction actuelle et proposer des améliorations.
+
+### Processus de contribution
+
+1. Fork le projet
+2. Créer une branche (`git checkout -b feature/AmazingFeature`)
+3. Commit les changements (`git commit -m 'Add AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrir une Pull Request
+
+### Standards de qualité
+
+- Tests unitaires obligatoires (couverture ≥ 90%)
+- Type hints sur toutes les fonctions publiques
+- Docstrings en français
+- Code formaté avec `black`
+- Lint avec `flake8` et `mypy`
 
 ## 📄 Licence
 

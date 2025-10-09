@@ -113,6 +113,13 @@ Voir `COVERAGE_REPORT.md` pour le rapport complet incluant :
 - Estimation d'effort : 17-24h pour 100%
 
 ## 🚧 Travaux en cours
+- **Préparation publication PyPI** 🚀 (En cours)
+  - Tests de packaging : ✅ Complets
+  - Tests de compatibilité Python 3.7-3.12 : ✅ Implémentés
+  - Tests de sécurité : ✅ Implémentés
+  - CI/CD GitHub Actions : ✅ Configuré
+  - Scripts de validation : ✅ Créés
+  - Documentation : ✅ Mise à jour
 - Amélioration continue de la documentation
 - Extension des tests de performance sur fichiers réels volumineux
 - Optimisations additionnelles pour les conversions (GEDCOM, JSON, XML)
@@ -154,9 +161,42 @@ geneweb_py/
 ## 🚀 Utilisation rapide
 Consultez les exemples dans `examples/` ainsi que la documentation d'API (Swagger UI) exposée par l'application FastAPI.
 
+## 🚀 Préparation PyPI
+
+**État** : En préparation pour publication v0.1.0
+
+### Checklist PyPI ✅
+
+| Critère | État | Notes |
+|---------|------|-------|
+| **Tests fonctionnels** | ✅ 84% | 858 tests passent |
+| **Tests packaging** | ✅ Complets | `tests/packaging/` |
+| **Tests compatibilité** | ✅ Python 3.7-3.12 | `tests/compatibility/` |
+| **Tests sécurité** | ✅ Implémentés | `tests/security/` |
+| **CI/CD** | ✅ GitHub Actions | Publication automatisée |
+| **Scripts validation** | ✅ Créés | `scripts/validate_pypi.sh` |
+| **Documentation** | ✅ Complète | README, CHANGELOG, LICENSE |
+| **Métadonnées** | ✅ Complètes | pyproject.toml à jour |
+
+### Prochaines étapes
+
+1. ✅ Finaliser tests de packaging
+2. ✅ Configurer GitHub Actions pour TestPyPI/PyPI
+3. ✅ Créer scripts de validation
+4. ⏳ Tester publication sur TestPyPI
+5. ⏳ Publication officielle sur PyPI
+
+### Ressources
+
+- [Stratégie de tests PyPI](PYPI_TESTING_STRATEGY.md)
+- [Script de validation](../scripts/validate_pypi.sh)
+- [Workflow CI/CD](../.github/workflows/test-pypi.yml)
+
 ## 🔗 Liens utiles
 - Documentation du format GeneWeb: `doc/geneweb/gw_format_documentation.md`
 - Rapport de couverture: `htmlcov/index.html`
+- Stratégie tests PyPI: `doc/PYPI_TESTING_STRATEGY.md`
 - Dépôt: `https://github.com/guillaumecayeux/geneweb-py`
+- PyPI (bientôt): `https://pypi.org/project/geneweb-py/`
 
 
