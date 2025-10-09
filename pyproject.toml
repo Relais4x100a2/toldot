@@ -173,6 +173,9 @@ select = [
 # Note : W503 (line break before binary operator) est obsolète dans Ruff
 ignore = ["E203"]
 
+# B008 : function call in default (faux positif pour FastAPI Depends/File/Query)
+extend-ignore = ["B008"]
+
 [tool.ruff.lint.isort]
 # Configuration des imports
 known-first-party = ["geneweb_py"]
