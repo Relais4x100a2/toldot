@@ -32,7 +32,7 @@ class GenealogyService:
     def __init__(self):
         """Initialise le service de généalogie."""
         self._genealogy: Optional[Genealogy] = None
-        self._parser = GeneWebParser()
+        self._parser = GeneWebParser(use_multipass=True)  # Mode multipass activé
         # Créer une généalogie vide par défaut
         self._initialize_empty_genealogy()
 

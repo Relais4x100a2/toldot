@@ -398,15 +398,20 @@ class FamilyBlockParser(BlockParser):
                     child_node.add_token(tokens[i])
                     i += 1
 
-                # Nom de famille (si différent du père)
+                # Nom et prénom de l'enfant
+                # Si un seul IDENTIFIER, c'est le prénom (le nom vient du père)
+                # Si deux IDENTIFIER, c'est NOM Prénom
+
                 if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
                     child_node.add_token(tokens[i])
                     i += 1
 
-                # Prénom de l'enfant
-                if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-                    child_node.add_token(tokens[i])
-                    i += 1
+                    # Vérifier s'il y a un deuxième IDENTIFIER
+                    if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                        # Deux identifiants: NOM Prénom
+                        child_node.add_token(tokens[i])
+                        i += 1
+                    # Sinon: un seul identifiant = Prénom seulement
 
                 # Numéro d'occurrence (après le prénom)
                 if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
@@ -1103,6 +1108,72 @@ class WizardNoteBlockParser(BlockParser):
         return i
 
 
+class ChildrenBlockParser(BlockParser):
+    """Parser spécialisé pour les blocs enfants (beg...end)"""
+
+    def __init__(self) -> None:
+        super().__init__(BlockType.FAMILY)  # Les enfants font partie d'une famille
+
+    def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
+        """Parse un bloc enfants (beg...end)
+
+        Format:
+        beg
+        - [h|f] FirstName date ...
+        - [h|f] FirstName date ...
+        end
+        """
+        node = SyntaxNode(BlockType.FAMILY)
+        i = start_index
+
+        # Début du bloc
+        if i >= len(tokens) or tokens[i].type != TokenType.BEG:
+            raise GeneWebParseError(
+                "Attendu 'beg' au début du bloc enfants",
+                tokens[i].line_number if i < len(tokens) else 0,
+            )
+
+        node.add_token(tokens[i])
+        i += 1
+
+        # Ignorer les newlines
+        while i < len(tokens) and tokens[i].type == TokenType.NEWLINE:
+            i += 1
+
+        # Parser chaque enfant
+        while i < len(tokens) and tokens[i].type == TokenType.DASH:
+            child_node = SyntaxNode(BlockType.FAMILY)
+            child_node.add_token(tokens[i])  # Tire
+            i += 1
+
+            # Sexe (optionnel)
+            if i < len(tokens) and tokens[i].type in [TokenType.H, TokenType.F]:
+                child_node.add_token(tokens[i])
+                i += 1
+
+            # Consommer tous les tokens jusqu'à la prochaine ligne ou fin
+            while i < len(tokens) and tokens[i].type not in [
+                TokenType.NEWLINE,
+                TokenType.DASH,
+                TokenType.END,
+            ]:
+                child_node.add_token(tokens[i])
+                i += 1
+
+            node.add_child(child_node)
+
+            # Ignorer les newlines
+            while i < len(tokens) and tokens[i].type == TokenType.NEWLINE:
+                i += 1
+
+        # Fin du bloc
+        if i < len(tokens) and tokens[i].type == TokenType.END:
+            node.add_token(tokens[i])
+            i += 1
+
+        return node, i
+
+
 class SyntaxParser:
     """Parser syntaxique principal pour les fichiers .gw"""
 
@@ -1113,6 +1184,7 @@ class SyntaxParser:
             TokenType.REL: RelationsBlockParser(),
             TokenType.PEVT: PersonEventsBlockParser(),
             TokenType.FEVT: FamilyEventsBlockParser(),
+            TokenType.BEG: ChildrenBlockParser(),  # Ajout du parser pour beg/end
             TokenType.NOTES_DB: DatabaseNotesBlockParser(),
             TokenType.PAGE_EXT: ExtendedPageBlockParser(),
             TokenType.WIZARD_NOTE: WizardNoteBlockParser(),

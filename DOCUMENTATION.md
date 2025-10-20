@@ -12,7 +12,6 @@ geneweb-py/
 ├── CHANGELOG.md                   # Historique des versions
 ├── LICENSE                        # Licence MIT
 ├── DOCUMENTATION.md              # Ce fichier - Index de navigation
-├── QUICK_START_PYPI.md           # Démarrage rapide PyPI
 │
 ├── doc/                          # Documentation technique
 │   ├── status.md                 # État du projet et métriques
@@ -50,7 +49,7 @@ geneweb-py/
 → Consultez **[doc/PERFORMANCE.md](doc/PERFORMANCE.md)** - Benchmarks et optimisations
 
 ### Je veux publier sur PyPI
-→ Suivez **[QUICK_START_PYPI.md](QUICK_START_PYPI.md)** puis **[doc/PYPI_PUBLICATION_GUIDE.md](doc/PYPI_PUBLICATION_GUIDE.md)**
+→ Suivez **[doc/PYPI_PUBLICATION_GUIDE.md](doc/PYPI_PUBLICATION_GUIDE.md)**
 
 ### Je veux comprendre le format GeneWeb
 → Lisez **[doc/geneweb/gw_format_documentation.md](doc/geneweb/gw_format_documentation.md)**
@@ -64,7 +63,6 @@ geneweb-py/
 | Document | Description | Public |
 |----------|-------------|--------|
 | **[README.md](README.md)** | Guide principal et démarrage | Tous |
-| **[QUICK_START_PYPI.md](QUICK_START_PYPI.md)** | Publication rapide sur PyPI | Mainteneurs |
 | **[examples/](examples/)** | Scripts de démonstration | Développeurs |
 
 ### Documentation technique
@@ -78,7 +76,6 @@ geneweb-py/
 ### Documentation PyPI
 | Document | Description | Temps lecture |
 |----------|-------------|---------------|
-| **[QUICK_START_PYPI.md](QUICK_START_PYPI.md)** | Commandes essentielles | 5 min |
 | **[doc/PYPI_PUBLICATION_GUIDE.md](doc/PYPI_PUBLICATION_GUIDE.md)** | Guide complet | 30 min |
 | **[doc/PYPI_TESTING_STRATEGY.md](doc/PYPI_TESTING_STRATEGY.md)** | Stratégie de tests | 1h |
 
@@ -102,10 +99,9 @@ geneweb-py/
 4. **[tests/README.md](tests/README.md)** (10 min) - Tests
 5. Exploration du code (10 min)
 
-### Publication PyPI (45 min)
-1. **[QUICK_START_PYPI.md](QUICK_START_PYPI.md)** (5 min) - Commandes
-2. **[doc/PYPI_PUBLICATION_GUIDE.md](doc/PYPI_PUBLICATION_GUIDE.md)** (30 min) - Procédure
-3. Validation et publication (10 min)
+### Publication PyPI (40 min)
+1. **[doc/PYPI_PUBLICATION_GUIDE.md](doc/PYPI_PUBLICATION_GUIDE.md)** (30 min) - Procédure
+2. Validation et publication (10 min)
 
 ### Optimisation performance (1h30)
 1. **[doc/PERFORMANCE.md](doc/PERFORMANCE.md)** (30 min) - Guide complet
@@ -119,8 +115,8 @@ geneweb-py/
 
 | Métrique | Valeur | État |
 |----------|--------|------|
-| **Tests** | 858 passants | ✅ Excellent |
-| **Couverture** | 84% | ✅ Excellent |
+| **Tests** | 704 passants | ✅ Excellent |
+| **Couverture** | 82% | ✅ Excellent |
 | **Compatibilité** | Python 3.7-3.12 | ✅ Multi-versions |
 | **Plateformes** | Linux, macOS, Windows | ✅ Multi-OS |
 | **Performance** | ~80% économie mémoire (streaming) | ⚡ Optimisé |
@@ -187,7 +183,7 @@ python run_api.py
 
 Ce document est maintenu à jour à chaque modification majeure de la structure documentaire.
 
-**Dernière mise à jour** : 9 octobre 2025
+**Dernière mise à jour** : 9 janvier 2025
 
 ---
 

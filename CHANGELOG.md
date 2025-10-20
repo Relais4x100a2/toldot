@@ -16,6 +16,10 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Email** : Mise à jour vers `guillaume.cayeux@relais4x100a2.fr`
 
 ### Documentation
+- 🧹 **Nettoyage documentation** : Suppression de 24 fichiers Markdown non conformes à la racine
+- 📊 **Mise à jour métriques** : 704 tests passants, 82% couverture
+- 📝 **Conformité structure** : Seuls README.md, CHANGELOG.md, DOCUMENTATION.md à la racine
+- 🏗️ **Organisation** : Documentation conforme aux règles Cursor du projet
 - Consolidation complète de la documentation
 - Suppression des fichiers de résumés de sessions obsolètes
 - Restructuration de la section documentation dans README

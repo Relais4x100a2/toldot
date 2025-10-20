@@ -186,10 +186,10 @@ end notes"""
         assert genealogy is not None
 
 
-@pytest.mark.skip(reason="TODO: Fonctionnalité parsing témoins à implémenter")
 class TestParserWitnessHandling:
     """Tests du parsing des témoins (lignes 567-568, 578-579, 584-585)"""
 
+    @pytest.mark.skip(reason="TODO: Fonctionnalité parsing témoins à implémenter")
     def test_parse_witness_male(self):
         """Test témoin masculin (ligne 567-568)"""
         content = """fam DUPONT Jean + MARTIN Marie
@@ -200,6 +200,7 @@ wit m: TEMOIN_M Martin #occu Prêtre"""
         family = list(genealogy.families.values())[0]
         assert len(family.witnesses) >= 1
 
+    @pytest.mark.skip(reason="TODO: Fonctionnalité parsing témoins à implémenter")
     def test_parse_witness_female(self):
         """Test témoin féminin (ligne 578-579)"""
         content = """fam DUPONT Jean + MARTIN Marie
@@ -210,6 +211,7 @@ wit f: TEMOIN_F Marie #occu Religieuse"""
         family = list(genealogy.families.values())[0]
         assert len(family.witnesses) >= 1
 
+    @pytest.mark.skip(reason="TODO: Fonctionnalité parsing témoins à implémenter")
     def test_parse_multiple_witnesses(self):
         """Test plusieurs témoins (ligne 584-585)"""
         content = """fam DUPONT Jean + MARTIN Marie
@@ -221,6 +223,22 @@ wit m: TEMOIN3 Paul"""
 
         family = list(genealogy.families.values())[0]
         assert len(family.witnesses) >= 2
+
+    def test_parse_witness_with_note(self):
+        """Test témoin avec note (wnote) - vérifie que wnote ne cause pas d'erreur"""
+        content = """fam DUPONT Jean + MARTIN Marie
+wit f: FABRE Marguerite_Anne 0
+wnote Liste de lecture
+wit f: LAMBERT Marie_Thérèse"""
+        parser = GeneWebParser()
+        # Le parsing doit réussir sans lever d'exception
+        genealogy = parser.parse_string(content)
+
+        # Vérifier que la famille est créée
+        assert genealogy is not None
+        assert len(genealogy.families) == 1
+        family = list(genealogy.families.values())[0]
+        assert family is not None
 
 
 @pytest.mark.skip(reason="TODO: Tests à adapter au parsing actuel des enfants")

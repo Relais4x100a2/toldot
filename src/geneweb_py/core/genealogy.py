@@ -87,6 +87,80 @@ class Genealogy:
         self.persons[person_id] = person
         self._invalidate_stats_cache()
 
+    def add_or_update_person(self, person: Person) -> Person:
+        """Ajoute une personne ou met à jour si elle existe déjà
+
+        Cette méthode gère intelligemment les cas où une personne apparaît
+        plusieurs fois dans le fichier GeneWeb (comme témoin, dans des notes, etc.).
+        Si la personne existe déjà, les informations sont fusionnées.
+
+        Args:
+            person: Personne à ajouter ou mettre à jour
+
+        Returns:
+            La personne ajoutée ou mise à jour (référence existante si doublon)
+        """
+        person_id = person.unique_id
+
+        if person_id in self.persons:
+            # La personne existe déjà, fusionner les informations
+            existing = self.persons[person_id]
+
+            # Fusionner le sexe (priorité au sexe connu)
+            from .person import Gender
+
+            if person.gender != Gender.UNKNOWN and existing.gender == Gender.UNKNOWN:
+                existing.gender = person.gender
+
+            # Fusionner les informations si la nouvelle personne a plus de détails
+            if person.birth_date and not existing.birth_date:
+                existing.birth_date = person.birth_date
+            if person.birth_place and not existing.birth_place:
+                existing.birth_place = person.birth_place
+            if person.death_date and not existing.death_date:
+                existing.death_date = person.death_date
+            if person.death_place and not existing.death_place:
+                existing.death_place = person.death_place
+            if person.baptism_date and not existing.baptism_date:
+                existing.baptism_date = person.baptism_date
+            if person.baptism_place and not existing.baptism_place:
+                existing.baptism_place = person.baptism_place
+            if person.occupation and not existing.occupation:
+                existing.occupation = person.occupation
+            if person.public_name and not existing.public_name:
+                existing.public_name = person.public_name
+            if person.nickname and not existing.nickname:
+                existing.nickname = person.nickname
+
+            # Fusionner les événements (éviter les doublons)
+            for event in person.events:
+                if event not in existing.events:
+                    existing.events.append(event)
+
+            # Fusionner les notes
+            for note in person.notes:
+                if note not in existing.notes:
+                    existing.notes.append(note)
+
+            # Fusionner les sources spécifiques
+            if person.birth_source and not existing.birth_source:
+                existing.birth_source = person.birth_source
+            if person.death_source and not existing.death_source:
+                existing.death_source = person.death_source
+            if person.baptism_source and not existing.baptism_source:
+                existing.baptism_source = person.baptism_source
+            if person.burial_source and not existing.burial_source:
+                existing.burial_source = person.burial_source
+            if person.person_source and not existing.person_source:
+                existing.person_source = person.person_source
+
+            return existing
+        else:
+            # Nouvelle personne, l'ajouter
+            self.persons[person_id] = person
+            self._invalidate_stats_cache()
+            return person
+
     def add_family(self, family: Family) -> None:
         """Ajoute une famille à la généalogie
 
