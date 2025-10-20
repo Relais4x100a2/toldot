@@ -75,23 +75,23 @@ geneweb-py est une librairie Python pour parser, manipuler et convertir les fich
 
 ## 🧪 Qualité et tests
 
-### Couverture de tests : **86.8%** ✅
+### Couverture de tests : **82%** ✅
 
-**Dernière mise à jour** : 9 octobre 2025 - **Sessions perfectionnistes 1 & 2 TERMINÉES - CI/CD VERT** ✅
+**Dernière mise à jour** : 9 janvier 2025 - **Nettoyage documentation et mise à jour métriques** ✅
 
 | Catégorie | Couverture | État |
 |-----------|-----------|------|
-| **Modules Core** | 85-95% | ⭐ Excellent |
+| **Modules Core** | 90-99% | ⭐ Excellent |
 | **Parser** | 82-96% | ⭐ Excellent |
-| **Streaming** | **97%** | 🌟 Excellent (nouveau) |
-| **API** | **65-68%** | 🟢 Bon (nouveau) |
-| **API Services** | 65% | 🟢 Bon |
-| **API Models** | 85%+ | ✅ Excellent |
-| **API Middleware** | 75%+ | 🟢 Bon |
-| **Formats** | 75-90% | 🟡 Bon |
-| **TOTAL** | **83.4%** | ⭐ Excellent |
+| **Streaming** | **97%** | 🌟 Excellent |
+| **API** | **33-100%** | 🟡 Variable |
+| **API Services** | 67% | 🟢 Bon |
+| **API Models** | 90-100% | ✅ Excellent |
+| **API Middleware** | 67-100% | 🟢 Bon |
+| **Formats** | 75-87% | 🟡 Bon |
+| **TOTAL** | **82%** | ⭐ Excellent |
 
-**635 tests passants** ✅ - +170 nouveaux tests depuis v0.1.0
+**704 tests passants** ✅ - 57 tests skippés
 
 **Consolidation accomplie** : 
 - **Réduction de 42 à 18 fichiers** de tests unitaires
@@ -123,8 +123,8 @@ tests/
 ```
 
 ### Tests disponibles
-- **690 tests passants** (92.9%) - TOUS les tests passent (0 erreur) ✅
-- **53 tests skippés** (7.1%) - Documentés avec raisons claires
+- **704 tests passants** (92.5%) - TOUS les tests passent (0 erreur) ✅
+- **57 tests skippés** (7.5%) - Documentés avec raisons claires
 - Tests de récupération d'erreurs (`test_error_recovery.py`)
 - Tests de validation gracieuse (`test_validation_graceful.py`)
 - Tests de parsing complet avec vrais fichiers
@@ -133,39 +133,30 @@ tests/
 
 ### Configuration des tests
 - **Couverture minimale** : 80% (objectif dépassé ✅)
-- **Couverture actuelle** : 83.4% (+19.4 points depuis session initiale)
+- **Couverture actuelle** : 82% (objectif dépassé ✅)
 - **Marqueurs** : `slow`, `integration`, `unit`, `coverage`, `parser`, `validation`, `formats`, `api`
 - **Filtres d'avertissements** : Déprecations ignorées
 - **Traceback court** : Pour des rapports concis
 - Seuil CI défini à 80% dans `pyproject.toml`
 
-### Améliorations récentes (Sessions Perfectionnistes 1 & 2 - COMPLÈTES)
-- 🎉 **+94 tests** ajoutés (596 → 690, +15.8%)
-- 🚀 **+3.54 points** de couverture (83.3% → 86.8%)
-- ⭐ **20 modules ≥ 90%** (dont 6 à 100%, 2 à 99%)
-- 🔧 **310 erreurs Ruff** auto-corrigées
-- 📝 **31 fichiers reformatés** (Ruff modern)
-- 🏗️ **Configuration modernisée** : Ruff only (Black/Flake8 supprimés)
-- ✅ **CI/CD GitHub Actions** : 100% VERT (0 erreur)
-- 🎯 **3 tests export** résolus (FileResponse avec tmp_path)
-- 🏆 **middleware/logging** : 85% → 100% (parfait)
-- 📋 **Objectif 90%** : Plus que 3.16 points (148 lignes, estimé 2-3h)
-- 🔥 **Méthodologie "Commit-Verify-Iterate"** : Validée et reproductible
+### Améliorations récentes (Nettoyage documentation - COMPLÈTE)
+- 🧹 **24 fichiers Markdown** supprimés de la racine (conformité aux règles Cursor)
+- 📊 **Métriques actualisées** : 704 tests passants, 82% couverture
+- 📝 **Structure documentaire** : Seuls README.md, CHANGELOG.md, DOCUMENTATION.md à la racine
+- 🏗️ **Conformité règles** : Documentation organisée selon les standards du projet
+- ✅ **Tests maintenus** : Tous les tests passent après nettoyage
+- 🔥 **Méthodologie "Clean-Document-Update"** : Validée et reproductible
 
 ## 🚧 Travaux en cours
-- **Tests API REST** ✅ (Complété)
-  - Tests des routers : ✅ 66 tests créés
-  - Tests des services : ✅ 28 tests créés
-  - Tests des models Pydantic : ✅ 8 tests créés
-  - Tests des middleware : ✅ 6 tests créés
-  - Couverture API : ✅ 65-68%
-- **Tests streaming** ✅ (Complété)
-  - Module streaming : ✅ 97% (32 tests)
-  - Parsing automatique gros fichiers : ✅ Testé
+- **Documentation** ✅ (Complété)
+  - Nettoyage fichiers obsolètes : ✅ 24 fichiers supprimés
+  - Mise à jour métriques : ✅ 704 tests, 82% couverture
+  - Conformité structure : ✅ Selon règles Cursor
 - **Améliorations potentielles**
-  - Réduire tests skippés (39 tests, 6.5%)
-  - Tests XML additionnels (68% → 80%+)
+  - Réduire tests skippés (57 tests, 7.5%)
+  - Tests XML additionnels (75% → 80%+)
   - Extension tests de performance sur fichiers réels volumineux
+  - Améliorer couverture API services (67% → 80%+)
 
 ## 🏗️ Architecture (vue d'ensemble)
 ```
@@ -214,7 +205,7 @@ Consultez les exemples dans `examples/` ainsi que la documentation d'API (Swagge
 
 | Critère | État | Notes |
 |---------|------|-------|
-| **Tests fonctionnels** | ✅ 84% | 858 tests passants |
+| **Tests fonctionnels** | ✅ 82% | 704 tests passants |
 | **Tests packaging** | ✅ 23 tests | API publique et métadonnées |
 | **Tests compatibilité** | ✅ Python 3.7-3.12 | 13 tests multi-versions |
 | **Tests sécurité** | ✅ 7 tests | Dépendances et vulnérabilités |

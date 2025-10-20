@@ -45,6 +45,7 @@ class GeneWebParser:
         stream_mode: Optional[bool] = None,
         streaming_threshold_mb: float = 10.0,
         strict: bool = True,
+        use_multipass: bool = False,
     ):
         """Initialise le parser
 
@@ -53,11 +54,13 @@ class GeneWebParser:
             stream_mode: Si True, force le mode streaming. Si None, détection automatique.  # noqa: E501
             streaming_threshold_mb: Seuil en MB pour activer le streaming automatiquement  # noqa: E501
             strict: Si True, lève une exception à la première erreur. Si False, parsing gracieux.  # noqa: E501
+            use_multipass: Si True, utilise le parser multi-passes (recommandé pour fichiers complexes)  # noqa: E501
         """
         self.validate = validate
         self.stream_mode = stream_mode
         self.streaming_threshold_mb = streaming_threshold_mb
         self.strict = strict
+        self.use_multipass = use_multipass
         self.lexical_parser: Optional[LexicalParser] = None
         self.syntax_parser = SyntaxParser()
         self.tokens: List[Token] = []
@@ -201,6 +204,7 @@ class GeneWebParser:
                 "end",
                 "beg",
                 "wit",
+                "wnote",
                 "src",
                 "comm",
                 "-",
@@ -251,7 +255,12 @@ class GeneWebParser:
                     continue
 
                 # Validation seulement pour les lignes en dehors des blocs
-                if word not in allowed_starts:
+                # Vérifier le mot avec et sans les deux-points (ex: "wit:" ou "wit")
+                word_without_colon = word.rstrip(":")
+                if (
+                    word not in allowed_starts
+                    and word_without_colon not in allowed_starts
+                ):
                     raise GeneWebParseError(
                         "Contenu .gw invalide: ligne non reconnue", line_number=line_num
                     )
@@ -341,14 +350,22 @@ class GeneWebParser:
                     gender=gender,
                 )
                 persons[person_id] = person
-                # Vérifier si la personne n'existe pas déjà dans la généalogie
-                if person_id not in genealogy.persons:
-                    genealogy.add_person(person)
+                # Ajouter ou mettre à jour la personne dans la généalogie
+                genealogy.add_or_update_person(person)
+            else:
+                # La personne existe, mettre à jour son sexe si nécessaire
+                existing = persons[person_id]
+                if gender != Gender.UNKNOWN and existing.gender == Gender.UNKNOWN:
+                    existing.gender = gender
             return person_id
 
         # Sinon, chercher une personne existante avec occurrence 0
         base_id = f"{last_name}_{first_name}_0"
         if base_id in persons:
+            # La personne existe, mettre à jour son sexe si nécessaire
+            existing = persons[base_id]
+            if gender != Gender.UNKNOWN and existing.gender == Gender.UNKNOWN:
+                existing.gender = gender
             return base_id
 
         # Si aucune personne n'existe, créer avec occurrence 0
@@ -361,11 +378,8 @@ class GeneWebParser:
         # Déduplication stricte: si existe déjà côté persons ou genealogy, réutiliser
         if base_id not in persons:
             persons[base_id] = person
-        if base_id not in genealogy.persons:
-            try:
-                genealogy.add_person(person)
-            except Exception:
-                pass
+        # Ajouter ou mettre à jour la personne
+        genealogy.add_or_update_person(person)
         return base_id
 
     def _read_file_with_encoding(self, file_path: Path) -> Tuple[str, str]:
@@ -439,16 +453,50 @@ class GeneWebParser:
         Returns:
             Instance de Genealogy complète
         """
+        # Router vers le parser multi-passes si activé
+        if self.use_multipass:
+            from .multipass_parser import MultiPassParser
+            
+            # Récupérer le contenu original si disponible
+            content = None
+            if self.lexical_parser and hasattr(self.lexical_parser, 'text'):
+                content = self.lexical_parser.text
+            
+            multipass = MultiPassParser(content=content)
+            genealogy = multipass.parse_syntax_nodes(self.syntax_nodes)
+            return genealogy
+        
+        # Sinon, utiliser le mode incrémental actuel
         genealogy = Genealogy()
 
         # Dictionnaires pour stocker les entités pendant la construction
         persons = {}  # ID -> Person
         families = {}  # ID -> Family
 
+        # Contexte pour associer fevt et enfants à la famille précédente
+        current_family = None  # Référence à la dernière famille créée
+
         # Parser chaque bloc
         for node in self.syntax_nodes:
             if node.type == BlockType.FAMILY:
-                self._parse_family_block(node, persons, families, genealogy)
+                # Vérifier si c'est un vrai bloc famille (avec token FAM) ou des enfants (avec token BEG)
+                if node.tokens and node.tokens[0].type == TokenType.FAM:
+                    # C'est un bloc famille normal
+                    current_family = self._parse_family_block(
+                        node, persons, families, genealogy
+                    )
+                elif node.tokens and node.tokens[0].type == TokenType.BEG:
+                    # C'est un bloc enfants (beg/end) à associer à la famille courante
+                    if current_family is not None:
+                        for child_node in node.children:
+                            self._parse_child(
+                                child_node, current_family, persons, genealogy
+                            )
+                else:
+                    # Bloc famille sans indication claire, le traiter normalement
+                    current_family = self._parse_family_block(
+                        node, persons, families, genealogy
+                    )
             elif node.type == BlockType.NOTES:
                 self._parse_notes_block(node, persons, genealogy)
             elif node.type == BlockType.RELATIONS:
@@ -456,6 +504,8 @@ class GeneWebParser:
             elif node.type == BlockType.PERSON_EVENTS:
                 self._parse_person_events_block(node, persons, genealogy)
             elif node.type == BlockType.FAMILY_EVENTS:
+                # Parser les événements familiaux (fevt)
+                # TODO: Associer à current_family si nécessaire
                 self._parse_family_events_block(node, families, genealogy)
             elif node.type == BlockType.DATABASE_NOTES:
                 self._parse_database_notes_block(node, genealogy)
@@ -467,20 +517,20 @@ class GeneWebParser:
         # Mettre à jour les références croisées
         genealogy._update_cross_references()
 
-        # Ajouter toutes les personnes créées (témoins, relations, etc.)
+        # Ajouter ou mettre à jour toutes les personnes créées (témoins, relations, etc.)
         for person in persons.values():
-            try:
-                genealogy.add_person(person)
-            except Exception:
-                # Ignorer les doublons silencieusement
-                pass
+            genealogy.add_or_update_person(person)
 
         return genealogy
 
     def _parse_family_block(
         self, node: SyntaxNode, persons: dict, families: dict, genealogy: Genealogy
-    ) -> None:
-        """Parse un bloc famille et construit les objets Person et Family"""
+    ) -> Optional[Family]:
+        """Parse un bloc famille et construit les objets Person et Family
+
+        Returns:
+            La famille créée, ou None si aucune famille n'a été créée
+        """
 
         # Extraire les informations du bloc
         tokens = node.tokens
@@ -564,6 +614,9 @@ class GeneWebParser:
 
             families[family_id] = family
             genealogy.add_family(family)
+            return family
+
+        return None
 
     def _parse_family_line(self, tokens: List[Token]) -> dict:
         """Parse une ligne fam et extrait toutes les informations
@@ -774,15 +827,23 @@ class GeneWebParser:
                 sex = ChildSex.FEMALE
             i += 1
 
-        # Nom de famille de l'enfant (premier identifiant après le sexe)
+        # Nom et prénom de l'enfant
+        # Si un seul IDENTIFIER: c'est le prénom, le nom vient du père
+        # Si deux IDENTIFIER: c'est NOM Prénom
         if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-            last_name = tokens[i].value
+            first_identifier_value = tokens[i].value
             i += 1
 
-        # Prénom de l'enfant (deuxième identifiant)
-        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-            first_name = tokens[i].value
-            i += 1
+            # Vérifier s'il y a un deuxième IDENTIFIER
+            if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                # Deux identifiants: NOM Prénom
+                last_name = first_identifier_value
+                first_name = tokens[i].value
+                i += 1
+            else:
+                # Un seul identifiant: c'est le Prénom, pas le nom
+                first_name = first_identifier_value
+                last_name = None  # Sera pris du père
 
         # Numéro d'occurrence (après le prénom)
         if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
@@ -796,9 +857,14 @@ class GeneWebParser:
         if first_name:
             # Utiliser le nom de famille du père si pas spécifié
             if not last_name:
-                husband = genealogy.find_person_by_id(family.husband_id)
-                if husband:
-                    last_name = husband.last_name
+                if family.husband_id:
+                    husband = genealogy.find_person_by_id(family.husband_id)
+                    if husband:
+                        last_name = husband.last_name
+
+                # Si toujours pas de nom, utiliser un nom par défaut
+                if not last_name:
+                    last_name = "UNKNOWN"
 
             # Utiliser la nouvelle méthode de déduplication
             child_id = self._get_or_create_person(
@@ -845,7 +911,7 @@ class GeneWebParser:
                     last_name=last_name, first_name=first_name, gender=Gender.UNKNOWN
                 )
                 persons[person_id] = person
-                genealogy.add_person(person)
+                genealogy.add_or_update_person(person)
 
             # Extraire le contenu des notes
             notes_content = []
@@ -891,7 +957,7 @@ class GeneWebParser:
                     gender=Gender.UNKNOWN,  # Sera déterminé plus tard
                 )
                 persons[person_id] = person
-                genealogy.add_person(person)
+                genealogy.add_or_update_person(person)
 
             person = persons[person_id]
 
@@ -1101,7 +1167,7 @@ class GeneWebParser:
                     gender=Gender.UNKNOWN,
                 )
                 persons[person_id] = person
-                genealogy.add_person(person)
+                genealogy.add_or_update_person(person)
 
             # Parser les relations dans les enfants du nœud
             relations = []

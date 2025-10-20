@@ -141,6 +141,20 @@ wit f: MARTIN Claire"""
         assert len(h_tokens) == 1  # m (masculin)
         assert len(f_tokens) == 1  # f (féminin)
 
+    def test_witness_notes(self):
+        """Test tokenisation des notes de témoins (wnote)"""
+        content = """fam DUPONT Jean + MARTIN Marie
+wit f: FABRE Marguerite_Anne 0
+wnote Liste de lecture
+wit f: LAMBERT Marie_Thérèse"""
+        parser = LexicalParser(content)
+        tokens = parser.tokenize()
+
+        # Vérifier la présence du token wnote
+        wnote_tokens = [t for t in tokens if t.type == TokenType.WNOTE]
+        assert len(wnote_tokens) == 1
+        assert wnote_tokens[0].value == "wnote"
+
     def test_children_block(self):
         """Test tokenisation du bloc enfants"""
         content = """fam CORNO Joseph + THOMAS Marie

@@ -37,6 +37,7 @@ class TokenType(Enum):
 
     # Mots-clés de données
     WIT = "wit"  # Témoin
+    WNOTE = "wnote"  # Note de témoin (witness note)
     SRC = "src"  # Source
     COMM = "comm"  # Commentaire
     CBP = "cbp"  # Common birth place
@@ -212,6 +213,7 @@ class LexicalParser:
             "page-ext": TokenType.PAGE_EXT,
             "wizard-note": TokenType.WIZARD_NOTE,
             "wit": TokenType.WIT,
+            "wnote": TokenType.WNOTE,
             "src": TokenType.SRC,
             "comm": TokenType.COMM,
         }
@@ -612,10 +614,11 @@ class LexicalParser:
             value += self.text[self.position]
             self._advance_position()
 
-        # Vérifier si c'est un mot-clé spécial (wit, src, comm, beg, end)
-        if value in ["wit", "src", "comm", "beg", "end"]:
+        # Vérifier si c'est un mot-clé spécial (wit, wnote, src, comm, beg, end)
+        if value in ["wit", "wnote", "src", "comm", "beg", "end"]:
             token_type = {
                 "wit": TokenType.WIT,
+                "wnote": TokenType.WNOTE,
                 "src": TokenType.SRC,
                 "comm": TokenType.COMM,
                 "beg": TokenType.BEG,
