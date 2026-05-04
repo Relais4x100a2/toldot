@@ -114,6 +114,25 @@ class Date:
             return None
         return self.year
 
+    def filter_years_for_range(self) -> List[int]:
+        """Années candidates pour un filtre par plage [début, fin].
+
+        Inclut l'année du segment principal et, pour OR/BETWEEN, les années issues
+        des segments ``alternative_dates`` (sans fusion ni dédoublonnage).
+
+        Returns:
+            Liste vide si aucune année exploitable.
+        """
+        years: List[int] = []
+        y = self.sort_year()
+        if y is not None:
+            years.append(y)
+        for alt in self.alternative_dates:
+            ay = alt.sort_year()
+            if ay is not None:
+                years.append(ay)
+        return years
+
     @property
     def display_text(self) -> str:
         """Retourne la représentation textuelle de la date"""

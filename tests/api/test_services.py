@@ -271,6 +271,48 @@ class TestPersonOperations:
         assert total == 1
         assert found[0].unique_id == p1950.unique_id
 
+    def test_search_persons_death_year_range(self, service):
+        """Filtre par plage d'année de décès."""
+        service.create_empty()
+        alive = service.create_person(
+            PersonCreateSchema(
+                first_name="V", surname="Test", sex="male", access_level="public"
+            )
+        )
+        dead = service.create_person(
+            PersonCreateSchema(
+                first_name="M", surname="Test", sex="male", access_level="public"
+            )
+        )
+        alive.death_date = None
+        dead.death_date = Date.parse("01/01/1975")
+
+        found, total = service.search_persons(
+            PersonSearchSchema(death_year_from=1960, death_year_to=1980)
+        )
+        assert total == 1
+        assert found[0].unique_id == dead.unique_id
+
+    def test_search_persons_birth_year_or_overlap(self, service):
+        """Date OR : inclusion si une borne alternative intersecte la plage."""
+        service.create_empty()
+        p = service.create_person(
+            PersonCreateSchema(
+                first_name="Alt", surname="Test", sex="male", access_level="public"
+            )
+        )
+        p.birth_date = Date.parse("1850|1888")
+
+        found_in = service.search_persons(
+            PersonSearchSchema(birth_year_from=1880, birth_year_to=1890)
+        )[1]
+        found_out = service.search_persons(
+            PersonSearchSchema(birth_year_from=1860, birth_year_to=1870)
+        )[1]
+
+        assert found_in == 1
+        assert found_out == 0
+
     def test_search_persons_place(self, service):
         """Filtre par sous-chaîne de lieu (naissance, décès, baptême, sépulture)."""
         service.create_empty()
@@ -299,6 +341,64 @@ class TestPersonOperations:
         assert "longevity" in stats["advanced"]
         assert "geography" in stats["advanced"]
         assert "family_sizes" in stats["advanced"]
+
+    def test_get_stats_advanced_values_small_genealogy(self, service):
+        """Valeurs du bloc advanced sur une petite généalogie contrôlée."""
+        from geneweb_py.api.models.family import FamilyCreateSchema
+
+        service.create_empty()
+        h = service.create_person(
+            PersonCreateSchema(
+                first_name="H", surname="Fam", sex="male", access_level="public"
+            )
+        )
+        w = service.create_person(
+            PersonCreateSchema(
+                first_name="W", surname="Fam", sex="female", access_level="public"
+            )
+        )
+        h.birth_date = Date.parse("01/01/1920")
+        h.death_date = Date.parse("01/01/1980")
+        w.birth_date = Date.parse("01/01/1925")
+        w.death_date = Date.parse("01/01/1995")
+        h.birth_place = "Paris"
+        w.birth_place = "Paris"
+
+        c_schema = PersonCreateSchema(
+            first_name="E", surname="Fam", sex="male", access_level="public"
+        )
+        children_ids = []
+        for _ in range(4):
+            ch = service.create_person(c_schema)
+            children_ids.append(ch.unique_id)
+
+        service.create_family(
+            FamilyCreateSchema(
+                husband_id=h.unique_id,
+                wife_id=w.unique_id,
+                marriage_status="married",
+                children=[
+                    {"person_id": cid, "sex": "male", "last_name": None}
+                    for cid in children_ids
+                ],
+            )
+        )
+
+        stats = service.get_stats()
+        adv = stats["advanced"]
+        assert adv["longevity"]["count_with_age_at_death"] == 2
+        assert adv["longevity"]["average_age_at_death"] == pytest.approx(65.0)
+        assert adv["longevity"]["min_age_at_death"] == 60
+        assert adv["longevity"]["max_age_at_death"] == 70
+
+        places = {
+            row["place"]: row["count"] for row in adv["geography"]["top_birth_places"]
+        }
+        assert places.get("Paris") == 2
+        assert adv["geography"]["distinct_birth_places"] == 1
+
+        hist = adv["family_sizes"]["children_per_family_histogram"]
+        assert hist["4+"] == 1
 
     def test_validate_genealogy_detects_broken_reference(self, service):
         """Références familiales invalides remontées par la validation."""
@@ -334,6 +434,26 @@ class TestPersonOperations:
         service.validate_genealogy(strict=True)
         assert g.is_valid is False
         assert len(g.validation_errors) >= 1
+
+    def test_validate_genealogy_strict_twice_no_duplicate_errors(self, service):
+        """Mode strict répété : pas de duplication dans validation_errors."""
+        from geneweb_py.core.family import Family
+        from geneweb_py.core.models import MarriageStatus
+
+        service.create_empty()
+        g = service.genealogy
+        g.clear_validation_errors()
+        g.families["broken_strict_twice"] = Family(
+            family_id="broken_strict_twice",
+            husband_id="ghost_twice",
+            wife_id=None,
+            marriage_status=MarriageStatus.MARRIED,
+        )
+        service.validate_genealogy(strict=True)
+        n1 = len(g.validation_errors)
+        service.validate_genealogy(strict=True)
+        n2 = len(g.validation_errors)
+        assert n1 == n2 >= 1
 
 
 class TestFamilyOperations:

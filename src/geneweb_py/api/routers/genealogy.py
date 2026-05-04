@@ -402,7 +402,8 @@ async def validate_genealogy(
         False,
         description=(
             "Si True, met à jour l'état de validation sur l'objet Genealogy "
-            "en mémoire (is_valid, validation_errors)."
+            "en mémoire : ``validation_errors`` est remplacé par les erreurs "
+            "de cette passe (pas de cumul avec les appels précédents)."
         ),
     ),
     service: GenealogyService = Depends(get_genealogy_service),
@@ -420,9 +421,15 @@ async def validate_genealogy(
     try:
         validation_results = service.validate_genealogy(strict=strict)
 
-        return SuccessResponse(
-            message="Validation effectuée avec succès", data=validation_results
-        )
+        if validation_results.get("is_valid"):
+            msg = "Validation terminée : aucune erreur détectée."
+        else:
+            msg = (
+                "Validation terminée : la généalogie présente des erreurs "
+                "(voir le champ data)."
+            )
+
+        return SuccessResponse(message=msg, data=validation_results)
 
     except Exception as exc:
         raise HTTPException(
