@@ -2,6 +2,8 @@
 Tests d'intégration pour vérifier la capture complète des personnes
 """
 
+from pathlib import Path
+
 import pytest
 
 from geneweb_py import GeneWebParser
@@ -9,6 +11,25 @@ from geneweb_py import GeneWebParser
 
 class TestCompletePersonParsing:
     """Tests pour vérifier que toutes les personnes sont capturées"""
+
+    def test_minimal_iso8859_fixture(self) -> None:
+        """Fixture ISO-8859-1 : détection d'encodage et couples nom/prénom attendus."""
+        parser = GeneWebParser()
+        genealogy = parser.parse_file("tests/fixtures/minimal_iso8859.gw")
+        assert genealogy.metadata.encoding == "iso-8859-1"
+        pairs = {(p.last_name, p.first_name) for p in genealogy.persons.values()}
+        assert ("HéBERT", "Andrée") in pairs
+        assert ("LEMAIRE", "François") in pairs
+
+    def test_crlf_in_content_parses_witness_lines(self) -> None:
+        """Contenu avec CRLF : les lignes wit doivent produire les témoins attendus."""
+        parser = GeneWebParser()
+        lf = Path("tests/fixtures/test_witnesses.gw").read_text(encoding="utf-8")
+        crlf = lf.replace("\n", "\r\n")
+        genealogy = parser.parse_string(crlf)
+        names = {f"{p.last_name} {p.first_name}" for p in genealogy.persons.values()}
+        assert "LEROY Bernard_Marie" in names
+        assert "BLANC Jacques" in names
 
     def test_relations_block_parsing(self):
         """Test que les blocs rel créent bien les Person référencées"""
