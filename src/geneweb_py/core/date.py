@@ -101,6 +101,19 @@ class Date:
             return False
         return self.year is not None and (self.day is None or self.month is None)
 
+    def sort_year(self) -> Optional[int]:
+        """Année utilisée pour le tri et les filtres par plage (ex.: recherche API).
+
+        Les dates textuelles ou inconnues ne fournissent pas d'année exploitable ;
+        les dates OR/BETWEEN utilisent l'année du segment principal.
+
+        Returns:
+            Année grégorienne principale ou None si non déterminable.
+        """
+        if self.is_unknown or self.text_date:
+            return None
+        return self.year
+
     @property
     def display_text(self) -> str:
         """Retourne la représentation textuelle de la date"""
@@ -169,7 +182,8 @@ class Date:
         """Parse une chaîne de date au format GeneWeb
 
         Args:
-            date_str: Chaîne de date à parser (ex: "25/12/1990", "~10/5/1990", "0(5_Mai_1990)")  # noqa: E501
+            date_str: Chaîne de date au format GeneWeb (ex. ``25/12/1990``,
+                ``~10/5/1990``, ``0(5_Mai_1990)``).
 
         Returns:
             Instance de Date parsée

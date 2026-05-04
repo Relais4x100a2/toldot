@@ -36,6 +36,13 @@ class TestDateParsing:
         assert date.month is None
         assert date.year == 1990
 
+    def test_sort_year_simple(self):
+        """Année de tri pour filtres API."""
+        assert Date.parse("15/06/1920").sort_year() == 1920
+        assert Date.parse("1990").sort_year() == 1990
+        assert Date.parse("0").sort_year() is None
+        assert Date.parse("0(texte)").sort_year() is None
+
     def test_parse_unknown_date(self):
         """Test parsing d'une date inconnue"""
         date = Date.parse("0")
