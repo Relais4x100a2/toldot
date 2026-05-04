@@ -19,6 +19,7 @@ from geneweb_py.api.models.person import (
     PersonUpdateSchema,
 )
 from geneweb_py.api.services.genealogy_service import GenealogyService
+from geneweb_py.core.date import Date
 from geneweb_py.core.models import (
     AccessLevel,
     EventType,
@@ -247,6 +248,92 @@ class TestPersonOperations:
         persons, total = service.search_persons(search_params)
         assert total == 5
         assert len(persons) == 2
+
+    def test_search_persons_birth_year_range(self, service):
+        """Filtre par plage d'année de naissance."""
+        service.create_empty()
+        p1900 = service.create_person(
+            PersonCreateSchema(
+                first_name="A", surname="Test", sex="male", access_level="public"
+            )
+        )
+        p1950 = service.create_person(
+            PersonCreateSchema(
+                first_name="B", surname="Test", sex="male", access_level="public"
+            )
+        )
+        p1900.birth_date = Date.parse("01/01/1900")
+        p1950.birth_date = Date.parse("15/03/1950")
+
+        found, total = service.search_persons(
+            PersonSearchSchema(birth_year_from=1920, birth_year_to=2000)
+        )
+        assert total == 1
+        assert found[0].unique_id == p1950.unique_id
+
+    def test_search_persons_place(self, service):
+        """Filtre par sous-chaîne de lieu (naissance, décès, baptême, sépulture)."""
+        service.create_empty()
+        p_paris = service.create_person(
+            PersonCreateSchema(
+                first_name="X", surname="Loc", sex="male", access_level="public"
+            )
+        )
+        p_lyon = service.create_person(
+            PersonCreateSchema(
+                first_name="Y", surname="Loc", sex="male", access_level="public"
+            )
+        )
+        p_paris.birth_place = "Paris, France"
+        p_lyon.baptism_place = "Lyon"
+
+        found, total = service.search_persons(PersonSearchSchema(place="paris"))
+        assert total == 1
+        assert found[0].unique_id == p_paris.unique_id
+
+    def test_get_stats_includes_advanced(self, service):
+        """Statistiques avancées (longévité, lieux, histogramme enfants)."""
+        service.create_empty()
+        stats = service.get_stats()
+        assert "advanced" in stats
+        assert "longevity" in stats["advanced"]
+        assert "geography" in stats["advanced"]
+        assert "family_sizes" in stats["advanced"]
+
+    def test_validate_genealogy_detects_broken_reference(self, service):
+        """Références familiales invalides remontées par la validation."""
+        from geneweb_py.core.family import Family
+        from geneweb_py.core.models import MarriageStatus
+
+        service.create_empty()
+        g = service.genealogy
+        g.families["broken"] = Family(
+            family_id="broken",
+            husband_id="nope_missing",
+            wife_id=None,
+            marriage_status=MarriageStatus.MARRIED,
+        )
+        result = service.validate_genealogy(strict=False)
+        assert result["is_valid"] is False
+        assert len(result["errors"]) >= 1
+
+    def test_validate_genealogy_strict_updates_state(self, service):
+        """Mode strict : met à jour is_valid sur la généalogie."""
+        from geneweb_py.core.family import Family
+        from geneweb_py.core.models import MarriageStatus
+
+        service.create_empty()
+        g = service.genealogy
+        g.clear_validation_errors()
+        g.families["broken2"] = Family(
+            family_id="broken2",
+            husband_id="ghost",
+            wife_id=None,
+            marriage_status=MarriageStatus.MARRIED,
+        )
+        service.validate_genealogy(strict=True)
+        assert g.is_valid is False
+        assert len(g.validation_errors) >= 1
 
 
 class TestFamilyOperations:

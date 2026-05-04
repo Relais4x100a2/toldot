@@ -7,6 +7,12 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+- **API** : Statistiques avancées dans `get_stats` (longévité, top lieux, histogramme enfants/famille).
+- **API** : Filtres recherche personnes par plage d'année (naissance/décès) et par lieu.
+- **API** : Endpoint `POST /genealogy/validate` branché sur `Genealogy.validate_consistency` avec option `strict`.
+- **Core** : Méthode `Date.sort_year()` pour les filtres temporels.
+
 ### Changed
 - **Structure** : Migration vers structure `src/` (meilleure pratique PyPA)
   - Package déplacé de `geneweb_py/` vers `src/geneweb_py/`
