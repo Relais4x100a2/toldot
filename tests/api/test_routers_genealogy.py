@@ -151,6 +151,7 @@ class TestValidateGenealogy:
         body = response.json()
         assert body["success"] is True
         assert body["data"]["is_valid"] is True
+        assert "aucune erreur" in body["message"]
         mock_service.validate_genealogy.assert_called_once_with(strict=False)
 
     def test_validate_strict_query_propagated(self, client, mock_service):
@@ -163,6 +164,8 @@ class TestValidateGenealogy:
         }
         response = client.post("/api/v1/genealogy/validate?strict=true")
         assert response.status_code == 200
+        body = response.json()
+        assert "présente des erreurs" in body["message"]
         mock_service.validate_genealogy.assert_called_once_with(strict=True)
 
 

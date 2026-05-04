@@ -5,6 +5,7 @@ Ce service fournit les opérations CRUD et la logique métier pour manipuler
 les données généalogiques.
 """
 
+import unicodedata
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -356,7 +357,7 @@ class GenealogyService:
             ]
 
         if search_params.place:
-            needle = search_params.place.lower()
+            needle = _normalize_place_fragment(search_params.place)
             persons = [p for p in persons if _person_matches_place(p, needle)]
 
         total = len(persons)
@@ -802,7 +803,8 @@ class GenealogyService:
 
         Args:
             strict: Si True, met à jour ``is_valid`` et ``validation_errors`` sur
-                l'objet ``Genealogy`` lorsque des erreurs sont trouvées.
+                l'objet ``Genealogy`` lorsque des erreurs sont trouvées (liste
+                remplacée à chaque passe en mode strict).
 
         Returns:
             Dictionnaire sérialisable pour l'API (erreurs, indicateur de validité).
@@ -936,23 +938,37 @@ def _person_year_in_range(
     year_from: Optional[int],
     year_to: Optional[int],
 ) -> bool:
-    """Indique si l'année extraite de ``date_val`` est dans [year_from, year_to]."""
+    """Indique si au moins une année candidate chevauche ``[year_from, year_to]``.
+
+    Pour les dates OR (``|``) ou BETWEEN (``..``), les années du segment principal
+    et des ``alternative_dates`` sont prises en compte (chevauchement / overlap).
+    """
     if year_from is None and year_to is None:
         return True
     if date_val is None:
         return False
-    year = date_val.sort_year()
-    if year is None:
+    years = date_val.filter_years_for_range()
+    if not years:
         return False
-    if year_from is not None and year < year_from:
-        return False
-    if year_to is not None and year > year_to:
-        return False
-    return True
+    for year in years:
+        if year_from is not None and year < year_from:
+            continue
+        if year_to is not None and year > year_to:
+            continue
+        return True
+    return False
 
 
-def _person_matches_place(person: Person, needle_lower: str) -> bool:
-    """Vérifie si ``needle_lower`` apparaît dans un lieu connu de la personne."""
+def _normalize_place_fragment(text: str) -> str:
+    """Normalisation NFKC + casefold pour comparaison de lieux."""
+    return unicodedata.normalize("NFKC", text).casefold()
+
+
+def _person_matches_place(person: Person, needle_normalized: str) -> bool:
+    """Vérifie si ``needle_normalized`` est une sous-chaîne d'un lieu connu.
+
+    Comparaison naive après NFKC et casefold (pas de collation locale).
+    """
     fields = (
         person.birth_place,
         person.death_place,
@@ -960,7 +976,7 @@ def _person_matches_place(person: Person, needle_lower: str) -> bool:
         person.burial_place,
     )
     for raw in fields:
-        if raw and needle_lower in raw.lower():
+        if raw and needle_normalized in _normalize_place_fragment(raw):
             return True
     return False
 
