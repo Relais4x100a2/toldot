@@ -7,7 +7,6 @@ import pytest
 from geneweb_py import GeneWebParser
 
 
-@pytest.mark.skip(reason="TODO: Fixtures manquants dans tests/fixtures/")
 class TestCompletePersonParsing:
     """Tests pour vérifier que toutes les personnes sont capturées"""
 
@@ -25,8 +24,8 @@ class TestCompletePersonParsing:
         ]
 
         # Personnes principales
-        assert "CORNO Joseph" in person_names
-        assert "MOREAU Marie_Julienne" in person_names
+        assert "CORNO Joseph_Marie_Vincent" in person_names
+        assert "THOMAS Marie_Julienne" in person_names
         assert "CORNO Paul_Henri" in person_names
         assert "CORNO Marie_Claire" in person_names
 
@@ -128,8 +127,6 @@ class TestCompletePersonParsing:
 
     def test_real_file_parsing(self):
         """Test avec le fichier réel pour vérifier le nombre de personnes"""
-        import pytest
-
         pytest.skip(
             "Fichier trop volumineux pour les tests de couverture, prend trop de temps"
         )
@@ -227,13 +224,16 @@ end
         """Test que les occupations avec caractères spéciaux sont parsées"""
         parser = GeneWebParser()
 
-        test_content = """
-fam CORNO Jean #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement_technique + MOREAU Marie  # noqa: E501
-wit m: LEROY Bernard #occu Dominicain,_Aumônier_de_l'enseignement_à_Rouen
-beg
-- h Pierre_Bernard #occu Ingénieur,_éditeur,_dirigeant
-end
-"""
+        test_content = (
+            "fam CORNO Jean "
+            "#occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement_technique "
+            "+ MOREAU Marie\n"
+            "wit m: LEROY Bernard "
+            "#occu Dominicain,_Aumônier_de_l'enseignement_à_Rouen\n"
+            "beg\n"
+            "- h Pierre_Bernard #occu Ingénieur,_éditeur,_dirigeant\n"
+            "end\n"
+        )
         genealogy = parser.parse_string(test_content)
 
         persons = list(genealogy.persons.values())

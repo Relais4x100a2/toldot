@@ -202,7 +202,6 @@ class TestGracefulParsing:
         assert parser.error_collector.strict is False
 
 
-@pytest.mark.skip(reason="TODO: Fixtures manquants dans tests/fixtures/")
 class TestErrorRecovery:
     """Tests de récupération après erreurs"""
 
@@ -235,6 +234,15 @@ class TestErrorRecovery:
         parser.error_collector.add_error(GeneWebParseError("Erreur 2", line_number=2))
 
         assert parser.error_collector.error_count() == 2
+
+    def test_malformed_fixture_still_recoverable(self):
+        """Ligne invalide puis bloc fam valide (mode strict désactivé)."""
+        fixture_file = (
+            Path(__file__).parent.parent / "fixtures" / "malformed_fragment.gw"
+        )
+        parser = GeneWebParser(strict=False, validate=False)
+        genealogy = parser.parse_file(fixture_file)
+        assert len(genealogy.persons) >= 1
 
 
 if __name__ == "__main__":
