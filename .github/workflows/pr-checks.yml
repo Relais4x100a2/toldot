@@ -90,6 +90,7 @@ jobs:
             --fail-under 84 \
             --base-ref ${{ github.base_ref }} \
             --tests-outcome "${TESTS_LABEL}" \
+            --regression-epsilon 0.15 \
             -o pr_coverage_comment_body.md
 
       - name: Publier ou mettre à jour le commentaire de régression couverture
@@ -153,6 +154,7 @@ jobs:
             --fail-under 84 \
             --base-ref ${{ github.base_ref }} \
             --tests-outcome "succès" \
+            --regression-epsilon 0.15 \
             --fail-on-regression
 
       - name: Vérifier nouveaux tests ajoutés

@@ -8,8 +8,6 @@ avec les modèles de données finaux.
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from geneweb_py import GeneWebParser
 
 

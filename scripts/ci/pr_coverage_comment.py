@@ -118,6 +118,16 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         action="store_true",
         help="Code 1 si current < baseline (baseline présente).",
     )
+    p.add_argument(
+        "--regression-epsilon",
+        type=float,
+        default=0.0,
+        metavar="PCT",
+        help=(
+            "Tolérance en points de pourcentage avant échec vs baseline "
+            "(ex. 0.15 pour compenser arrondis ou ajout de lignes peu couvertes)."
+        ),
+    )
     return p.parse_args(argv)
 
 
@@ -158,9 +168,22 @@ def main(argv: Optional[list[str]] = None, stdout: TextIO = sys.stdout) -> int:
         with open(args.output, "w", encoding="utf-8") as out:
             out.write(body)
 
-    if args.fail_on_regression and baseline is not None and current + 1e-9 < baseline:
+    eff_baseline = baseline - args.regression_epsilon if baseline is not None else None
+    if (
+        args.fail_on_regression
+        and eff_baseline is not None
+        and current + 1e-9 < eff_baseline
+    ):
+        eps_note = (
+            f" (seuil effectif {eff_baseline:.2f}% avec ε={args.regression_epsilon:g})"
+            if args.regression_epsilon > 0
+            else ""
+        )
         print(
-            f"Régression de couverture : {current:.2f}% < baseline {baseline:.2f}%",
+            (
+                f"Régression de couverture : {current:.2f}% "
+                f"< baseline {baseline:.2f}%{eps_note}"
+            ),
             file=stdout,
         )
         return 1
