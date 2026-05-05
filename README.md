@@ -440,6 +440,7 @@ Les contributions sont les bienvenues ! Consultez le [Statut du projet](doc/stat
 - Docstrings en français (style Google)
 - **Ruff** pour le formatage et le lint (`ruff format`, `ruff check`) — aligné sur `pyproject.toml`
 - Vérification des types avec **mypy** (mode strict)
+- **Sécurité des dépendances** : le workflow [.github/workflows/security.yml](.github/workflows/security.yml) exécute **pip-audit** sur les extras `api`, `validation` et `parsing` (cœur + optionnels « runtime » documentés) à chaque PR et chaque semaine ; pour un contrôle local, installer l’extra `dev` puis lancer `pip-audit` selon vos besoins
 
 ## 📄 Licence
 

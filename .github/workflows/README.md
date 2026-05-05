@@ -67,6 +67,13 @@ Ce dossier contient les workflows CI/CD pour le projet geneweb-py.
 - Création release GitHub
 - Publication sur PyPI (si configuré)
 
+### 8. `security.yml` - Audit des dépendances (pip-audit)
+**Déclenchement** : Push/PR sur `main` et `develop`, planification hebdomadaire (lundi 6h UTC)
+
+**Actions** :
+- Agrège les contraintes des extras `api`, `validation` et `parsing` (aligné sur les dépendances d’exécution exposées aux utilisateurs)
+- Exécute `pip-audit --strict` sur cette liste pour détecter les vulnérabilités connues des paquets PyPI
+
 ## 🔧 Configuration
 
 ### Secrets Requis
