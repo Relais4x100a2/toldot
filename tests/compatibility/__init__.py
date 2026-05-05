@@ -1,5 +1,5 @@
 """
 Tests de compatibilité multi-versions Python
 
-Vérifie que geneweb-py fonctionne correctement sur Python 3.7 à 3.12+
+Vérifie que geneweb-py fonctionne correctement sur Python 3.8 à 3.12
 """

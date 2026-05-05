@@ -10,38 +10,29 @@ import pytest
 
 
 def test_minimum_python_version():
-    """Vérifier que nous sommes sur Python 3.7+"""
+    """Vérifier que nous sommes sur Python 3.8+ (aligné sur requires-python)."""
     assert sys.version_info >= (
         3,
-        7,
-    ), f"Python 3.7+ requis, version actuelle: {sys.version_info}"
+        8,
+    ), f"Python 3.8+ requis, version actuelle: {sys.version_info}"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="Python 3.7+ requis")
-def test_python37_compatible():
-    """Test compatibilité Python 3.7"""
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="Python 3.8+ requis")
+def test_python38_baseline():
+    """Test ligne de base Python 3.8 (version minimale supportée)."""
     from geneweb_py import GeneWebParser, Person
 
-    # Features Python 3.7
     parser = GeneWebParser()
     assert parser is not None
 
-    # Dataclasses sont supportées en 3.7+
     person = Person(last_name="TEST", first_name="User")
     assert person.last_name == "TEST"
 
 
-def test_typing_extensions_compatibility():
-    """Test compatibilité typing_extensions pour Python 3.7"""
-    # typing_extensions fournit des backports pour Python 3.7
-    try:
-        # Python 3.8+
-        from typing import Literal
-    except ImportError:
-        # Python 3.7 fallback
-        from typing_extensions import Literal
+def test_literal_typing_available():
+    """Literal est disponible depuis typing (Python 3.8+)."""
+    from typing import Literal
 
-    # Vérifier qu'on peut utiliser ces types
     assert Literal is not None
 
 

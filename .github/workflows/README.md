@@ -16,17 +16,16 @@ Ce dossier contient les workflows CI/CD pour le projet geneweb-py.
 
 **Badges** :
 ```markdown
-[![Tests](https://github.com/guillaumecayeux/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/guillaumecayeux/geneweb-py/actions)
-[![Coverage](https://codecov.io/gh/guillaumecayeux/geneweb-py/branch/main/graph/badge.svg)](https://codecov.io/gh/guillaumecayeux/geneweb-py)
+[![Tests](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
+[![Coverage](https://codecov.io/gh/Relais4x100a2/geneweb-py/branch/main/graph/badge.svg)](https://codecov.io/gh/Relais4x100a2/geneweb-py)
 ```
 
 ### 2. `lint.yml` - Linting et Formatage
 **Déclenchement** : Push/PR sur main et develop
 
 **Actions** :
-- Vérification formatage Black
-- Linting Flake8
-- Type checking mypy
+- Vérification du formatage et du lint avec **Ruff**
+- Vérification des types avec **mypy**
 
 ### 3. `coverage-report.yml` - Rapport Détaillé
 **Déclenchement** : Push sur main, tous les lundis à 9h, manuel
@@ -68,6 +67,13 @@ Ce dossier contient les workflows CI/CD pour le projet geneweb-py.
 - Création release GitHub
 - Publication sur PyPI (si configuré)
 
+### 8. `security.yml` - Audit des dépendances (pip-audit)
+**Déclenchement** : Push/PR sur `main` et `develop`, planification hebdomadaire (lundi 6h UTC)
+
+**Actions** :
+- Agrège les contraintes des extras `api`, `validation` et `parsing` (aligné sur les dépendances d’exécution exposées aux utilisateurs)
+- Exécute `pip-audit --strict` sur cette liste pour détecter les vulnérabilités connues des paquets PyPI
+
 ## 🔧 Configuration
 
 ### Secrets Requis
@@ -89,10 +95,10 @@ Actuellement configurés dans `tests.yml` :
 Ajoutez ces badges dans votre README.md :
 
 ```markdown
-[![Tests](https://github.com/guillaumecayeux/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/guillaumecayeux/geneweb-py/actions)
-[![Linting](https://github.com/guillaumecayeux/geneweb-py/workflows/Linting%20et%20Formatage/badge.svg)](https://github.com/guillaumecayeux/geneweb-py/actions)
+[![Tests](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
+[![Linting](https://github.com/Relais4x100a2/geneweb-py/workflows/Linting%20et%20Formatage/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
 [![Coverage](https://img.shields.io/badge/coverage-84%25-green)](htmlcov/index.html)
-[![Python](https://img.shields.io/badge/python-3.8+-blue)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)](https://www.python.org/downloads/)
 ```
 
 ## 🚀 Utilisation

@@ -38,7 +38,8 @@ jobs:
           lines = []
           lines.extend(project.get("dependencies", []))
           optional = project.get("optional-dependencies", {})
-          for group in ("api", "validation"):
+          # Inclut l'extra « parsing » (Lark) pour auditer la supply-chain si publié.
+          for group in ("api", "validation", "parsing"):
               lines.extend(optional.get(group, []))
           Path("audit-requirements.txt").write_text(
               "\n".join(lines) + "\n", encoding="utf-8"
