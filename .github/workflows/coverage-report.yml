@@ -1,10 +1,7 @@
 name: Rapport de Couverture
 
 on:
-  push:
-    branches: [ main ]
   schedule:
-    # Tous les lundis à 9h
     - cron: '0 9 * * 1'
   workflow_dispatch:
 

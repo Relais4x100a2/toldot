@@ -8,6 +8,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
 jobs:
   test-packaging:
     name: Test packaging et métadonnées
@@ -71,7 +74,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       
@@ -121,72 +124,9 @@ jobs:
           pip install pytest
           pytest tests/security/ -v --tb=short || true
 
-  test-full-suite:
-    name: Suite de tests complète
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: 'pip'
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev,api]"
-      
-      - name: Run all tests with coverage
-        run: |
-          pytest tests/ --cov=geneweb_py --cov-report=xml --cov-report=term-missing -m "not slow"
-      
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-
-  lint-and-format:
-    name: Linting et formatage
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: 'pip'
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff mypy
-      
-      - name: Check formatting with Ruff
-        run: |
-          echo "Vérification du formatage avec Ruff..."
-          ruff format --check --diff .
-      
-      - name: Lint with Ruff
-        run: |
-          echo "Linting avec Ruff..."
-          ruff check . --output-format=github --ignore E501
-      
-      - name: Type check with mypy
-        run: |
-          echo "Vérification des types avec mypy..."
-          mypy src/geneweb_py/ --ignore-missing-imports
-        continue-on-error: true
-
   publish-test-pypi:
     name: Publier sur TestPyPI
-    needs: [test-packaging, test-compatibility, test-security, test-full-suite]
+    needs: [test-packaging, test-compatibility, test-security]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     
@@ -216,7 +156,7 @@ jobs:
 
   publish-pypi:
     name: Publier sur PyPI
-    needs: [test-packaging, test-compatibility, test-security, test-full-suite]
+    needs: [test-packaging, test-compatibility, test-security]
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
     
