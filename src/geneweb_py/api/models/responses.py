@@ -66,6 +66,53 @@ class StatsResponse(BaseModel):
     total_persons: int = Field(..., ge=0, description="Nombre total de personnes")
     total_families: int = Field(..., ge=0, description="Nombre total de familles")
     total_events: int = Field(..., ge=0, description="Nombre total d'événements")
+    persons_by_sex: Dict[str, int] = Field(
+        default_factory=dict, description="Répartition par sexe"
+    )
+    persons_by_access_level: Dict[str, int] = Field(
+        default_factory=dict, description="Répartition par niveau d'accès"
+    )
+    persons_by_birth_century: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Répartition des personnes par siècle de naissance",
+    )
+    families_by_status: Dict[str, int] = Field(
+        default_factory=dict, description="Répartition des familles par statut"
+    )
+    families_by_marriage_century: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Répartition des familles par siècle de mariage",
+    )
+    events_by_type: Dict[str, int] = Field(
+        default_factory=dict, description="Répartition des événements par type"
+    )
+    events_by_century: Dict[str, int] = Field(
+        default_factory=dict, description="Répartition des événements par siècle"
+    )
+    average_children_per_family: float = Field(
+        0.0, ge=0, description="Nombre moyen d'enfants par famille"
+    )
     metadata: Optional[Dict[str, Any]] = Field(
-        None, description="Métadonnées supplémentaires"
+        None, description="Métadonnées (fichier source, encodage, dates)"
+    )
+    persons_with_birth_date: int = Field(
+        0, ge=0, description="Nombre de personnes avec date de naissance"
+    )
+    persons_with_death_date: int = Field(
+        0, ge=0, description="Nombre de personnes avec date de décès"
+    )
+    families_with_children: int = Field(
+        0, ge=0, description="Nombre de familles ayant au moins un enfant"
+    )
+    personal_events: int = Field(0, ge=0, description="Nombre d'événements personnels")
+    family_events: int = Field(0, ge=0, description="Nombre d'événements familiaux")
+    families_with_marriage_date: int = Field(
+        0, ge=0, description="Familles avec date de mariage renseignée"
+    )
+    families_with_divorce_date: int = Field(
+        0, ge=0, description="Familles avec date de divorce renseignée"
+    )
+    advanced: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Statistiques avancées (longévité, géographie, tailles de famille)",
     )

@@ -7,10 +7,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..dependencies import get_genealogy_service
+from ..family_payload import family_to_family_schema
 from ..models.person import (
     PersonCreateSchema,
-    PersonListSchema,
-    PersonSchema,
     PersonSearchSchema,
     PersonStatsSchema,
     PersonUpdateSchema,
@@ -20,7 +19,9 @@ from ..models.responses import (
     PaginationInfo,
     SuccessResponse,
 )
+from ..person_payload import person_to_list_schema, person_to_person_schema
 from ..router_helpers import raise_internal_server_error
+from ..serialization import event_to_schema, stable_event_id
 from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
@@ -44,30 +45,7 @@ async def create_person(
     try:
         person = service.create_person(person_data)
 
-        # Conversion vers le schéma de réponse
-        person_schema = PersonSchema(
-            id=person.unique_id,
-            first_name=person.first_name,
-            surname=person.last_name,
-            public_name=person.public_name,
-            titles=[],  # TODO: Convertir les titres
-            image=person.image_path,
-            sex=person.gender,
-            access_level=person.access_level,
-            birth_date=None,  # TODO: Convertir les dates
-            birth_place=person.birth_place,
-            death_date=None,  # TODO: Convertir les dates
-            death_place=person.death_place,
-            death_cause=None,
-            burial_date=None,  # TODO: Convertir les dates
-            burial_place=person.burial_place,
-            baptism_date=None,  # TODO: Convertir les dates
-            baptism_place=person.baptism_place,
-            notes=person.notes,
-            sources=[],  # TODO: Récupérer les sources
-            families=[],  # TODO: Récupérer les familles
-            events=[],  # TODO: Récupérer les événements
-        )
+        person_schema = person_to_person_schema(person)
 
         return SuccessResponse(
             message="Personne créée avec succès", data=person_schema.model_dump()
@@ -100,30 +78,7 @@ async def get_person(
             status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
         )
 
-    # Conversion vers le schéma de réponse
-    person_schema = PersonSchema(
-        id=person.unique_id,
-        first_name=person.first_name,
-        surname=person.last_name,
-        public_name=person.public_name,
-        titles=[],  # TODO: Convertir les titres
-        image=person.image_path,
-        sex=person.gender,
-        access_level=person.access_level,
-        birth_date=None,  # TODO: Convertir les dates
-        birth_place=person.birth_place,
-        death_date=None,  # TODO: Convertir les dates
-        death_place=person.death_place,
-        death_cause=None,
-        burial_date=None,  # TODO: Convertir les dates
-        burial_place=person.burial_place,
-        baptism_date=None,  # TODO: Convertir les dates
-        baptism_place=person.baptism_place,
-        notes=person.notes,
-        sources=[],  # TODO: Récupérer les sources
-        families=[],  # TODO: Récupérer les familles
-        events=[],  # TODO: Récupérer les événements
-    )
+    person_schema = person_to_person_schema(person)
 
     return SuccessResponse(
         message="Personne récupérée avec succès", data=person_schema.model_dump()
@@ -154,30 +109,7 @@ async def update_person(
             status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
         )
 
-    # Conversion vers le schéma de réponse
-    person_schema = PersonSchema(
-        id=person.unique_id,
-        first_name=person.first_name,
-        surname=person.last_name,
-        public_name=person.public_name,
-        titles=[],  # TODO: Convertir les titres
-        image=person.image_path,
-        sex=person.gender,
-        access_level=person.access_level,
-        birth_date=None,  # TODO: Convertir les dates
-        birth_place=person.birth_place,
-        death_date=None,  # TODO: Convertir les dates
-        death_place=person.death_place,
-        death_cause=None,
-        burial_date=None,  # TODO: Convertir les dates
-        burial_place=person.burial_place,
-        baptism_date=None,  # TODO: Convertir les dates
-        baptism_place=person.baptism_place,
-        notes=person.notes,
-        sources=[],  # TODO: Récupérer les sources
-        families=[],  # TODO: Récupérer les familles
-        events=[],  # TODO: Récupérer les événements
-    )
+    person_schema = person_to_person_schema(person)
 
     return SuccessResponse(
         message="Personne mise à jour avec succès", data=person_schema.model_dump()
@@ -280,17 +212,7 @@ async def list_persons(
     # Conversion vers les schémas de liste
     person_list = []
     for person in persons:
-        person_schema = PersonListSchema(
-            id=person.unique_id,
-            first_name=person.first_name,
-            surname=person.last_name,
-            public_name=person.public_name,
-            birth_date=None,  # TODO: Convertir les dates
-            death_date=None,
-            sex=person.gender,
-            access_level=person.access_level,
-        )
-        person_list.append(person_schema.model_dump())
+        person_list.append(person_to_list_schema(person).model_dump())
 
     # Calcul de la pagination
     total_pages = (total + size - 1) // size
@@ -330,10 +252,14 @@ async def get_person_families(
             status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
         )
 
-    # TODO: Implémenter la récupération des familles de la personne
-    families = []
+    genealogy = service.genealogy
+    families_out = []
+    for fid in person.get_families():
+        fam = genealogy.families.get(fid)
+        if fam is not None:
+            families_out.append(family_to_family_schema(fam).model_dump())
 
-    return SuccessResponse(message="Familles récupérées avec succès", data=families)
+    return SuccessResponse(message="Familles récupérées avec succès", data=families_out)
 
 
 @router.get("/{person_id}/events", response_model=SuccessResponse)
@@ -357,10 +283,23 @@ async def get_person_events(
             status_code=404, detail=f"Personne avec l'ID '{person_id}' non trouvée"
         )
 
-    # TODO: Implémenter la récupération des événements de la personne
-    events = []
+    events_out = []
+    for idx, ev in enumerate(person.events):
+        uid = getattr(ev, "unique_id", None)
+        eid = (
+            str(uid)
+            if uid is not None
+            else stable_event_id(
+                ev, scope="person", scope_key=person.unique_id, index=idx
+            )
+        )
+        events_out.append(
+            event_to_schema(
+                ev, event_id=eid, person_id=person.unique_id, family_id=None
+            ).model_dump()
+        )
 
-    return SuccessResponse(message="Événements récupérés avec succès", data=events)
+    return SuccessResponse(message="Événements récupérés avec succès", data=events_out)
 
 
 @router.get("/stats/overview", response_model=SuccessResponse)
@@ -382,7 +321,7 @@ async def get_person_stats(
         total=stats["total_persons"],
         by_sex=stats["persons_by_sex"],
         by_access_level=stats["persons_by_access_level"],
-        by_century={},  # TODO: Calculer par siècle
+        by_century=stats.get("persons_by_birth_century", {}),
         with_birth_date=stats["persons_with_birth_date"],
         with_death_date=stats["persons_with_death_date"],
     )

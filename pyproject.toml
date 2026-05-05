@@ -185,6 +185,10 @@ extend-ignore = ["B008"]
 [tool.ruff.lint.per-file-ignores]
 # Scripts CI : syntaxe compat 3.8 (Optional / Dict depuis typing — pas PEP 604)
 "scripts/ci/**" = ["UP006", "UP045"]
+# Couche API : typage explicite typing.* (compat Python 3.8, pas PEP 604)
+"src/geneweb_py/api/serialization.py" = ["UP006", "UP045", "UP007"]
+"src/geneweb_py/api/person_payload.py" = ["UP006", "UP045"]
+"src/geneweb_py/api/family_payload.py" = ["UP006", "UP045"]
 
 [tool.ruff.lint.isort]
 # Configuration des imports
