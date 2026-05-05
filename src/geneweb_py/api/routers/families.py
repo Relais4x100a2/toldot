@@ -20,6 +20,7 @@ from ..models.responses import (
     PaginationInfo,
     SuccessResponse,
 )
+from ..router_helpers import raise_internal_server_error
 from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
@@ -64,9 +65,9 @@ async def create_family(
         )
 
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Erreur lors de la création de la famille: {exc}"
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la création d'une famille dans l'API", exc
+        )
 
 
 @router.get("/{family_id}", response_model=SuccessResponse)
@@ -339,10 +340,9 @@ async def get_family_events(
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erreur lors de la récupération des événements: {exc}",
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la récupération des événements d'une famille", exc
+        )
 
 
 @router.get("/stats/overview", response_model=SuccessResponse)

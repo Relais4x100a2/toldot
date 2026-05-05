@@ -4,24 +4,76 @@ Router FastAPI pour la gestion de la généalogie dans l'API geneweb-py.
 
 import os
 import tempfile
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any, Dict, Optional, Set
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import FileResponse
 
 from ...formats import GEDCOMExporter, JSONExporter, XMLExporter
 from ..dependencies import get_genealogy_service
-from ..models.responses import (
-    StatsResponse,
-    SuccessResponse,
-)
+from ..limits import MAX_UPLOAD_BYTES
+from ..models.responses import StatsResponse, SuccessResponse
+from ..rate_limit import limiter
+from ..router_helpers import raise_internal_server_error
 from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
 
+_ALLOWED_UPLOAD_CONTENT_TYPES: Set[str] = {
+    "application/octet-stream",
+    "text/plain",
+    "application/genealogy",
+}
+
+_READ_CHUNK_SIZE = 1024 * 1024
+
+
+def _unlink_temp(path: str) -> None:
+    """Supprime un fichier temporaire en ignorant les erreurs."""
+    try:
+        os.unlink(path)
+    except OSError:
+        pass
+
+
+def _sanitize_client_filename(raw: str) -> str:
+    """Retourne un nom de fichier sans composants de chemin (basename)."""
+    if not raw:
+        return ""
+    return Path(raw).name
+
+
+def _validate_upload_meta(content_type: Optional[str], safe_name: str) -> None:
+    """Vérifie type MIME et extension pour l'import .gw."""
+    if not safe_name.lower().endswith((".gw", ".gwplus")):
+        raise HTTPException(
+            status_code=400,
+            detail="Le fichier doit avoir l'extension .gw ou .gwplus",
+        )
+    if content_type is not None:
+        main_type = content_type.split(";")[0].strip().lower()
+        allowed = {t.lower() for t in _ALLOWED_UPLOAD_CONTENT_TYPES if t}
+        if main_type not in allowed:
+            raise HTTPException(
+                status_code=415,
+                detail="Type de contenu non accepté pour un fichier GeneWeb",
+            )
+
 
 @router.post("/import", response_model=SuccessResponse)
+@limiter.limit("20/minute")
 async def import_genealogy_file(
+    request: Request,
     file: UploadFile = File(...),
     service: GenealogyService = Depends(get_genealogy_service),
 ) -> SuccessResponse:
@@ -29,163 +81,170 @@ async def import_genealogy_file(
     Importe un fichier généalogique (.gw).
 
     Args:
+        request: Requête HTTP (limitation de débit).
         file: Fichier à importer
         service: Service de généalogie
 
     Returns:
         SuccessResponse: Réponse de succès avec les statistiques d'import
     """
+    safe_name = _sanitize_client_filename(file.filename or "")
     try:
-        # Vérification de l'extension du fichier
-        if not file.filename.endswith((".gw", ".gwplus")):
-            raise HTTPException(
-                status_code=400,
-                detail="Le fichier doit avoir l'extension .gw ou .gwplus",
-            )
-
-        # Sauvegarde temporaire du fichier
-        import os
-        import tempfile
+        _validate_upload_meta(file.content_type, safe_name)
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".gw") as temp_file:
-            content = await file.read()
-            temp_file.write(content)
             temp_file_path = temp_file.name
+            total = 0
+            while True:
+                chunk = await file.read(_READ_CHUNK_SIZE)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > MAX_UPLOAD_BYTES:
+                    temp_file.flush()
+                    os.unlink(temp_file_path)
+                    raise HTTPException(
+                        status_code=413,
+                        detail=(
+                            "Fichier trop volumineux (limite "
+                            f"{MAX_UPLOAD_BYTES // (1024 * 1024)} Mo)"
+                        ),
+                    )
+                temp_file.write(chunk)
 
         try:
-            # Chargement de la généalogie
             service.load_from_file(temp_file_path)
-
-            # Récupération des statistiques
             stats = service.get_stats()
 
             return SuccessResponse(
-                message=f"Fichier '{file.filename}' importé avec succès",
+                message=f"Fichier '{safe_name}' importé avec succès",
                 data={
-                    "filename": file.filename,
-                    "size_bytes": len(content),
+                    "filename": safe_name,
+                    "size_bytes": total,
                     "statistics": stats,
                 },
             )
 
         finally:
-            # Nettoyage du fichier temporaire
-            os.unlink(temp_file_path)
+            _unlink_temp(temp_file_path)
 
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Erreur lors de l'import du fichier: {exc}"
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de l'import du fichier généalogique", exc
+        )
+
+
+def _export_with_cleanup(
+    genealogy: Any,
+    exporter_class: type,
+    suffix: str,
+    download_filename: str,
+    media_type: str,
+    background_tasks: BackgroundTasks,
+) -> FileResponse:
+    """Écrit l'export dans un fichier temporaire et planifie sa suppression."""
+    temp_fd, temp_path = tempfile.mkstemp(suffix=suffix)
+    os.close(temp_fd)
+    try:
+        exporter = exporter_class()
+        exporter.export(genealogy, temp_path)
+    except Exception:
+        _unlink_temp(temp_path)
+        raise
+
+    background_tasks.add_task(_unlink_temp, temp_path)
+    return FileResponse(
+        path=temp_path,
+        filename=download_filename,
+        media_type=media_type,
+    )
 
 
 @router.get("/export/{format}", response_class=FileResponse)
+@limiter.limit("40/minute")
 async def export_genealogy(
-    format: str, service: GenealogyService = Depends(get_genealogy_service)
+    request: Request,
+    format: str,
+    background_tasks: BackgroundTasks,
+    service: GenealogyService = Depends(get_genealogy_service),
 ) -> FileResponse:
     """
     Exporte la généalogie dans différents formats.
 
     Args:
+        request: Requête HTTP (limitation de débit).
         format: Format d'export (gw, json, xml, gedcom)
+        background_tasks: Tâches après envoi de la réponse (nettoyage disque)
         service: Service de généalogie
 
     Returns:
         FileResponse: Fichier exporté
     """
     try:
-        # Récupérer la généalogie depuis le service
         genealogy = service.genealogy
 
         if format == "gw":
-            # Export vers format GeneWeb natif
             raise HTTPException(
                 status_code=501,
                 detail="Export vers format GeneWeb non encore implémenté",
             )
-        elif format == "json":
-            # Export vers JSON
+        if format == "json":
             try:
-                exporter = JSONExporter()
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
-                temp_file.close()
-
-                exporter.export(genealogy, temp_file.name)
-
-                return FileResponse(
-                    path=temp_file.name,
-                    filename="genealogy.json",
-                    media_type="application/json",
+                return _export_with_cleanup(
+                    genealogy,
+                    JSONExporter,
+                    ".json",
+                    "genealogy.json",
+                    "application/json",
+                    background_tasks,
                 )
             except Exception as exc:
-                # Nettoyer le fichier temporaire en cas d'erreur
-                if "temp_file" in locals():
-                    try:
-                        os.unlink(temp_file.name)
-                    except Exception:
-                        pass
-                raise HTTPException(
-                    status_code=500, detail=f"Erreur lors de l'export JSON: {exc}"
-                ) from exc
-        elif format == "xml":
-            # Export vers XML
+                raise_internal_server_error(
+                    "Erreur lors de l'export JSON de la généalogie", exc
+                )
+        if format == "xml":
             try:
-                exporter = XMLExporter()
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".xml")
-                temp_file.close()
-
-                exporter.export(genealogy, temp_file.name)
-
-                return FileResponse(
-                    path=temp_file.name,
-                    filename="genealogy.xml",
-                    media_type="application/xml",
+                return _export_with_cleanup(
+                    genealogy,
+                    XMLExporter,
+                    ".xml",
+                    "genealogy.xml",
+                    "application/xml",
+                    background_tasks,
                 )
             except Exception as exc:
-                # Nettoyer le fichier temporaire en cas d'erreur
-                if "temp_file" in locals():
-                    try:
-                        os.unlink(temp_file.name)
-                    except Exception:
-                        pass
-                raise HTTPException(
-                    status_code=500, detail=f"Erreur lors de l'export XML: {exc}"
-                ) from exc
-        elif format == "gedcom":
-            # Export vers GEDCOM
+                raise_internal_server_error(
+                    "Erreur lors de l'export XML de la généalogie", exc
+                )
+        if format == "gedcom":
             try:
-                exporter = GEDCOMExporter()
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".ged")
-                temp_file.close()
-
-                exporter.export(genealogy, temp_file.name)
-
-                return FileResponse(
-                    path=temp_file.name,
-                    filename="genealogy.ged",
-                    media_type="application/octet-stream",
+                return _export_with_cleanup(
+                    genealogy,
+                    GEDCOMExporter,
+                    ".ged",
+                    "genealogy.ged",
+                    "application/octet-stream",
+                    background_tasks,
                 )
             except Exception as exc:
-                # Nettoyer le fichier temporaire en cas d'erreur
-                if "temp_file" in locals():
-                    try:
-                        os.unlink(temp_file.name)
-                    except Exception:
-                        pass
-                raise HTTPException(
-                    status_code=500, detail=f"Erreur lors de l'export GEDCOM: {exc}"
-                ) from exc
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Format d'export '{format}' non supporté. Formats disponibles: gw, json, xml, gedcom",  # noqa: E501
-            )
+                raise_internal_server_error(
+                    "Erreur lors de l'export GEDCOM de la généalogie", exc
+                )
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Format d'export '{format}' non supporté. "
+                "Formats disponibles: gw, json, xml, gedcom"
+            ),
+        )
 
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Erreur lors de l'export: {exc}"
-        ) from exc  # noqa: E501
+        raise_internal_server_error("Erreur lors de l'export de la généalogie", exc)
 
 
 @router.get("/stats", response_model=SuccessResponse)
@@ -228,14 +287,15 @@ async def get_genealogy_stats(
         )
 
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erreur lors de la récupération des statistiques: {exc}",
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la récupération des statistiques de la généalogie", exc
+        )
 
 
 @router.get("/search", response_model=SuccessResponse)
+@limiter.limit("60/minute")
 async def search_genealogy(
+    request: Request,
     query: str = Query(..., min_length=1, description="Terme de recherche"),
     search_type: str = Query(
         "all", description="Type de recherche: all, persons, families, events"
@@ -247,6 +307,7 @@ async def search_genealogy(
     Effectue une recherche globale dans la généalogie.
 
     Args:
+        request: Requête HTTP (limitation de débit).
         query: Terme de recherche
         search_type: Type de recherche (all, persons, families, events)
         limit: Nombre maximum de résultats
@@ -260,7 +321,6 @@ async def search_genealogy(
         query_lower = query.lower()
         results = {"persons": [], "families": [], "events": []}
 
-        # Recherche dans les personnes
         if search_type in ["all", "persons"]:
             for person in genealogy.persons.values():
                 if (
@@ -287,10 +347,8 @@ async def search_genealogy(
                     }
                     results["persons"].append(person_data)
 
-        # Recherche dans les familles
         if search_type in ["all", "families"]:
             for family in genealogy.families.values():
-                # Recherche par ID des époux
                 husband = (
                     genealogy.persons.get(family.husband_id)
                     if family.husband_id
@@ -324,7 +382,6 @@ async def search_genealogy(
                     }
                     results["families"].append(family_data)
 
-        # Recherche dans les événements
         if search_type in ["all", "events"]:
             for person in genealogy.persons.values():
                 for event in person.events:
@@ -364,12 +421,10 @@ async def search_genealogy(
                         }
                         results["events"].append(event_data)
 
-        # Limitation des résultats
         total_results = (
             len(results["persons"]) + len(results["families"]) + len(results["events"])
         )
         if limit < total_results:
-            # Tronquer les résultats si nécessaire
             results["persons"] = results["persons"][:limit]
             remaining = limit - len(results["persons"])
             if remaining > 0:
@@ -391,9 +446,9 @@ async def search_genealogy(
         )
 
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Erreur lors de la recherche: {exc}"
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la recherche dans la généalogie", exc
+        )
 
 
 @router.post("/validate", response_model=SuccessResponse)
@@ -432,9 +487,9 @@ async def validate_genealogy(
         return SuccessResponse(message=msg, data=validation_results)
 
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Erreur lors de la validation: {exc}"
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la validation de la généalogie", exc
+        )
 
 
 @router.delete("/", response_model=SuccessResponse)
@@ -451,15 +506,12 @@ async def clear_genealogy(
         SuccessResponse: Réponse de succès
     """
     try:
-        # Création d'une nouvelle généalogie vide
         service.create_empty()
 
         return SuccessResponse(message="Généalogie vidée avec succès")
 
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Erreur lors du vidage de la généalogie: {exc}"
-        ) from exc
+        raise_internal_server_error("Erreur lors du vidage de la généalogie", exc)
 
 
 @router.get("/health")
