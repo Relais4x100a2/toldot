@@ -189,7 +189,6 @@ end notes"""
 class TestParserWitnessHandling:
     """Tests du parsing des témoins (lignes 567-568, 578-579, 584-585)"""
 
-    @pytest.mark.skip(reason="TODO: Fonctionnalité parsing témoins à implémenter")
     def test_parse_witness_male(self):
         """Test témoin masculin (ligne 567-568)"""
         content = """fam DUPONT Jean + MARTIN Marie
@@ -200,7 +199,6 @@ wit m: TEMOIN_M Martin #occu Prêtre"""
         family = list(genealogy.families.values())[0]
         assert len(family.witnesses) >= 1
 
-    @pytest.mark.skip(reason="TODO: Fonctionnalité parsing témoins à implémenter")
     def test_parse_witness_female(self):
         """Test témoin féminin (ligne 578-579)"""
         content = """fam DUPONT Jean + MARTIN Marie
@@ -211,7 +209,6 @@ wit f: TEMOIN_F Marie #occu Religieuse"""
         family = list(genealogy.families.values())[0]
         assert len(family.witnesses) >= 1
 
-    @pytest.mark.skip(reason="TODO: Fonctionnalité parsing témoins à implémenter")
     def test_parse_multiple_witnesses(self):
         """Test plusieurs témoins (ligne 584-585)"""
         content = """fam DUPONT Jean + MARTIN Marie
@@ -241,7 +238,6 @@ wit f: LAMBERT Marie_Thérèse"""
         assert family is not None
 
 
-@pytest.mark.skip(reason="TODO: Tests à adapter au parsing actuel des enfants")
 class TestParserChildrenParsing:
     """Tests du parsing des enfants (lignes 628-633, 646)"""
 
@@ -395,7 +391,6 @@ class TestParserPersonalInfo:
         assert jean is not None
 
 
-@pytest.mark.skip(reason="TODO: Tests à adapter - commentaires non gérés actuellement")
 class TestParserSpecialCases:
     """Tests de cas spéciaux (lignes 972, 1022, 1042)"""
 
@@ -668,3 +663,44 @@ end"""
         assert hasattr(parser, "syntax_nodes")
         assert len(parser.tokens) > 0
         assert len(parser.syntax_nodes) > 0
+
+
+class TestParserResourceLimits:
+    """Bornes contre une agrégation excessive via `comm` (DoS mémoire)."""
+
+    def test_family_comm_aggregate_length_capped(self):
+        """Une suite très longue après `comm` est tronquée au plafond configuré."""
+        chunk = "a" * 70_000
+        long_comm = "comm " + " ".join([chunk] * 8)
+        content = f"fam DUPONT Jean + MARTIN Marie\n{long_comm}\n"
+        parser = GeneWebParser(validate=False)
+        genealogy = parser.parse_string(content)
+        family = next(iter(genealogy.families.values()))
+        assert family.comments
+        assert len(family.comments[0]) <= 524_288 + 1024
+
+    def test_family_comm_fragment_count_capped(self):
+        """Le nombre maximal de fragments `comm` est appliqué."""
+        identifiers = ["abc"] * 10_050
+        content = (
+            "fam LEROY Paul + DENIS Jeanne\ncomm "
+            + " ".join(identifiers)
+            + " wit m: MARIE Jean\n"
+        )
+        parser = GeneWebParser(validate=False)
+        genealogy = parser.parse_string(content)
+        family = next(iter(genealogy.families.values()))
+        assert family.comments
+        assert len(family.comments[0].split()) == 10000
+
+    def test_notes_block_aggregate_length_capped(self):
+        """Les tokens du bloc ``notes`` ne peuvent pas agréger un texte illimité."""
+        chunk = "y" * 100_000
+        long_body = " ".join([chunk] * 6)
+        content = f"notes BERNARD Paul\nbeg\n{long_body}\nend notes\n"
+        parser = GeneWebParser(validate=False)
+        genealogy = parser.parse_string(content)
+        person = genealogy.persons.get("BERNARD_Paul_0")
+        assert person is not None
+        assert person.notes
+        assert len(person.notes[0]) <= 524_288 + 2048
