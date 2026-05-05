@@ -162,7 +162,7 @@ def test_no_test_dependencies_in_main():
         content = f.read()
 
     # Packages qui doivent être uniquement dans [dev]
-    test_packages = ["pytest", "black", "flake8", "mypy", "coverage"]
+    test_packages = ["pytest", "ruff", "black", "flake8", "mypy", "coverage"]
 
     # Parser les sections
     lines = content.split("\n")

@@ -6,6 +6,7 @@ pour une publication PyPI réussie.
 """
 
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -164,7 +165,25 @@ def test_no_dev_dependencies_in_core():
     """Vérifier qu'aucune dépendance de dev n'est requise pour l'utilisation basique"""
     from geneweb_py import GeneWebParser
 
-    # Ces imports ne doivent PAS nécessiter pytest, black, etc.
+    # Ces imports ne doivent PAS nécessiter pytest, ruff, etc.
     # Si on arrive ici sans ImportError, c'est bon
     parser = GeneWebParser()
     assert parser is not None
+
+
+def test_pyproject_aligns_with_documented_stack():
+    """Vérifie cohérence README / doc : Python minimal, dépôt GitHub, extra parsing.
+
+    Évite les régressions (ex. requires-python ou URLs projet) sans dépendance TOML.
+    """
+    root = Path(__file__).resolve().parents[2]
+    text = (root / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'requires-python = ">=3.8"' in text
+
+    gh = "https://github.com/Relais4x100a2/geneweb-py"
+    assert f'Homepage = "{gh}"' in text
+    assert f'Repository = "{gh}"' in text
+    assert f'"Bug Tracker" = "{gh}/issues"' in text
+
+    assert "\nparsing = [" in text
+    assert any("lark" in line.lower() for line in text.splitlines())
