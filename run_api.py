@@ -51,6 +51,16 @@ def main():
     )
 
     parser.add_argument(
+        "--limit-max-requests",
+        type=int,
+        default=None,
+        help=(
+            "Recycle chaque worker après N requêtes (atténuation fuite mémoire / "
+            "DoS, défaut: illimité)"
+        ),
+    )
+
+    parser.add_argument(
         "--env",
         choices=["dev", "prod", "test"],
         default="dev",
@@ -96,6 +106,7 @@ def main():
             log_level=log_level,
             workers=workers,
             access_log=True,
+            limit_max_requests=args.limit_max_requests,
         )
     except KeyboardInterrupt:
         print("\n🛑 Arrêt du serveur demandé par l'utilisateur")
