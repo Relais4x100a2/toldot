@@ -1,6 +1,6 @@
 # geneweb-py
 
-[![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)](https://python.org)
+[![Python Version](https://img.shields.io/badge/python-%3E%3D3.8-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://img.shields.io/badge/pypi-v0.1.0-blue.svg)](https://pypi.org/project/geneweb-py/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20PyPI%20et%20Publication/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
@@ -36,6 +36,8 @@ Pour le développement :
 ```bash
 pip install geneweb-py[dev]
 ```
+
+Extras disponibles (voir `pyproject.toml`) : `dev`, `docs`, `cli`, `validation`, `api`. L’extra optionnel **`parsing`** installe [Lark](https://github.com/lark-parser/lark) pour d’éventuels travaux sur une grammaire déclarative ; **le parser GeneWeb actuel n’en dépend pas** — réservé à un usage expérimental ou futur.
 
 ## 🎯 Utilisation rapide
 
@@ -370,7 +372,7 @@ Les tests sont configurés dans `pyproject.toml` avec :
 ### Installation en mode développement
 
 ```bash
-git clone https://github.com/guillaumecayeux/geneweb-py.git
+git clone https://github.com/Relais4x100a2/geneweb-py.git
 cd geneweb-py
 pip install -e .[dev]
 ```
@@ -414,7 +416,7 @@ twine upload dist/*
 ### Compatibilité
 
 geneweb-py est testé et compatible avec :
-- **Python** : 3.7, 3.8, 3.9, 3.10, 3.11, 3.12
+- **Python** : 3.8, 3.9, 3.10, 3.11, 3.12 (voir `requires-python` dans `pyproject.toml`)
 - **OS** : Linux, macOS, Windows
 - **Architectures** : x86_64, arm64
 
@@ -432,11 +434,11 @@ Les contributions sont les bienvenues ! Consultez le [Statut du projet](doc/stat
 
 ### Standards de qualité
 
-- Tests unitaires obligatoires (couverture ≥ 90%)
-- Type hints sur toutes les fonctions publiques
-- Docstrings en français
-- Code formaté avec `black`
-- Lint avec `flake8` et `mypy`
+- Tests unitaires obligatoires (couverture ≥ 90% sur les modules critiques)
+- Annotations de type sur toutes les fonctions publiques
+- Docstrings en français (style Google)
+- **Ruff** pour le formatage et le lint (`ruff format`, `ruff check`) — aligné sur `pyproject.toml`
+- Vérification des types avec **mypy** (mode strict)
 
 ## 📄 Licence
 
@@ -447,4 +449,4 @@ Ce projet est sous licence MIT. Voir [LICENSE](LICENSE) pour plus de détails.
 - [GeneWeb GitHub repo](http://geneweb.org/)
 - [Format .gw](doc/geneweb/gw_format_documentation.md)
 - [Geneweb documentation by the community](https://web.archive.org/web/20250802144922/https://geneweb.tuxfamily.org/wiki/GeneWeb)
-- [Issues](https://github.com/guillaumecayeux/geneweb-py/issues)
+- [Issues](https://github.com/Relais4x100a2/geneweb-py/issues)

@@ -163,7 +163,7 @@ git tag -a v0.1.0 -m "Release version 0.1.0"
 git push origin v0.1.0
 
 # Créer une release sur GitHub
-# Aller sur https://github.com/guillaumecayeux/geneweb-py/releases/new
+# Aller sur https://github.com/Relais4x100a2/geneweb-py/releases/new
 # - Tag version: v0.1.0
 # - Release title: geneweb-py v0.1.0
 # - Description: Copier depuis CHANGELOG.md
@@ -336,7 +336,7 @@ pytest tests/packaging/ -v
 ### Monitoring
 
 - Surveiller les downloads : https://pypistats.org/packages/geneweb-py
-- Surveiller les issues : https://github.com/guillaumecayeux/geneweb-py/issues
+- Surveiller les issues : https://github.com/Relais4x100a2/geneweb-py/issues
 - Surveiller les stars/forks
 
 ### Maintenance

@@ -61,15 +61,17 @@ api = [
     "slowapi>=0.1.9",
     "httpx>=0.24.0",  # Requis pour TestClient
 ]
+# Expérimental / futur : le parser .gw livré n'utilise pas Lark ; extra réservé
+# à d'éventuelles grammaires déclaratives (voir README, section Installation).
 parsing = [
     "lark>=1.0.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/guillaumecayeux/geneweb-py"
-Repository = "https://github.com/guillaumecayeux/geneweb-py"
+Homepage = "https://github.com/Relais4x100a2/geneweb-py"
+Repository = "https://github.com/Relais4x100a2/geneweb-py"
 Documentation = "https://geneweb-py.readthedocs.io"
-"Bug Tracker" = "https://github.com/guillaumecayeux/geneweb-py/issues"
+"Bug Tracker" = "https://github.com/Relais4x100a2/geneweb-py/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
