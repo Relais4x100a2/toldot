@@ -8,7 +8,7 @@
 
 Préparer geneweb-py pour publication sur PyPI avec une suite de tests garantissant :
 - ✅ Installation correcte sur toutes plateformes
-- ✅ Compatibilité Python 3.7-3.12
+- ✅ Compatibilité Python 3.8-3.12
 - ✅ Intégrité du packaging
 - ✅ Sécurité des dépendances
 - ✅ Documentation complète
@@ -93,7 +93,7 @@ def test_install_from_sdist():
 
 def test_install_with_extras():
     """Test installation avec extras (dev, api, cli, etc.)"""
-    extras = ["dev", "api", "cli", "validation", "parsing"]
+    extras = ["dev", "api", "cli", "validation", "parsing"]  # parsing = Lark (expérimental, voir README)
     
     for extra in extras:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -211,7 +211,7 @@ def test_package_metadata():
     assert metadata["Summary"]
     assert metadata["Author"]
     assert metadata["License"] == "MIT"
-    assert metadata["Requires-Python"] == ">=3.7"
+    assert metadata["Requires-Python"] == ">=3.8"
 
 
 def test_classifiers():
@@ -318,28 +318,24 @@ import sys
 import pytest
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="Python 3.7+ requis")
-def test_python37_compatible():
-    """Test compatibilité Python 3.7"""
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="Python 3.8+ requis")
+def test_python38_compatible():
+    """Test compatibilité Python 3.8 (version minimale supportée)."""
     from geneweb_py import GeneWebParser
     parser = GeneWebParser()
     assert parser is not None
 
 
-def test_typing_extensions_compat():
-    """Test compatibilité typing_extensions"""
-    try:
-        from typing import Literal  # Python 3.8+
-    except ImportError:
-        from typing_extensions import Literal  # Fallback Python 3.7
-    
+def test_typing_literal_available():
+    """Literal est disponible dans typing (minimum du projet : Python 3.8)."""
+    from typing import Literal
+
     assert Literal is not None
 
 
 def test_no_fstrings_with_equals():
-    """Vérifier qu'on n'utilise pas f-strings avec = (Python 3.8+)"""
-    # Cette feature n'existe qu'en Python 3.8+
-    # Si on cible 3.7, on ne doit pas l'utiliser
+    """Vérifier qu'on n'utilise pas les f-strings avec = (debug, Python 3.8+)."""
+    # Version minimale du projet : 3.8 ; cette syntaxe y est réservée au débogage.
     import ast
     from pathlib import Path
     
@@ -636,7 +632,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     
     steps:
       - uses: actions/checkout@v3
@@ -716,7 +712,7 @@ jobs:
 ### Pre-publication (TestPyPI)
 - [ ] Tous les tests passent (coverage ≥ 90%)
 - [ ] Tests de packaging passent
-- [ ] Tests de compatibilité Python 3.7-3.12 passent
+- [ ] Tests de compatibilité Python 3.8-3.12 passent
 - [ ] Aucune vulnérabilité de sécurité
 - [ ] Documentation complète (README, CHANGELOG, LICENSE)
 - [ ] Version correctement taggée
