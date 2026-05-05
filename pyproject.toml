@@ -40,6 +40,7 @@ dev = [
     "mypy>=1.0.0",
     "hypothesis>=6.0.0",
     "httpx>=0.24.0",  # Requis pour TestClient de FastAPI
+    "pip-audit>=2.6.0",
 ]
 docs = [
     "sphinx>=5.0.0",
@@ -57,6 +58,7 @@ api = [
     "uvicorn[standard]>=0.20.0",
     "pydantic>=2.0.0",
     "python-multipart>=0.0.5",
+    "slowapi>=0.1.9",
     "httpx>=0.24.0",  # Requis pour TestClient
 ]
 parsing = [
@@ -120,6 +122,7 @@ filterwarnings = [
 # Configuration de couverture pour les tests avec --cov
 [tool.coverage.run]
 source = ["src/geneweb_py"]
+relative_files = true
 omit = [
     "*/tests/*",
     "*/test_*",

@@ -32,6 +32,16 @@ class TestMainApp:
         assert data["version"] == "0.1.0"
         assert data["documentation"] == "/docs"
 
+    def test_security_headers_on_root(self):
+        """Les en-têtes de sécurité de base sont présents sur les réponses."""
+        client = TestClient(app)
+        response = client.get("/")
+
+        assert response.headers.get("X-Content-Type-Options") == "nosniff"
+        assert response.headers.get("X-Frame-Options") == "DENY"
+        assert response.headers.get("Referrer-Policy") == "no-referrer"
+        assert "Content-Security-Policy" in response.headers
+
     def test_health_endpoint(self):
         """Test endpoint de santé."""
         client = TestClient(app)

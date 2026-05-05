@@ -32,12 +32,19 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         # Informations de la requête
         start_time = time.time()
         client_ip = request.client.host if request.client else "unknown"
-        user_agent = request.headers.get("user-agent", "unknown")
+        raw_user_agent = request.headers.get("user-agent", "unknown")
+        user_agent_sanitized = (
+            raw_user_agent.replace("\r", " ").replace("\n", " ").strip()[:256]
+            or "unknown"
+        )
 
         # Log de la requête entrante
         logger.info(
-            f"Requête entrante: {request.method} {request.url.path} "
-            f"depuis {client_ip} - User-Agent: {user_agent}"
+            "Requête entrante: %s %s depuis %s - User-Agent: %s",
+            request.method,
+            request.url.path,
+            client_ip,
+            user_agent_sanitized,
         )
 
         # Traitement de la requête
@@ -64,8 +71,12 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
             # Log de l'erreur
             logger.error(
-                f"Erreur lors du traitement: {request.method} {request.url.path} "
-                f"après {process_time:.3f}s - {type(exc).__name__}: {exc}"
+                "Erreur lors du traitement: %s %s après %.3fs - %s: %s",
+                request.method,
+                request.url.path,
+                process_time,
+                type(exc).__name__,
+                exc,
             )
 
             # Re-lance l'exception pour qu'elle soit traitée par les gestionnaires d'erreurs  # noqa: E501
