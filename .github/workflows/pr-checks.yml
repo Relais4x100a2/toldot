@@ -38,6 +38,7 @@ jobs:
         pytest tests/ \
           --cov=src/geneweb_py \
           --cov-report=term-missing \
+          --cov-report=json \
           --cov-fail-under=84 \
           -v
     

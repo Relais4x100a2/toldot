@@ -140,33 +140,4 @@ jobs:
             exit(1)
         EOF
     
-    - name: Generate coverage badge
-      run: |
-        python << 'EOF'
-        import json
-        
-        with open('coverage.json') as f:
-            data = json.load(f)
-        
-        coverage = data['totals']['percent_covered']
-        
-        # Déterminer la couleur du badge
-        if coverage >= 90:
-            color = "brightgreen"
-        elif coverage >= 80:
-            color = "green"
-        elif coverage >= 70:
-            color = "yellow"
-        elif coverage >= 60:
-            color = "orange"
-        else:
-            color = "red"
-        
-        badge_url = f"https://img.shields.io/badge/coverage-{coverage:.0f}%25-{color}"
-        
-        print(f"Badge URL: {badge_url}")
-        
-        with open('coverage_badge.txt', 'w') as f:
-            f.write(badge_url)
-        EOF
 
