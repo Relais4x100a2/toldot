@@ -2,13 +2,13 @@
 Router FastAPI pour la gestion des événements dans l'API geneweb-py.
 """
 
-from typing import Optional
+from typing import Generator, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from ...core.person import Person
 from ..dependencies import get_genealogy_service
 from ..models.event import (
-    EventSchema,
     EventUpdateSchema,
     FamilyEventCreateSchema,
     PersonalEventCreateSchema,
@@ -19,9 +19,55 @@ from ..models.responses import (
     SuccessResponse,
 )
 from ..router_helpers import raise_internal_server_error
-from ..services.genealogy_service import GenealogyService
+from ..serialization import event_to_schema, stable_event_id
+from ..services.genealogy_service import EventSearchHit, GenealogyService
 
 router = APIRouter()
+
+
+def _person_events_index_for_response(person: object) -> int:
+    """Indice pour ``stable_event_id`` (service mock ou réel)."""
+    evs = getattr(person, "events", None)
+    if isinstance(evs, list) and evs:
+        return len(evs) - 1
+    return 0
+
+
+def _family_events_index_for_response(family: object) -> int:
+    """Indice pour événement familial (``stable_event_id``)."""
+    evs = getattr(family, "events", None)
+    if isinstance(evs, list) and evs:
+        return len(evs) - 1
+    return 0
+
+
+def _unpack_event_context(
+    service: GenealogyService, event: object
+) -> Tuple[Optional[str], Optional[str], int]:
+    """Décompacte le contexte d'événement si le service le fournit correctement."""
+    ctx = service.get_event_context(event)
+    if isinstance(ctx, tuple) and len(ctx) == 3:
+        return ctx[0], ctx[1], ctx[2]
+    return (
+        getattr(event, "person_id", None),
+        getattr(event, "family_id", None),
+        -1,
+    )
+
+
+def _iterate_search_events(
+    service: GenealogyService, hits: object
+) -> Generator[Tuple[object, Optional[str], Optional[str], int], None, None]:
+    """Parcourt ``search_events`` : ``EventSearchHit`` ou liste d'``Event``."""
+    if not isinstance(hits, list):
+        return
+    for item in hits:
+        if isinstance(item, EventSearchHit):
+            yield item.event, item.person_id, item.family_id, item.index
+        else:
+            ev = item
+            pid, fid, ev_idx = _unpack_event_context(service, ev)
+            yield ev, pid, fid, ev_idx
 
 
 @router.post("/personal", response_model=SuccessResponse, status_code=201)
@@ -41,19 +87,23 @@ async def create_personal_event(
     """
     try:
         event = service.create_personal_event(event_data)
-
-        # Conversion vers le schéma de réponse
-        event_schema = EventSchema(
-            id=getattr(event, "unique_id", "unknown"),
-            event_type=event.event_type,
-            date=None,  # TODO: Convertir les dates
-            place=event.place,
-            reason=event.reason,
-            notes=event.notes,
-            witnesses=event.witnesses,
-            sources=[],  # Pas d'attribut sources dans Event
-            person_id=event_data.person_id,
-            family_id=None,
+        person = service.get_person(event_data.person_id)
+        if person is None:
+            raise HTTPException(status_code=400, detail="Personne introuvable")
+        idx = _person_events_index_for_response(person)
+        person_key = (
+            person.unique_id
+            if isinstance(person, Person)
+            else str(event_data.person_id)
+        )
+        uid = getattr(event, "unique_id", None)
+        eid = (
+            str(uid)
+            if uid is not None
+            else stable_event_id(event, scope="person", scope_key=person_key, index=idx)
+        )
+        event_schema = event_to_schema(
+            event, event_id=eid, person_id=person_key, family_id=None
         )
 
         return SuccessResponse(
@@ -86,17 +136,21 @@ async def create_family_event(
     """
     try:
         event = service.create_family_event(event_data)
-
-        # Conversion vers le schéma de réponse
-        event_schema = EventSchema(
-            id=getattr(event, "unique_id", "unknown"),
-            event_type=event.event_type,
-            date=None,  # TODO: Convertir les dates
-            place=event.place,
-            reason=event.reason,
-            notes=event.notes,
-            witnesses=event.witnesses,
-            sources=[event.source] if event.source else [],
+        family = service.get_family(event_data.family_id)
+        if family is None:
+            raise HTTPException(status_code=400, detail="Famille introuvable")
+        idx = _family_events_index_for_response(family)
+        uid = getattr(event, "unique_id", None)
+        eid = (
+            str(uid)
+            if uid is not None
+            else stable_event_id(
+                event, scope="family", scope_key=event_data.family_id, index=idx
+            )
+        )
+        event_schema = event_to_schema(
+            event,
+            event_id=eid,
             person_id=None,
             family_id=event_data.family_id,
         )
@@ -136,18 +190,21 @@ async def get_event(
                 status_code=404, detail=f"Événement avec l'ID {event_id} non trouvé"
             )
 
-        # Conversion vers le schéma de réponse
-        event_schema = EventSchema(
-            id=getattr(event, "unique_id", event_id),
-            event_type=event.event_type,
-            date=None,  # TODO: Convertir les dates
-            place=event.place,
-            reason=event.reason,
-            notes=event.notes,
-            witnesses=event.witnesses,
-            sources=[event.source] if event.source else [],
-            person_id=getattr(event, "person_id", None),
-            family_id=getattr(event, "family_id", None),
+        pid, fid, ev_idx = _unpack_event_context(service, event)
+        uid = getattr(event, "unique_id", None)
+        if uid is not None:
+            eid = str(uid)
+        elif pid is not None and ev_idx >= 0:
+            eid = stable_event_id(event, scope="person", scope_key=pid, index=ev_idx)
+        elif fid is not None and ev_idx >= 0:
+            eid = stable_event_id(event, scope="family", scope_key=fid, index=ev_idx)
+        else:
+            eid = event_id
+        event_schema = event_to_schema(
+            event,
+            event_id=eid,
+            person_id=pid or getattr(event, "person_id", None),
+            family_id=fid or getattr(event, "family_id", None),
         )
 
         return SuccessResponse(
@@ -187,18 +244,21 @@ async def update_event(
                 status_code=404, detail=f"Événement avec l'ID {event_id} non trouvé"
             )
 
-        # Conversion vers le schéma de réponse
-        event_schema = EventSchema(
-            id=getattr(event, "unique_id", event_id),
-            event_type=event.event_type,
-            date=None,  # TODO: Convertir les dates
-            place=event.place,
-            reason=event.reason,
-            notes=event.notes,
-            witnesses=event.witnesses,
-            sources=[event.source] if event.source else [],
-            person_id=getattr(event, "person_id", None),
-            family_id=getattr(event, "family_id", None),
+        pid, fid, ev_idx = _unpack_event_context(service, event)
+        uid = getattr(event, "unique_id", None)
+        if uid is not None:
+            eid = str(uid)
+        elif pid is not None and ev_idx >= 0:
+            eid = stable_event_id(event, scope="person", scope_key=pid, index=ev_idx)
+        elif fid is not None and ev_idx >= 0:
+            eid = stable_event_id(event, scope="family", scope_key=fid, index=ev_idx)
+        else:
+            eid = event_id
+        event_schema = event_to_schema(
+            event,
+            event_id=eid,
+            person_id=pid or getattr(event, "person_id", None),
+            family_id=fid or getattr(event, "family_id", None),
         )
 
         return SuccessResponse(
@@ -305,20 +365,34 @@ async def list_events(
 
         # Conversion vers les schémas de réponse
         event_schemas = []
-        for event in events:
-            event_schema = EventSchema(
-                id=getattr(event, "unique_id", "unknown"),
-                event_type=event.event_type,
-                date=None,  # TODO: Convertir les dates
-                place=event.place,
-                reason=None,  # Pas d'attribut reason dans Event
-                notes=event.notes,
-                witnesses=event.witnesses,
-                sources=[],  # Pas d'attribut sources dans Event
-                person_id=getattr(event, "person_id", None),
-                family_id=getattr(event, "family_id", None),
+        for ev, hit_pid, hit_fid, hit_idx in _iterate_search_events(service, events):
+            uid = getattr(ev, "unique_id", None)
+            if uid is not None:
+                eid = str(uid)
+            elif hit_pid is not None and hit_idx >= 0:
+                eid = stable_event_id(
+                    ev,
+                    scope="person",
+                    scope_key=hit_pid,
+                    index=hit_idx,
+                )
+            elif hit_fid is not None and hit_idx >= 0:
+                eid = stable_event_id(
+                    ev,
+                    scope="family",
+                    scope_key=hit_fid,
+                    index=hit_idx,
+                )
+            else:
+                eid = "unknown"
+            event_schemas.append(
+                event_to_schema(
+                    ev,
+                    event_id=eid,
+                    person_id=hit_pid or getattr(ev, "person_id", None),
+                    family_id=hit_fid or getattr(ev, "family_id", None),
+                ).model_dump()
             )
-            event_schemas.append(event_schema.model_dump())
 
         # Calcul de la pagination
         total_pages = (total + size - 1) // size
@@ -364,6 +438,7 @@ async def get_event_stats(
             "personal_events": stats.get("personal_events", 0),
             "family_events": stats.get("family_events", 0),
             "events_by_type": stats.get("events_by_type", {}),
+            "events_by_century": stats.get("events_by_century", {}),
         }
 
         return SuccessResponse(

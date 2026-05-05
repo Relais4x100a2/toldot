@@ -127,6 +127,10 @@ class PersonSchema(PersonBaseSchema):
     notes: List[str] = Field(default_factory=list, description="Notes personnelles")
     sources: List[str] = Field(default_factory=list, description="Sources")
     families: List[str] = Field(default_factory=list, description="IDs des familles")
+    related_families: List[str] = Field(
+        default_factory=list,
+        description="IDs des familles où la personne est conjoint(e)",
+    )
     events: List[str] = Field(
         default_factory=list, description="IDs des événements personnels"
     )

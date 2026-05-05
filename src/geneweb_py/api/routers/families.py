@@ -2,15 +2,15 @@
 Router FastAPI pour la gestion des familles dans l'API geneweb-py.
 """
 
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from ...core.person import Person
 from ..dependencies import get_genealogy_service
+from ..family_payload import family_to_family_schema, family_to_list_schema
 from ..models.family import (
     FamilyCreateSchema,
-    FamilyListSchema,
-    FamilySchema,
     FamilySearchSchema,
     FamilyStatsSchema,
     FamilyUpdateSchema,
@@ -20,7 +20,9 @@ from ..models.responses import (
     PaginationInfo,
     SuccessResponse,
 )
+from ..person_payload import person_to_list_schema
 from ..router_helpers import raise_internal_server_error
+from ..serialization import event_to_schema, stable_event_id
 from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
@@ -44,21 +46,7 @@ async def create_family(
     try:
         family = service.create_family(family_data)
 
-        # Conversion vers le schéma de réponse
-        family_schema = FamilySchema(
-            id=family.family_id,
-            husband_id=family.husband_id,
-            wife_id=family.wife_id,
-            children=[],  # TODO: Convertir les enfants
-            marriage_status=family.marriage_status,
-            notes=family.comments,
-            sources=[family.family_source] if family.family_source else [],
-            marriage_date=None,  # TODO: Convertir les dates
-            marriage_place=None,
-            divorce_date=None,
-            divorce_place=None,
-            events=[],  # TODO: Récupérer les événements
-        )
+        family_schema = family_to_family_schema(family)
 
         return SuccessResponse(
             message="Famille créée avec succès", data=family_schema.model_dump()
@@ -91,21 +79,7 @@ async def get_family(
             status_code=404, detail=f"Famille avec l'ID '{family_id}' non trouvée"
         )
 
-    # Conversion vers le schéma de réponse
-    family_schema = FamilySchema(
-        id=family.family_id,
-        husband_id=family.husband_id,
-        wife_id=family.wife_id,
-        children=[],  # TODO: Convertir les enfants
-        marriage_status=family.marriage_status,
-        notes=family.comments,
-        sources=[family.family_source] if family.family_source else [],
-        marriage_date=None,  # TODO: Convertir les dates
-        marriage_place=None,
-        divorce_date=None,
-        divorce_place=None,
-        events=[],  # TODO: Récupérer les événements
-    )
+    family_schema = family_to_family_schema(family)
 
     return SuccessResponse(
         message="Famille récupérée avec succès", data=family_schema.model_dump()
@@ -136,21 +110,7 @@ async def update_family(
             status_code=404, detail=f"Famille avec l'ID '{family_id}' non trouvée"
         )
 
-    # Conversion vers le schéma de réponse
-    family_schema = FamilySchema(
-        id=family.family_id,
-        husband_id=family.husband_id,
-        wife_id=family.wife_id,
-        children=[],  # TODO: Convertir les enfants
-        marriage_status=family.marriage_status,
-        notes=family.comments,
-        sources=[family.family_source] if family.family_source else [],
-        marriage_date=None,  # TODO: Convertir les dates
-        marriage_place=None,
-        divorce_date=None,
-        divorce_place=None,
-        events=[],  # TODO: Récupérer les événements
-    )
+    family_schema = family_to_family_schema(family)
 
     return SuccessResponse(
         message="Famille mise à jour avec succès", data=family_schema.model_dump()
@@ -243,15 +203,7 @@ async def list_families(
     # Conversion vers les schémas de liste
     family_list = []
     for family in families:
-        family_schema = FamilyListSchema(
-            id=family.family_id,
-            husband_id=family.husband_id,
-            wife_id=family.wife_id,
-            children_count=len(family.children),
-            marriage_date=None,  # TODO: Convertir les dates
-            marriage_status=family.marriage_status,
-        )
-        family_list.append(family_schema.model_dump())
+        family_list.append(family_to_list_schema(family).model_dump())
 
     # Calcul de la pagination
     total_pages = (total + size - 1) // size
@@ -291,10 +243,39 @@ async def get_family_children(
             status_code=404, detail=f"Famille avec l'ID '{family_id}' non trouvée"
         )
 
-    # TODO: Implémenter la récupération des enfants avec leurs détails
-    children = []
+    genealogy = service.genealogy
+    children_out: List[Dict[str, Any]] = []
+    for ch in family.children:
+        if isinstance(ch, str):
+            pid = ch
+            sex_val: Optional[str] = None
+            last: Optional[str] = None
+        else:
+            pid = ch.person_id
+            sex_val = ch.sex.value if ch.sex else None
+            last = ch.last_name
 
-    return SuccessResponse(message="Enfants récupérés avec succès", data=children)
+        child_person = genealogy.persons.get(pid)
+        if isinstance(child_person, Person):
+            children_out.append(
+                {
+                    "person_id": pid,
+                    "sex": sex_val,
+                    "last_name": last,
+                    "person": person_to_list_schema(child_person).model_dump(),
+                }
+            )
+        else:
+            children_out.append(
+                {
+                    "person_id": pid,
+                    "sex": sex_val,
+                    "last_name": last,
+                    "person": None,
+                }
+            )
+
+    return SuccessResponse(message="Enfants récupérés avec succès", data=children_out)
 
 
 @router.get("/{family_id}/events", response_model=SuccessResponse)
@@ -319,21 +300,21 @@ async def get_family_events(
                 status_code=404, detail=f"Famille avec l'ID '{family_id}' non trouvée"
             )
 
-        # Conversion des événements familiaux
         events = []
-        for event in family.events:
-            event_data = {
-                "id": getattr(event, "unique_id", "unknown"),
-                "event_type": event.event_type.value if event.event_type else None,
-                "date": None,  # TODO: Convertir les dates
-                "place": event.place,
-                "reason": event.reason,
-                "notes": event.notes,
-                "witnesses": event.witnesses,
-                "sources": event.sources,
-                "family_id": family_id,
-            }
-            events.append(event_data)
+        for idx, event in enumerate(family.events):
+            uid = getattr(event, "unique_id", None)
+            eid = (
+                str(uid)
+                if uid is not None
+                else stable_event_id(
+                    event, scope="family", scope_key=family_id, index=idx
+                )
+            )
+            events.append(
+                event_to_schema(
+                    event, event_id=eid, person_id=None, family_id=family_id
+                ).model_dump()
+            )
 
         return SuccessResponse(message="Événements récupérés avec succès", data=events)
 
@@ -363,9 +344,9 @@ async def get_family_stats(
     family_stats = FamilyStatsSchema(
         total=stats["total_families"],
         by_status=stats["families_by_status"],
-        by_century={},  # TODO: Calculer par siècle
-        with_marriage_date=0,  # TODO: Calculer
-        with_divorce_date=0,  # TODO: Calculer
+        by_century=stats.get("families_by_marriage_century", {}),
+        with_marriage_date=stats.get("families_with_marriage_date", 0),
+        with_divorce_date=stats.get("families_with_divorce_date", 0),
         average_children=stats["average_children_per_family"],
         families_with_children=stats["families_with_children"],
     )
