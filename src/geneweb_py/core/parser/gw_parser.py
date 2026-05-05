@@ -29,6 +29,57 @@ logger = logging.getLogger(__name__)
 _FAMILY_COMM_AGGREGATE_MAX_CHARS = 512 * 1024
 _FAMILY_COMM_MAX_FRAGMENTS = 10000
 
+# Autres accumulations texte (notes, occupations, métadonnées) : même discipline.
+_TEXT_AGGREGATE_MAX_CHARS = 512 * 1024
+_TEXT_AGGREGATE_MAX_FRAGMENTS = 10000
+
+
+def _bounded_append_text_fragment(
+    parts: List[str],
+    agg_len: int,
+    fragment: str,
+    inter_fragment_sep_len: int,
+    max_fragments: int,
+    max_aggregate_chars: int,
+    log_context: str,
+) -> Tuple[int, bool]:
+    """Ajoute un fragment à une liste avec plafonds fragments / caractères.
+
+    Utilisé pour éviter une croissance non bornée (entrée hostile) lors du
+    concaténage de tokens en note, occupation ou métadonnées.
+
+    Args:
+        parts: Liste des fragments déjà acceptés (modifiée en place).
+        agg_len: Longueur cumulée actuelle (séparateurs inclus selon la règle).
+        fragment: Texte à ajouter.
+        inter_fragment_sep_len: Longueur du séparateur entre fragments (1 = espace,
+            0 = concaténation directe).
+        max_fragments: Nombre maximal de fragments.
+        max_aggregate_chars: Taille maximale agrégée (caractères).
+        log_context: Libellé court pour le journal (ex. ``notes bloc``).
+
+    Returns:
+        Tuple (nouvelle longueur agrégée, True si une limite a été atteinte et
+        que l'appelant doit arrêter d'alimenter cette agrégation).
+    """
+    if len(parts) >= max_fragments:
+        logger.debug(
+            "%s: tronqué, limite de fragments %s atteinte",
+            log_context,
+            max_fragments,
+        )
+        return agg_len, True
+    sep_len = inter_fragment_sep_len if parts else 0
+    if agg_len + sep_len + len(fragment) > max_aggregate_chars:
+        logger.debug(
+            "%s: tronqué, limite d'agrégat %s caractères atteinte",
+            log_context,
+            max_aggregate_chars,
+        )
+        return agg_len, True
+    parts.append(fragment)
+    return agg_len + sep_len + len(fragment), False
+
 
 class GeneWebParser:
     """Parser principal pour les fichiers .gw
@@ -743,24 +794,18 @@ class GeneWebParser:
                         TokenType.IDENTIFIER,
                         TokenType.STRING,
                     ):
-                        if len(parts) >= _FAMILY_COMM_MAX_FRAGMENTS:
-                            logger.debug(
-                                "Commentaire famille `comm` tronqué: limite de "
-                                "fragments %s atteinte",
-                                _FAMILY_COMM_MAX_FRAGMENTS,
-                            )
-                            break
                         frag = tokens[i].value
-                        sep = 1 if parts else 0
-                        if agg_len + sep + len(frag) > _FAMILY_COMM_AGGREGATE_MAX_CHARS:
-                            logger.debug(
-                                "Commentaire famille `comm` tronqué: limite "
-                                "d'agrégat %s caractères atteinte",
-                                _FAMILY_COMM_AGGREGATE_MAX_CHARS,
-                            )
+                        agg_len, stop = _bounded_append_text_fragment(
+                            parts,
+                            agg_len,
+                            frag,
+                            inter_fragment_sep_len=1,
+                            max_fragments=_FAMILY_COMM_MAX_FRAGMENTS,
+                            max_aggregate_chars=_FAMILY_COMM_AGGREGATE_MAX_CHARS,
+                            log_context="Commentaire famille `comm`",
+                        )
+                        if stop:
                             break
-                        parts.append(frag)
-                        agg_len += sep + len(frag)
                     i += 1
                 if parts:
                     family.add_comment(" ".join(parts))
@@ -961,6 +1006,7 @@ class GeneWebParser:
             elif token.type == TokenType.OCCU:
                 i += 1
                 occupation_parts = []
+                occ_agg = 0
                 while i < len(tokens) and tokens[i].type in [
                     TokenType.IDENTIFIER,
                     TokenType.STRING,
@@ -969,8 +1015,19 @@ class GeneWebParser:
                     TokenType.UNKNOWN,
                 ]:
                     # Remplacer les underscores par des espaces pour l'affichage
-                    occupation_parts.append(tokens[i].value.replace("_", " "))
+                    occ_seg = tokens[i].value.replace("_", " ")
+                    occ_agg, stop = _bounded_append_text_fragment(
+                        occupation_parts,
+                        occ_agg,
+                        occ_seg,
+                        inter_fragment_sep_len=0,
+                        max_fragments=_TEXT_AGGREGATE_MAX_FRAGMENTS,
+                        max_aggregate_chars=_TEXT_AGGREGATE_MAX_CHARS,
+                        log_context="Occupation ligne fam",
+                    )
                     i += 1
+                    if stop:
+                        break
                 if occupation_parts:
                     result[f"{current_person}_occupation"] = "".join(occupation_parts)
                 continue
@@ -1125,6 +1182,8 @@ class GeneWebParser:
 
             # Extraire le contenu des notes
             notes_content = []
+            notes_agg = 0
+            notes_stop = False
             in_content = False
 
             for token in tokens:
@@ -1137,7 +1196,17 @@ class GeneWebParser:
                     TokenType.NEWLINE,
                     TokenType.WHITESPACE,
                 ]:
-                    notes_content.append(token.value)
+                    notes_agg, notes_stop = _bounded_append_text_fragment(
+                        notes_content,
+                        notes_agg,
+                        token.value,
+                        inter_fragment_sep_len=1,
+                        max_fragments=_TEXT_AGGREGATE_MAX_FRAGMENTS,
+                        max_aggregate_chars=_TEXT_AGGREGATE_MAX_CHARS,
+                        log_context="Bloc notes",
+                    )
+                    if notes_stop:
+                        break
 
             if notes_content:
                 persons[person_id].add_note(" ".join(notes_content))
@@ -1243,12 +1312,23 @@ class GeneWebParser:
                     i += 1
                     # Contenu de la note
                     note_content = []
+                    note_agg = 0
                     while i < len(tokens) and tokens[i].type not in [
                         TokenType.NEWLINE,
                         TokenType.END_PEVT,
                     ]:
-                        note_content.append(tokens[i].value)
+                        note_agg, stop = _bounded_append_text_fragment(
+                            note_content,
+                            note_agg,
+                            tokens[i].value,
+                            inter_fragment_sep_len=1,
+                            max_fragments=_TEXT_AGGREGATE_MAX_FRAGMENTS,
+                            max_aggregate_chars=_TEXT_AGGREGATE_MAX_CHARS,
+                            log_context="Note pevt",
+                        )
                         i += 1
+                        if stop:
+                            break
                     if note_content:
                         person.add_note(" ".join(note_content))
 
@@ -1558,6 +1638,7 @@ class GeneWebParser:
             elif token.type == TokenType.OCCU:
                 i += 1
                 occupation_parts = []
+                occ_agg = 0
                 while i < len(tokens) and tokens[i].type in [
                     TokenType.IDENTIFIER,
                     TokenType.STRING,
@@ -1568,8 +1649,18 @@ class GeneWebParser:
                     # Remplacer les underscores par des espaces pour l'affichage
                     # Garder les virgules et apostrophes telles quelles
                     value = tokens[i].value.replace("_", " ")
-                    occupation_parts.append(value)
+                    occ_agg, stop = _bounded_append_text_fragment(
+                        occupation_parts,
+                        occ_agg,
+                        value,
+                        inter_fragment_sep_len=0,
+                        max_fragments=_TEXT_AGGREGATE_MAX_FRAGMENTS,
+                        max_aggregate_chars=_TEXT_AGGREGATE_MAX_CHARS,
+                        log_context="Occupation inline",
+                    )
                     i += 1
+                    if stop:
+                        break
                 if occupation_parts:
                     person.occupation = "".join(occupation_parts)
 
@@ -1587,14 +1678,25 @@ class GeneWebParser:
             elif token.type == TokenType.NOTE:
                 i += 1
                 note_content = []
+                note_agg = 0
                 while i < len(tokens) and tokens[i].type not in [
                     TokenType.NEWLINE,
                     TokenType.WIT,
                     TokenType.SRC,
                     TokenType.COMM,
                 ]:
-                    note_content.append(tokens[i].value)
+                    note_agg, stop = _bounded_append_text_fragment(
+                        note_content,
+                        note_agg,
+                        tokens[i].value,
+                        inter_fragment_sep_len=1,
+                        max_fragments=_TEXT_AGGREGATE_MAX_FRAGMENTS,
+                        max_aggregate_chars=_TEXT_AGGREGATE_MAX_CHARS,
+                        log_context="Note inline",
+                    )
                     i += 1
+                    if stop:
+                        break
                 if note_content:
                     person.add_note(" ".join(note_content))
 
@@ -1680,6 +1782,7 @@ class GeneWebParser:
 
         # Extraire le contenu des notes
         notes_content = []
+        notes_agg = 0
         in_content = False
 
         for token in tokens:
@@ -1692,7 +1795,17 @@ class GeneWebParser:
                 TokenType.NEWLINE,
                 TokenType.WHITESPACE,
             ]:
-                notes_content.append(token.value)
+                notes_agg, stop = _bounded_append_text_fragment(
+                    notes_content,
+                    notes_agg,
+                    token.value,
+                    inter_fragment_sep_len=1,
+                    max_fragments=_TEXT_AGGREGATE_MAX_FRAGMENTS,
+                    max_aggregate_chars=_TEXT_AGGREGATE_MAX_CHARS,
+                    log_context="Bloc notes-db",
+                )
+                if stop:
+                    break
 
         if notes_content:
             # Stocker les notes de base de données dans les métadonnées
@@ -1730,6 +1843,7 @@ class GeneWebParser:
 
             # Extraire le contenu de la page
             page_content = []
+            page_agg = 0
             in_content = False
 
             for token in tokens:
@@ -1742,7 +1856,17 @@ class GeneWebParser:
                     TokenType.NEWLINE,
                     TokenType.WHITESPACE,
                 ]:
-                    page_content.append(token.value)
+                    page_agg, stop = _bounded_append_text_fragment(
+                        page_content,
+                        page_agg,
+                        token.value,
+                        inter_fragment_sep_len=1,
+                        max_fragments=_TEXT_AGGREGATE_MAX_FRAGMENTS,
+                        max_aggregate_chars=_TEXT_AGGREGATE_MAX_CHARS,
+                        log_context="Page étendue",
+                    )
+                    if stop:
+                        break
 
             if page_content:
                 # Stocker le contenu de la page dans les métadonnées de la personne
@@ -1781,6 +1905,7 @@ class GeneWebParser:
 
             # Extraire le contenu des notes de wizard
             wizard_content = []
+            wiz_agg = 0
             in_content = False
 
             for token in tokens:
@@ -1793,7 +1918,17 @@ class GeneWebParser:
                     TokenType.NEWLINE,
                     TokenType.WHITESPACE,
                 ]:
-                    wizard_content.append(token.value)
+                    wiz_agg, stop = _bounded_append_text_fragment(
+                        wizard_content,
+                        wiz_agg,
+                        token.value,
+                        inter_fragment_sep_len=1,
+                        max_fragments=_TEXT_AGGREGATE_MAX_FRAGMENTS,
+                        max_aggregate_chars=_TEXT_AGGREGATE_MAX_CHARS,
+                        log_context="Note wizard",
+                    )
+                    if stop:
+                        break
 
             if wizard_content:
                 # Ajouter les notes de wizard avec un tag spécial

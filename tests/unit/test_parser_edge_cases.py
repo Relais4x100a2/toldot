@@ -692,3 +692,15 @@ class TestParserResourceLimits:
         family = next(iter(genealogy.families.values()))
         assert family.comments
         assert len(family.comments[0].split()) == 10000
+
+    def test_notes_block_aggregate_length_capped(self):
+        """Les tokens du bloc ``notes`` ne peuvent pas agréger un texte illimité."""
+        chunk = "y" * 100_000
+        long_body = " ".join([chunk] * 6)
+        content = f"notes BERNARD Paul\nbeg\n{long_body}\nend notes\n"
+        parser = GeneWebParser(validate=False)
+        genealogy = parser.parse_string(content)
+        person = genealogy.persons.get("BERNARD_Paul_0")
+        assert person is not None
+        assert person.notes
+        assert len(person.notes[0]) <= 524_288 + 2048
