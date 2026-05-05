@@ -453,28 +453,38 @@ async def search_genealogy(
 
 @router.post("/validate", response_model=SuccessResponse)
 async def validate_genealogy(
+    strict: bool = Query(
+        False,
+        description=(
+            "Si True, met à jour l'état de validation sur l'objet Genealogy "
+            "en mémoire : ``validation_errors`` est remplacé par les erreurs "
+            "de cette passe (pas de cumul avec les appels précédents)."
+        ),
+    ),
     service: GenealogyService = Depends(get_genealogy_service),
 ) -> SuccessResponse:
     """
     Valide la cohérence de la généalogie.
 
     Args:
+        strict: Propagé au validateur côté service.
         service: Service de généalogie
 
     Returns:
         SuccessResponse: Réponse avec les résultats de validation
     """
     try:
-        validation_results = {
-            "is_valid": True,
-            "warnings": [],
-            "errors": [],
-            "suggestions": [],
-        }
+        validation_results = service.validate_genealogy(strict=strict)
 
-        return SuccessResponse(
-            message="Validation effectuée avec succès", data=validation_results
-        )
+        if validation_results.get("is_valid"):
+            msg = "Validation terminée : aucune erreur détectée."
+        else:
+            msg = (
+                "Validation terminée : la généalogie présente des erreurs "
+                "(voir le champ data)."
+            )
+
+        return SuccessResponse(message=msg, data=validation_results)
 
     except Exception as exc:
         raise_internal_server_error(
