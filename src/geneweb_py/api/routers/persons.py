@@ -20,6 +20,7 @@ from ..models.responses import (
     PaginationInfo,
     SuccessResponse,
 )
+from ..router_helpers import raise_internal_server_error
 from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
@@ -73,9 +74,9 @@ async def create_person(
         )
 
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Erreur lors de la création de la personne: {exc}"
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la création d'une personne dans l'API", exc
+        )
 
 
 @router.get("/{person_id}", response_model=SuccessResponse)

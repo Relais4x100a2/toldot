@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+# GITHUB_TOKEN — commentaire couverture (python-coverage-comment-action) + API user
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   tests:
     name: Tests Python ${{ matrix.python-version }}
@@ -60,8 +66,12 @@ jobs:
         path: htmlcov/
         retention-days: 30
     
+    # PR depuis un fork : le token reste en lecture seule (impossible de poster)
     - name: Comment PR with coverage
-      if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
+      if: >
+        github.event_name == 'pull_request' &&
+        matrix.python-version == '3.12' &&
+        github.event.pull_request.head.repo.full_name == github.repository
       uses: py-cov-action/python-coverage-comment-action@v3
       with:
         GITHUB_TOKEN: ${{ github.token }}
