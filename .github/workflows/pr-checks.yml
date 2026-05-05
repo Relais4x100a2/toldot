@@ -79,7 +79,8 @@ jobs:
         run: |
           OUTCOME_PYTEST="${{ steps.pytest_pr.outcome }}"
           if [ "${OUTCOME_PYTEST}" = "success" ]; then
-            TESTS_LABEL="succès (`pytest + --cov-fail-under=84`)"
+            # Guillemets simples : sinon bash interprète les backticks comme une commande (pytest + … → erreur « + » introuvable).
+            TESTS_LABEL='succès (`pytest + --cov-fail-under=84`)'
           else
             TESTS_LABEL="échec ou seuil — voir journaux (\`${OUTCOME_PYTEST}\`)"
           fi
