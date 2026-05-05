@@ -238,20 +238,48 @@ end fevt"""
         monkeypatch.setattr(gw_parser_module, "_FEVT_MAX_EVENTS_PER_BLOCK", 2)
         content = """fam DUPONT Jean + MARTIN Marie
 fevt
-#marr 1/1/2000
-#marr 2/1/2000
-#marr 3/1/2000
-#div 4/1/2010
+#marr 1/1/2000 #p Paris #s Registre_A
+src "Acte 1"
+comm "Commentaire 1"
+#note union officielle
+#marr 2/1/2000 #p Lille #s Registre_B
+src "Acte 2"
+comm "Commentaire 2"
+#note seconde union
+#marr 3/1/2000 #p Nantes #s Registre_C
+src "Acte 3"
+comm "Commentaire 3"
+#note troisieme union
+#div 4/1/2010 #p Lyon #s Registre_D
+wit m: TEMOIN_X Xavier
 end fevt"""
         parser = GeneWebParser(strict=False, validate=False)
         genealogy = parser.parse_string(content)
         family = next(iter(genealogy.families.values()))
         assert len(family.events) == 2
+        assert family.events[0].place == "Paris"
+        assert family.events[0].source == "Acte 1"
+        assert "Commentaire 1" in family.events[0].notes
+        assert "union officielle" in family.events[0].notes
+        assert family.events[1].place == "Lille"
+        # Après troncature, le bloc continue d'avancer et le dernier `src`
+        # rencontré reste associé à l'événement encore courant.
+        assert family.events[1].source == "Acte 3"
+        assert "Commentaire 2" in family.events[1].notes
         assert any(
             "limite" in e.message and "événements" in e.message
             for e in genealogy.validation_errors
             if isinstance(e, ParseWarning)
         )
+        # Les témoins vus dans le bloc restent disponibles en métadonnées du nœud.
+        assert parser.get_syntax_nodes()
+        fevt_nodes = [
+            node
+            for node in parser.get_syntax_nodes()
+            if getattr(node.type, "value", "") == "family_events"
+        ]
+        assert fevt_nodes
+        assert len(fevt_nodes[0].metadata.get("witnesses", [])) == 1
 
     def test_fevt_truncate_witnesses_over_limit(self, monkeypatch):
         """Plafond de témoins par bloc fevt : ignorer l'excédent."""
@@ -259,20 +287,59 @@ end fevt"""
         content = """fam DUPONT Jean + MARTIN Marie
 fevt
 #marr 1/1/2000
-wit m: A Alpha
-wit m: B Bravo
-wit m: C Charlie
+wit m: A Alpha #occu Notaire
+wit m: B Bravo #note premier_témoin
+wit m: C Charlie #occu Docteur #note témoin_ignoré #src Archive_C
 end fevt"""
         parser = GeneWebParser(strict=False, validate=False)
         genealogy = parser.parse_string(content)
         family = next(iter(genealogy.families.values()))
         assert len(family.events) == 1
         assert len(family.events[0].witnesses) == 2
+        witness_ids = [w["person_id"] for w in family.events[0].witnesses]
+        assert any("A_Alpha" in wid for wid in witness_ids)
+        assert any("B_Bravo" in wid for wid in witness_ids)
+        # Le témoin excédentaire n'est jamais matérialisé.
+        assert not any("C_Charlie" in pid for pid in genealogy.persons)
         assert any(
             "témoins" in e.message
             for e in genealogy.validation_errors
             if isinstance(e, ParseWarning)
         )
+
+    def test_fevt_unmatched_spouses_with_events_and_witnesses_do_not_attach(self):
+        """Aucun repli silencieux si les époux du bloc `fevt` ne matchent pas."""
+        content = """fam DUPONT Jean + MARTIN Marie
+
+fam LEURR Pierre + LEURR Pauline
+
+fevt DURAND Sophie + BERNARD Marc
+#marr 1/1/2000 #p Paris #s Registre_X
+src "Acte externe"
+comm "Bloc orphelin"
+#note événement sans famille cible
+wit f: TEMOIN_E Emma #occu Archiviste
+end fevt"""
+        parser = GeneWebParser(strict=False, validate=False)
+        genealogy = parser.parse_string(content)
+
+        fams = list(genealogy.families.values())
+        assert len(fams) == 2
+        assert all(len(f.events) == 0 for f in fams)
+        assert any(
+            isinstance(e, ParseWarning) and e.context == "fevt" and "époux" in e.message
+            for e in genealogy.validation_errors
+        )
+        # Les témoins du bloc restent exposés côté métadonnées syntaxiques.
+        fevt_nodes = [
+            node
+            for node in parser.get_syntax_nodes()
+            if getattr(node.type, "value", "") == "family_events"
+        ]
+        assert fevt_nodes
+        witnesses = fevt_nodes[0].metadata.get("witnesses", [])
+        assert len(witnesses) == 1
+        assert witnesses[0]["person_id"].startswith("TEMOIN_E_Emma")
 
     def test_parse_relations_block(self):
         """Test parsing bloc rel complet"""
