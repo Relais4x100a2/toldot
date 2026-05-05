@@ -248,7 +248,7 @@ twine upload dist/*
 - Documentation du format GeneWeb: `doc/geneweb/gw_format_documentation.md`
 - Rapport de couverture: `htmlcov/index.html`
 - Stratégie tests PyPI: `doc/PYPI_TESTING_STRATEGY.md`
-- Dépôt: `https://github.com/guillaumecayeux/geneweb-py`
+- Dépôt: `https://github.com/Relais4x100a2/geneweb-py`
 - PyPI (bientôt): `https://pypi.org/project/geneweb-py/`
 
 

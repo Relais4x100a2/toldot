@@ -8,7 +8,7 @@
 
 Préparer geneweb-py pour publication sur PyPI avec une suite de tests garantissant :
 - ✅ Installation correcte sur toutes plateformes
-- ✅ Compatibilité Python 3.7-3.12
+- ✅ Compatibilité Python 3.8-3.12
 - ✅ Intégrité du packaging
 - ✅ Sécurité des dépendances
 - ✅ Documentation complète
@@ -93,7 +93,7 @@ def test_install_from_sdist():
 
 def test_install_with_extras():
     """Test installation avec extras (dev, api, cli, etc.)"""
-    extras = ["dev", "api", "cli", "validation", "parsing"]
+    extras = ["dev", "api", "cli", "validation", "parsing"]  # parsing = Lark (expérimental, voir README)
     
     for extra in extras:
         with tempfile.TemporaryDirectory() as tmpdir:
