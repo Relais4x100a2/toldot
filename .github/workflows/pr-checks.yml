@@ -4,6 +4,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# GITHUB_TOKEN : commentaire sur la PR (API issues)
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
 jobs:
   pr-checks:
     name: Vérifications PR

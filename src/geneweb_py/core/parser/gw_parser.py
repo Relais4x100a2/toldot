@@ -456,16 +456,16 @@ class GeneWebParser:
         # Router vers le parser multi-passes si activé
         if self.use_multipass:
             from .multipass_parser import MultiPassParser
-            
+
             # Récupérer le contenu original si disponible
             content = None
-            if self.lexical_parser and hasattr(self.lexical_parser, 'text'):
+            if self.lexical_parser and hasattr(self.lexical_parser, "text"):
                 content = self.lexical_parser.text
-            
+
             multipass = MultiPassParser(content=content)
             genealogy = multipass.parse_syntax_nodes(self.syntax_nodes)
             return genealogy
-        
+
         # Sinon, utiliser le mode incrémental actuel
         genealogy = Genealogy()
 
