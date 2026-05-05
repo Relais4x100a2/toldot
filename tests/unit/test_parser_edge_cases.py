@@ -11,6 +11,7 @@ Lignes manquantes principales :
 
 import pytest
 
+from geneweb_py.core.event import FamilyEventType
 from geneweb_py.core.exceptions import GeneWebEncodingError, GeneWebParseError
 from geneweb_py.core.parser.gw_parser import GeneWebParser
 
@@ -162,6 +163,47 @@ end fevt"""
         parser = GeneWebParser()
         genealogy = parser.parse_string(content)
         assert genealogy is not None
+
+    def test_fevt_events_attached_to_matching_family(self):
+        """Les #marr/#div du bloc fevt sont rattachés à la famille des époux."""
+        content = """fam DUPONT Jean + MARTIN Marie
+
+fevt DUPONT Jean + MARTIN Marie
+#marr 1/1/2000 #p Paris
+#div 1/1/2010 #p Lyon
+end fevt"""
+        parser = GeneWebParser(validate=False)
+        genealogy = parser.parse_string(content)
+
+        assert len(genealogy.families) == 1
+        family = next(iter(genealogy.families.values()))
+        assert len(family.events) == 2
+
+        marriage_events = family.get_events_by_type(FamilyEventType.MARRIAGE)
+        assert len(marriage_events) == 1
+        assert marriage_events[0].place == "Paris"
+        assert marriage_events[0].family_id == family.family_id
+
+        divorce_events = family.get_events_by_type(FamilyEventType.DIVORCE)
+        assert len(divorce_events) == 1
+        assert divorce_events[0].place == "Lyon"
+
+    def test_fevt_without_spouse_line_uses_current_family(self):
+        """Bloc fevt sans noms : rattachement à la dernière famille ``fam``."""
+        content = """fam DUPONT Jean + MARTIN Marie
+
+fevt
+#marr 15/6/2018 #p Grenoble
+end fevt"""
+        parser = GeneWebParser(validate=False)
+        genealogy = parser.parse_string(content)
+
+        family = next(iter(genealogy.families.values()))
+        assert len(family.events) == 1
+        ev = family.events[0]
+        assert ev.family_event_type == FamilyEventType.MARRIAGE
+        assert ev.place == "Grenoble"
+        assert ev.family_id == family.family_id
 
     def test_parse_relations_block(self):
         """Test parsing bloc rel complet"""
