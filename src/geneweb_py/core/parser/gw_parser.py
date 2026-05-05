@@ -25,6 +25,10 @@ from .syntax import BlockType, SyntaxNode, SyntaxParser
 
 logger = logging.getLogger(__name__)
 
+# Agrégats `comm` famille : borne mémoire (DoS lors d'une ligne ou séquence géante).
+_FAMILY_COMM_AGGREGATE_MAX_CHARS = 512 * 1024
+_FAMILY_COMM_MAX_FRAGMENTS = 10000
+
 
 class GeneWebParser:
     """Parser principal pour les fichiers .gw
@@ -661,10 +665,7 @@ class GeneWebParser:
                 if i < len(tokens) and tokens[i].type == TokenType.DASH:
                     i += 1
                 elif i < len(tokens) and tokens[i].type == TokenType.DATE:
-                    try:
-                        family.divorce_date = Date.parse_with_fallback(tokens[i].value)
-                    except Exception:
-                        pass
+                    family.divorce_date = Date.parse_with_fallback(tokens[i].value)
                     i += 1
                 continue
             if tok.type == TokenType.DIV:
@@ -673,10 +674,7 @@ class GeneWebParser:
                 if i < len(tokens) and tokens[i].type == TokenType.DASH:
                     i += 1
                 elif i < len(tokens) and tokens[i].type == TokenType.DATE:
-                    try:
-                        family.divorce_date = Date.parse_with_fallback(tokens[i].value)
-                    except Exception:
-                        pass
+                    family.divorce_date = Date.parse_with_fallback(tokens[i].value)
                     i += 1
                 continue
             if tok.type == TokenType.NM:
@@ -690,10 +688,7 @@ class GeneWebParser:
             if tok.type == TokenType.MARR:
                 i += 1
                 if i < len(tokens) and tokens[i].type == TokenType.DATE:
-                    try:
-                        family.marriage_date = Date.parse_with_fallback(tokens[i].value)
-                    except Exception:
-                        pass
+                    family.marriage_date = Date.parse_with_fallback(tokens[i].value)
                     i += 1
                 if i < len(tokens) and tokens[i].type == TokenType.P:
                     i += 1
@@ -705,10 +700,7 @@ class GeneWebParser:
                 i += 1
                 family.marriage_status = MarriageStatus.DIVORCED
                 if i < len(tokens) and tokens[i].type == TokenType.DATE:
-                    try:
-                        family.divorce_date = Date.parse_with_fallback(tokens[i].value)
-                    except Exception:
-                        pass
+                    family.divorce_date = Date.parse_with_fallback(tokens[i].value)
                     i += 1
                 if i < len(tokens) and tokens[i].type == TokenType.P:
                     i += 1
@@ -720,10 +712,7 @@ class GeneWebParser:
                 family.marriage_status = MarriageStatus.SEPARATED
                 family.is_separated = True
                 if i < len(tokens) and tokens[i].type == TokenType.DATE:
-                    try:
-                        family.divorce_date = Date.parse_with_fallback(tokens[i].value)
-                    except Exception:
-                        pass
+                    family.divorce_date = Date.parse_with_fallback(tokens[i].value)
                     i += 1
                 if i < len(tokens) and tokens[i].type == TokenType.P:
                     i += 1
@@ -742,6 +731,7 @@ class GeneWebParser:
             if tok.type == TokenType.COMM:
                 i += 1
                 parts: List[str] = []
+                agg_len = 0
                 while i < len(tokens) and tokens[i].type not in (
                     TokenType.NEWLINE,
                     TokenType.WIT,
@@ -753,7 +743,24 @@ class GeneWebParser:
                         TokenType.IDENTIFIER,
                         TokenType.STRING,
                     ):
-                        parts.append(tokens[i].value)
+                        if len(parts) >= _FAMILY_COMM_MAX_FRAGMENTS:
+                            logger.debug(
+                                "Commentaire famille `comm` tronqué: limite de "
+                                "fragments %s atteinte",
+                                _FAMILY_COMM_MAX_FRAGMENTS,
+                            )
+                            break
+                        frag = tokens[i].value
+                        sep = 1 if parts else 0
+                        if agg_len + sep + len(frag) > _FAMILY_COMM_AGGREGATE_MAX_CHARS:
+                            logger.debug(
+                                "Commentaire famille `comm` tronqué: limite "
+                                "d'agrégat %s caractères atteinte",
+                                _FAMILY_COMM_AGGREGATE_MAX_CHARS,
+                            )
+                            break
+                        parts.append(frag)
+                        agg_len += sep + len(frag)
                     i += 1
                 if parts:
                     family.add_comment(" ".join(parts))
@@ -806,12 +813,9 @@ class GeneWebParser:
                     if i_ < len(tokens) and tokens[i_].type == TokenType.DASH:
                         i_ += 1
                     elif i_ < len(tokens) and tokens[i_].type == TokenType.DATE:
-                        try:
-                            result["divorce_date"] = Date.parse_with_fallback(
-                                tokens[i_].value
-                            )
-                        except Exception:
-                            pass
+                        result["divorce_date"] = Date.parse_with_fallback(
+                            tokens[i_].value
+                        )
                         i_ += 1
                     continue
                 if tok.type == TokenType.DIV:
@@ -821,12 +825,9 @@ class GeneWebParser:
                     if i_ < len(tokens) and tokens[i_].type == TokenType.DASH:
                         i_ += 1
                     elif i_ < len(tokens) and tokens[i_].type == TokenType.DATE:
-                        try:
-                            result["divorce_date"] = Date.parse_with_fallback(
-                                tokens[i_].value
-                            )
-                        except Exception:
-                            pass
+                        result["divorce_date"] = Date.parse_with_fallback(
+                            tokens[i_].value
+                        )
                         i_ += 1
                     continue
                 if tok.type == TokenType.NM:
@@ -869,12 +870,7 @@ class GeneWebParser:
             elif token.type == TokenType.MARR:
                 i += 1
                 if i < len(tokens) and tokens[i].type == TokenType.DATE:
-                    try:
-                        result["marriage_date"] = Date.parse_with_fallback(
-                            tokens[i].value
-                        )
-                    except Exception:
-                        pass
+                    result["marriage_date"] = Date.parse_with_fallback(tokens[i].value)
                     i += 1
                 if i < len(tokens) and tokens[i].type == TokenType.P:
                     i += 1
@@ -934,20 +930,14 @@ class GeneWebParser:
             elif token.type == TokenType.DATE:
                 # Si c'est la première date, c'est probablement la naissance
                 if not result[f"{current_person}_birth_date"]:
-                    try:
-                        result[f"{current_person}_birth_date"] = (
-                            Date.parse_with_fallback(token.value)
-                        )
-                    except Exception:
-                        pass
+                    result[f"{current_person}_birth_date"] = Date.parse_with_fallback(
+                        token.value
+                    )
                 # Sinon c'est probablement le décès
                 elif not result[f"{current_person}_death_date"]:
-                    try:
-                        result[f"{current_person}_death_date"] = (
-                            Date.parse_with_fallback(token.value)
-                        )
-                    except Exception:
-                        pass
+                    result[f"{current_person}_death_date"] = Date.parse_with_fallback(
+                        token.value
+                    )
                 i += 1
                 continue
 
@@ -999,10 +989,7 @@ class GeneWebParser:
                 and current_person == "wife"
                 and not result["marriage_date"]
             ):
-                try:
-                    result["marriage_date"] = Date.parse_with_fallback(token.value)
-                except Exception:
-                    pass
+                result["marriage_date"] = Date.parse_with_fallback(token.value)
                 i += 1
                 continue
 
@@ -1196,12 +1183,8 @@ class GeneWebParser:
                     i += 1
                     # Date de naissance (optionnelle)
                     if i < len(tokens) and tokens[i].type == TokenType.DATE:
-                        try:
-                            birth_date = Date.parse_with_fallback(tokens[i].value)
-                            person.birth_date = birth_date
-                        except Exception:
-                            # En cas d'erreur, ignorer silencieusement
-                            pass
+                        birth_date = Date.parse_with_fallback(tokens[i].value)
+                        person.birth_date = birth_date
                         i += 1
                     else:
                         # Pas de date -> date inconnue
@@ -1217,12 +1200,8 @@ class GeneWebParser:
                     i += 1
                     # Date de décès (optionnelle)
                     if i < len(tokens) and tokens[i].type == TokenType.DATE:
-                        try:
-                            death_date = Date.parse_with_fallback(tokens[i].value)
-                            person.death_date = death_date
-                        except Exception:
-                            # En cas d'erreur, ignorer silencieusement
-                            pass
+                        death_date = Date.parse_with_fallback(tokens[i].value)
+                        person.death_date = death_date
                         i += 1
                     else:
                         # Pas de date -> date inconnue
@@ -1238,19 +1217,15 @@ class GeneWebParser:
                     i += 1
                     # Date de baptême (optionnelle)
                     if i < len(tokens) and tokens[i].type == TokenType.DATE:
-                        try:
-                            baptism_date = Date.parse_with_fallback(tokens[i].value)
-                            # Ajouter l'événement de baptême
-                            from ..event import Event, EventType
+                        baptism_date = Date.parse_with_fallback(tokens[i].value)
+                        # Ajouter l'événement de baptême
+                        from ..event import Event, EventType
 
-                            baptism_event = Event(
-                                event_type=EventType.BAPTISM, date=baptism_date
-                            )
-                            person.add_event(baptism_event)
-                            last_event = baptism_event
-                        except Exception:
-                            # En cas d'erreur, ignorer silencieusement
-                            pass
+                        baptism_event = Event(
+                            event_type=EventType.BAPTISM, date=baptism_date
+                        )
+                        person.add_event(baptism_event)
+                        last_event = baptism_event
                         i += 1
                     # Lieu de baptême (optionnel)
                     if i < len(tokens) and tokens[i].type == TokenType.P:
@@ -1283,10 +1258,7 @@ class GeneWebParser:
                         tokens, i, persons, genealogy
                     )
                     if witness_id and last_event is not None:
-                        try:
-                            last_event.add_witness(witness_id, witness_type)
-                        except Exception:
-                            pass
+                        last_event.add_witness(witness_id, witness_type)
                     i = next_i
 
                 else:
@@ -1315,10 +1287,7 @@ class GeneWebParser:
                     tokens, i, persons, genealogy
                 )
                 if witness_id and current_event is not None:
-                    try:
-                        current_event.add_witness(witness_id, witness_type)
-                    except Exception:
-                        pass
+                    current_event.add_witness(witness_id, witness_type)
                 i = next_i
                 continue
 
@@ -1567,11 +1536,8 @@ class GeneWebParser:
 
             # Date de naissance
             if token.type == TokenType.DATE:
-                try:
-                    birth_date = Date.parse_with_fallback(token.value)
-                    person.birth_date = birth_date
-                except Exception:
-                    pass
+                birth_date = Date.parse_with_fallback(token.value)
+                person.birth_date = birth_date
                 i += 1
 
             # Lieu de naissance (#bp)
