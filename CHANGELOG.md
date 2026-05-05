@@ -56,7 +56,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Tests & Qualité
 - ✅ **858 tests passants** (84% couverture)
-- ✅ **Multi-versions** : Python 3.7-3.12
+- ✅ **Multi-versions** : Python 3.8-3.12
 - ✅ **Multi-OS** : Linux, macOS, Windows
 - ✅ **Structure consolidée** : 18 fichiers de tests unitaires
 

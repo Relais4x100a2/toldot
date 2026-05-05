@@ -17,7 +17,7 @@ Ce guide fournit toutes les instructions pour publier geneweb-py sur PyPI.
 pip install build twine check-manifest pip-audit pip-licenses
 
 # Vérification versions
-python --version  # ≥ 3.7
+python --version  # ≥ 3.8
 twine --version
 ```
 

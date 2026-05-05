@@ -3,7 +3,8 @@
 [![Python Version](https://img.shields.io/badge/python-%3E%3D3.8-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://img.shields.io/badge/pypi-v0.1.0-blue.svg)](https://pypi.org/project/geneweb-py/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20PyPI%20et%20Publication/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
+[![Tests et couverture](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions?query=workflow%3A%22Tests+et+Couverture%22)
+[![TestPyPI / publication](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20PyPI%20et%20Publication/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions?query=workflow%3A%22Tests+PyPI+et+Publication%22)
 [![Coverage](https://img.shields.io/badge/coverage-82%25-green.svg)](htmlcov/index.html)
 [![Tests Passing](https://img.shields.io/badge/tests-704%20passing-success.svg)](tests/)
 

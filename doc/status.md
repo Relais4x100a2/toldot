@@ -192,7 +192,7 @@ geneweb-py/
 - Type hints obligatoires pour toutes les fonctions publiques
 - Docstrings en français pour les APIs publiques
 - `dataclasses` pour les modèles
-- Formatage: Black (88 colonnes), linting: Flake8, typage: mypy
+- Formatage et lint: **Ruff** (`ruff format`, `ruff check`, 88 colonnes) ; typage: mypy (strict)
 
 ## 🚀 Utilisation rapide
 Consultez les exemples dans `examples/` ainsi que la documentation d'API (Swagger UI) exposée par l'application FastAPI.
@@ -207,7 +207,7 @@ Consultez les exemples dans `examples/` ainsi que la documentation d'API (Swagge
 |---------|------|-------|
 | **Tests fonctionnels** | ✅ 82% | 704 tests passants |
 | **Tests packaging** | ✅ 23 tests | API publique et métadonnées |
-| **Tests compatibilité** | ✅ Python 3.7-3.12 | 13 tests multi-versions |
+| **Tests compatibilité** | ✅ Python 3.8-3.12 | 13 tests multi-versions (CI : 5 versions × `tests.yml`) |
 | **Tests sécurité** | ✅ 7 tests | Dépendances et vulnérabilités |
 | **CI/CD** | ✅ GitHub Actions | 7 jobs automatisés |
 | **Scripts validation** | ✅ Créés | Bash et Python |
