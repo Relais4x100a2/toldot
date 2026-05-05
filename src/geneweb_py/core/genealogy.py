@@ -321,7 +321,9 @@ class Genealogy:
         """Valide la cohérence des données généalogiques
 
         Args:
-            strict: Si True, met à jour is_valid en fonction des erreurs trouvées
+            strict: Si True, met à jour ``is_valid`` et ``validation_errors`` pour
+                refléter exclusivement les erreurs de cette passe (idempotent si
+                l'endpoint est rappelé plusieurs fois avec les mêmes données).
 
         Returns:
             Liste des erreurs de validation trouvées
@@ -364,10 +366,14 @@ class Genealogy:
                         )
                     )
 
-        # Mettre à jour les attributs de validation
-        if strict and errors:
-            self.is_valid = False
-            self.validation_errors.extend(errors)
+        # Mettre à jour les attributs de validation (pas de cumul entre appels strict)
+        if strict:
+            self.validation_errors.clear()
+            if errors:
+                self.validation_errors.extend(errors)
+                self.is_valid = False
+            else:
+                self.is_valid = True
 
         return errors
 

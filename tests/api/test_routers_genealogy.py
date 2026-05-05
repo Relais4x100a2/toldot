@@ -171,6 +171,40 @@ class TestGetStats:
         assert data["data"]["total_families"] == 50
 
 
+class TestValidateGenealogy:
+    """Tests pour la validation de cohérence."""
+
+    def test_validate_returns_service_payload(self, client, mock_service):
+        """La route délègue au service et enveloppe dans SuccessResponse."""
+        mock_service.validate_genealogy.return_value = {
+            "is_valid": True,
+            "warnings": [],
+            "errors": [],
+            "suggestions": [],
+        }
+        response = client.post("/api/v1/genealogy/validate")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["success"] is True
+        assert body["data"]["is_valid"] is True
+        assert "aucune erreur" in body["message"]
+        mock_service.validate_genealogy.assert_called_once_with(strict=False)
+
+    def test_validate_strict_query_propagated(self, client, mock_service):
+        """Le paramètre query strict est transmis au service."""
+        mock_service.validate_genealogy.return_value = {
+            "is_valid": False,
+            "warnings": [],
+            "errors": [{"type": "GeneWebValidationError", "message": "x"}],
+            "suggestions": [],
+        }
+        response = client.post("/api/v1/genealogy/validate?strict=true")
+        assert response.status_code == 200
+        body = response.json()
+        assert "présente des erreurs" in body["message"]
+        mock_service.validate_genealogy.assert_called_once_with(strict=True)
+
+
 class TestSearchGlobal:
     """Tests pour la recherche globale."""
 

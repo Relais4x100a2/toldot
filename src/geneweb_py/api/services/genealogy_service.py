@@ -5,9 +5,11 @@ Ce service fournit les opérations CRUD et la logique métier pour manipuler
 les données généalogiques.
 """
 
+import unicodedata
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+from ...core.date import Date
 from ...core.models import (
     Event,
     Family,
@@ -326,7 +328,37 @@ class GenealogyService:
                 p for p in persons if p.access_level == search_params.access_level
             ]
 
-        # TODO: Implémenter les filtres par dates et lieux
+        if (
+            search_params.birth_year_from is not None
+            or search_params.birth_year_to is not None
+        ):
+            persons = [
+                p
+                for p in persons
+                if _person_year_in_range(
+                    p.birth_date,
+                    search_params.birth_year_from,
+                    search_params.birth_year_to,
+                )
+            ]
+
+        if (
+            search_params.death_year_from is not None
+            or search_params.death_year_to is not None
+        ):
+            persons = [
+                p
+                for p in persons
+                if _person_year_in_range(
+                    p.death_date,
+                    search_params.death_year_from,
+                    search_params.death_year_to,
+                )
+            ]
+
+        if search_params.place:
+            needle = _normalize_place_fragment(search_params.place)
+            persons = [p for p in persons if _person_matches_place(p, needle)]
 
         total = len(persons)
 
@@ -763,6 +795,40 @@ class GenealogyService:
 
         return events, total
 
+    # === VALIDATION ===
+
+    def validate_genealogy(self, strict: bool = False) -> Dict[str, Any]:
+        """
+        Valide la cohérence des références personnes/familles.
+
+        Args:
+            strict: Si True, met à jour ``is_valid`` et ``validation_errors`` sur
+                l'objet ``Genealogy`` lorsque des erreurs sont trouvées (liste
+                remplacée à chaque passe en mode strict).
+
+        Returns:
+            Dictionnaire sérialisable pour l'API (erreurs, indicateur de validité).
+
+        Note:
+            En mode non strict (défaut pour l'endpoint HTTP), les erreurs sont
+            uniquement retournées sans modifier l'état de validation stocké.
+        """
+        genealogy = self.genealogy
+        errors_list = genealogy.validate_consistency(strict=strict)
+        error_payloads = [err.to_dict() for err in errors_list]
+        suggestions: List[str] = []
+        if error_payloads:
+            suggestions.append(
+                "Vérifiez que chaque identifiant cité dans une famille existe "
+                "parmi les personnes chargées."
+            )
+        return {
+            "is_valid": len(error_payloads) == 0,
+            "warnings": [],
+            "errors": error_payloads,
+            "suggestions": suggestions,
+        }
+
     # === STATISTIQUES ===
 
     def get_stats(self) -> Dict[str, Any]:
@@ -831,7 +897,7 @@ class GenealogyService:
                 events_by_type[type_key] = events_by_type.get(type_key, 0) + 1
                 family_events += 1
 
-        return {
+        base_stats = {
             "total_persons": len(genealogy.persons),
             "total_families": len(genealogy.families),
             "total_events": personal_events + family_events,
@@ -863,3 +929,133 @@ class GenealogyService:
                 "encoding": genealogy.metadata.encoding,
             },
         }
+        base_stats["advanced"] = _build_advanced_genealogy_stats(genealogy)
+        return base_stats
+
+
+def _person_year_in_range(
+    date_val: Optional[Date],
+    year_from: Optional[int],
+    year_to: Optional[int],
+) -> bool:
+    """Indique si au moins une année candidate chevauche ``[year_from, year_to]``.
+
+    Pour les dates OR (``|``) ou BETWEEN (``..``), les années du segment principal
+    et des ``alternative_dates`` sont prises en compte (chevauchement / overlap).
+    """
+    if year_from is None and year_to is None:
+        return True
+    if date_val is None:
+        return False
+    years = date_val.filter_years_for_range()
+    if not years:
+        return False
+    for year in years:
+        if year_from is not None and year < year_from:
+            continue
+        if year_to is not None and year > year_to:
+            continue
+        return True
+    return False
+
+
+def _normalize_place_fragment(text: str) -> str:
+    """Normalisation NFKC + casefold pour comparaison de lieux."""
+    return unicodedata.normalize("NFKC", text).casefold()
+
+
+def _person_matches_place(person: Person, needle_normalized: str) -> bool:
+    """Vérifie si ``needle_normalized`` est une sous-chaîne d'un lieu connu.
+
+    Comparaison naive après NFKC et casefold (pas de collation locale).
+    """
+    fields = (
+        person.birth_place,
+        person.death_place,
+        person.baptism_place,
+        person.burial_place,
+    )
+    for raw in fields:
+        if raw and needle_normalized in _normalize_place_fragment(raw):
+            return True
+    return False
+
+
+def _build_advanced_genealogy_stats(genealogy: Genealogy) -> Dict[str, Any]:
+    """Construit des statistiques complémentaires.
+
+    Inclut longévité (âge au décès), répartition géographique (lieux fréquents)
+    et distribution des tailles de famille (histogramme du nombre d'enfants).
+    """
+    persons = list(genealogy.persons.values())
+    ages_at_death: List[int] = []
+    for p in persons:
+        if p.age_at_death is not None:
+            ages_at_death.append(int(p.age_at_death))
+
+    longevity: Dict[str, Any] = {
+        "count_with_age_at_death": len(ages_at_death),
+        "average_age_at_death": None,
+        "min_age_at_death": None,
+        "max_age_at_death": None,
+    }
+    if ages_at_death:
+        longevity["average_age_at_death"] = sum(ages_at_death) / len(ages_at_death)
+        longevity["min_age_at_death"] = min(ages_at_death)
+        longevity["max_age_at_death"] = max(ages_at_death)
+
+    birth_places = _top_places_from_persons(persons, "birth_place", limit=15)
+    death_places = _top_places_from_persons(persons, "death_place", limit=15)
+
+    child_counts = [len(f.children) for f in genealogy.families.values()]
+    distribution: Dict[str, int] = {"0": 0, "1": 0, "2": 0, "3": 0, "4+": 0}
+    for n in child_counts:
+        if n <= 3:
+            distribution[str(n)] += 1
+        else:
+            distribution["4+"] += 1
+
+    family_sizes: Dict[str, Any] = {
+        "max_children_per_family": max(child_counts) if child_counts else 0,
+        "min_children_per_family": min(child_counts) if child_counts else 0,
+        "children_per_family_histogram": distribution,
+    }
+
+    return {
+        "longevity": longevity,
+        "geography": {
+            "distinct_birth_places": len(
+                {
+                    (p.birth_place or "").strip().lower()
+                    for p in persons
+                    if p.birth_place and str(p.birth_place).strip()
+                }
+            ),
+            "top_birth_places": birth_places,
+            "top_death_places": death_places,
+        },
+        "family_sizes": family_sizes,
+    }
+
+
+def _top_places_from_persons(
+    persons: List[Person], attr: str, limit: int
+) -> List[Dict[str, Any]]:
+    """Agrège les lieux les plus fréquents pour l'attribut ``attr`` sur ``Person``."""
+    counts: Dict[str, int] = {}
+    label_for_key: Dict[str, str] = {}
+    for person in persons:
+        raw = getattr(person, attr, None)
+        if raw is None:
+            continue
+        place = str(raw).strip()
+        if not place:
+            continue
+        key = place.lower()
+        counts[key] = counts.get(key, 0) + 1
+        if key not in label_for_key:
+            label_for_key[key] = place
+    ordered = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    return [
+        {"place": label_for_key[key], "count": count} for key, count in ordered[:limit]
+    ]
