@@ -5,7 +5,7 @@ Router FastAPI pour la gestion de la généalogie dans l'API geneweb-py.
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from fastapi import (
     APIRouter,
@@ -267,6 +267,14 @@ async def get_genealogy_stats(
             total_persons=stats["total_persons"],
             total_families=stats["total_families"],
             total_events=stats["total_events"],
+            persons_by_sex=stats.get("persons_by_sex", {}),
+            persons_by_access_level=stats.get("persons_by_access_level", {}),
+            persons_by_birth_century=stats.get("persons_by_birth_century", {}),
+            families_by_status=stats.get("families_by_status", {}),
+            families_by_marriage_century=stats.get("families_by_marriage_century", {}),
+            events_by_type=stats.get("events_by_type", {}),
+            events_by_century=stats.get("events_by_century", {}),
+            average_children_per_family=stats.get("average_children_per_family", 0.0),
             metadata={
                 "source_file": stats["metadata"]["source_file"],
                 "created": stats["metadata"]["created"],
@@ -274,11 +282,14 @@ async def get_genealogy_stats(
                 "version": stats["metadata"]["version"],
                 "encoding": stats["metadata"]["encoding"],
             },
-            persons_by_sex=stats["persons_by_sex"],
-            persons_by_access_level=stats["persons_by_access_level"],
-            families_by_status=stats["families_by_status"],
-            events_by_type=stats["events_by_type"],
-            average_children_per_family=stats["average_children_per_family"],
+            persons_with_birth_date=stats.get("persons_with_birth_date", 0),
+            persons_with_death_date=stats.get("persons_with_death_date", 0),
+            families_with_children=stats.get("families_with_children", 0),
+            personal_events=stats.get("personal_events", 0),
+            family_events=stats.get("family_events", 0),
+            families_with_marriage_date=stats.get("families_with_marriage_date", 0),
+            families_with_divorce_date=stats.get("families_with_divorce_date", 0),
+            advanced=stats.get("advanced"),
         )
 
         return SuccessResponse(
@@ -319,7 +330,7 @@ async def search_genealogy(
     try:
         genealogy = service.genealogy
         query_lower = query.lower()
-        results = {"persons": [], "families": [], "events": []}
+        results: Dict[str, List[Any]] = {"persons": [], "families": [], "events": []}
 
         if search_type in ["all", "persons"]:
             for person in genealogy.persons.values():
@@ -383,12 +394,16 @@ async def search_genealogy(
                     results["families"].append(family_data)
 
         if search_type in ["all", "events"]:
+
+            def _event_notes_match(notes: List[str], q: str) -> bool:
+                return any(q in (n or "").lower() for n in notes)
+
             for person in genealogy.persons.values():
                 for event in person.events:
                     if (
                         query_lower in (event.place or "").lower()
                         or query_lower in (event.reason or "").lower()
-                        or query_lower in (event.notes or "").lower()
+                        or _event_notes_match(event.notes, query_lower)
                     ):
                         event_data = {
                             "id": getattr(event, "unique_id", "unknown"),
@@ -407,7 +422,7 @@ async def search_genealogy(
                     if (
                         query_lower in (event.place or "").lower()
                         or query_lower in (event.reason or "").lower()
-                        or query_lower in (event.notes or "").lower()
+                        or _event_notes_match(event.notes, query_lower)
                     ):
                         event_data = {
                             "id": getattr(event, "unique_id", "unknown"),

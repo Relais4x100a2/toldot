@@ -6,14 +6,17 @@ les données généalogiques.
 """
 
 import unicodedata
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from ...core.date import Date
 from ...core.models import (
     Event,
+    EventType,
     Family,
     FamilyEvent,
+    FamilyEventType,
     Genealogy,
     Person,
     PersonalEvent,
@@ -26,6 +29,25 @@ from ..models.event import (
 )
 from ..models.family import FamilyCreateSchema, FamilySearchSchema, FamilyUpdateSchema
 from ..models.person import PersonCreateSchema, PersonSearchSchema, PersonUpdateSchema
+from ..serialization import (
+    count_by_birth_century,
+    count_event_century,
+    count_marriage_century,
+    family_events_breakdown,
+    parse_api_date_string,
+    stable_event_id,
+    titles_from_create_schemas,
+)
+
+
+@dataclass(frozen=True)
+class EventSearchHit:
+    """Contexte d'un événement pour recherche et sérialisation API."""
+
+    event: Event
+    person_id: Optional[str]
+    family_id: Optional[str]
+    index: int
 
 
 class GenealogyService:
@@ -129,21 +151,7 @@ class GenealogyService:
         """
         genealogy = self.genealogy
 
-        # Conversion des titres
-        titles = []
-        for title_data in person_data.titles:
-            from ...core.person import Title
-
-            title = Title(
-                name=title_data.name,
-                title_type=title_data.title_type,
-                place=title_data.place,
-                start_date=None,  # TODO: Parser les dates
-                end_date=None,
-                number=title_data.number,
-                is_main=title_data.is_main,
-            )
-            titles.append(title)
+        titles = titles_from_create_schemas(person_data.titles)
 
         # Création de la personne
         person = Person(
@@ -223,22 +231,7 @@ class GenealogyService:
         if person_data.access_level is not None:
             person.access_level = person_data.access_level
         if person_data.titles is not None:
-            # Conversion des titres
-            titles = []
-            for title_data in person_data.titles:
-                from ...core.person import Title
-
-                title = Title(
-                    name=title_data.name,
-                    title_type=title_data.title_type,
-                    place=title_data.place,
-                    start_date=None,
-                    end_date=None,
-                    number=title_data.number,
-                    is_main=title_data.is_main,
-                )
-                titles.append(title)
-            person.titles = titles
+            person.titles = titles_from_create_schemas(person_data.titles)
 
         genealogy.metadata.modified_date = datetime.now()
         return person
@@ -454,9 +447,14 @@ class GenealogyService:
         if family_data.marriage_status is not None:
             family.marriage_status = family_data.marriage_status
         if family_data.notes is not None:
-            family.notes = family_data.notes
+            family.comments = family_data.notes
         if family_data.sources is not None:
-            family.sources = family_data.sources
+            src_first: Optional[str] = None
+            for s in family_data.sources:
+                if s and str(s).strip():
+                    src_first = str(s).strip()
+                    break
+            family.family_source = src_first
         if family_data.children is not None:
             # Conversion des enfants
             children = []
@@ -574,13 +572,17 @@ class GenealogyService:
         if person is None:
             raise ValueError(f"Personne avec l'ID {event_data.person_id} non trouvée")
 
+        witness_dicts: List[Dict[str, Any]] = []
+        for w in event_data.witnesses or []:
+            witness_dicts.append({"person_id": str(w)})
+
         # Création de l'événement
         event = PersonalEvent(
             event_type=event_data.event_type,
-            date=None,  # TODO: Parser les dates
+            date=parse_api_date_string(event_data.date),
             place=event_data.place,
             notes=[event_data.note] if event_data.note else [],
-            witnesses=event_data.witnesses or [],
+            witnesses=witness_dicts,
         )
 
         # Ajout à la personne
@@ -606,15 +608,26 @@ class GenealogyService:
         if family is None:
             raise ValueError(f"Famille avec l'ID {event_data.family_id} non trouvée")
 
+        witness_dicts: List[Dict[str, Any]] = []
+        for w in event_data.witnesses or []:
+            witness_dicts.append({"person_id": str(w)})
+        source_val: Optional[str] = None
+        if event_data.sources:
+            for s in event_data.sources:
+                if s and str(s).strip():
+                    source_val = str(s).strip()
+                    break
+
         # Création de l'événement
         event = FamilyEvent(
-            event_type=event_data.event_type,
-            date=None,  # TODO: Parser les dates
+            event_type=EventType.MARRIAGE,
+            family_event_type=event_data.event_type,
+            date=parse_api_date_string(event_data.date),
             place=event_data.place,
             reason=event_data.reason,
-            notes=event_data.notes,
-            witnesses=event_data.witnesses or [],
-            sources=event_data.sources or [],
+            notes=[event_data.note] if event_data.note else [],
+            witnesses=witness_dicts,
+            source=source_val,
         )
 
         # Ajout à la famille
@@ -637,17 +650,48 @@ class GenealogyService:
 
         # Recherche dans les événements personnels
         for person in genealogy.persons.values():
-            for event in person.events:
-                if hasattr(event, "unique_id") and event.unique_id == event_id:
-                    return event
+            for idx, pev in enumerate(person.events):
+                uid = getattr(pev, "unique_id", None)
+                if uid is not None and uid == event_id:
+                    return pev
+                if (
+                    stable_event_id(
+                        pev, scope="person", scope_key=person.unique_id, index=idx
+                    )
+                    == event_id
+                ):
+                    return pev
 
         # Recherche dans les événements familiaux
         for family in genealogy.families.values():
-            for event in family.events:
-                if hasattr(event, "unique_id") and event.unique_id == event_id:
-                    return event
+            for idx, fev in enumerate(family.events):
+                uid = getattr(fev, "unique_id", None)
+                if uid is not None and uid == event_id:
+                    return fev
+                if (
+                    stable_event_id(
+                        fev, scope="family", scope_key=family.family_id, index=idx
+                    )
+                    == event_id
+                ):
+                    return fev
 
         return None
+
+    def get_event_context(
+        self, event: Event
+    ) -> Tuple[Optional[str], Optional[str], int]:
+        """Identifie la personne ou la famille et l'indice d'un événement en mémoire."""
+        genealogy = self.genealogy
+        for person in genealogy.persons.values():
+            for idx, ev in enumerate(person.events):
+                if ev is event:
+                    return person.unique_id, None, idx
+        for family in genealogy.families.values():
+            for idx, ev in enumerate(family.events):
+                if ev is event:
+                    return None, family.family_id, idx
+        return None, None, -1
 
     def update_event(
         self, event_id: str, event_data: EventUpdateSchema
@@ -668,19 +712,40 @@ class GenealogyService:
         if event is None:
             return None
 
-        # Mise à jour des champs fournis
         if event_data.event_type is not None:
-            event.event_type = event_data.event_type
+            et = event_data.event_type
+            if isinstance(event, FamilyEvent):
+                if isinstance(et, FamilyEventType):
+                    event.family_event_type = et
+                    mapping = {
+                        FamilyEventType.MARRIAGE: EventType.MARRIAGE,
+                        FamilyEventType.DIVORCE: EventType.DIVORCE,
+                        FamilyEventType.SEPARATION: EventType.SEPARATION,
+                        FamilyEventType.ENGAGEMENT: EventType.ENGAGEMENT,
+                        FamilyEventType.PACS: EventType.PACS,
+                    }
+                    event.event_type = mapping.get(et, event.event_type)
+                elif isinstance(et, EventType):
+                    event.event_type = et
+            elif isinstance(et, EventType):
+                event.event_type = et
+        if event_data.date is not None:
+            event.date = parse_api_date_string(event_data.date)
         if event_data.place is not None:
             event.place = event_data.place
         if event_data.reason is not None:
             event.reason = event_data.reason
-        if event_data.notes is not None:
-            event.notes = event_data.notes
+        if event_data.note is not None:
+            event.notes = [event_data.note] if event_data.note else []
         if event_data.witnesses is not None:
-            event.witnesses = event_data.witnesses
+            event.witnesses = [{"person_id": str(w)} for w in event_data.witnesses]
         if event_data.sources is not None:
-            event.sources = event_data.sources
+            first_src: Optional[str] = None
+            for s in event_data.sources:
+                if s and str(s).strip():
+                    first_src = str(s).strip()
+                    break
+            event.source = first_src
 
         genealogy.metadata.modified_date = datetime.now()
         return event
@@ -699,23 +764,45 @@ class GenealogyService:
 
         # Recherche et suppression dans les événements personnels
         for person in genealogy.persons.values():
-            for i, event in enumerate(person.events):
-                if hasattr(event, "unique_id") and event.unique_id == event_id:
+            for i, pev in enumerate(person.events):
+                uid = getattr(pev, "unique_id", None)
+                if uid is not None and uid == event_id:
+                    del person.events[i]
+                    genealogy.metadata.modified_date = datetime.now()
+                    return True
+                if (
+                    stable_event_id(
+                        pev, scope="person", scope_key=person.unique_id, index=i
+                    )
+                    == event_id
+                ):
                     del person.events[i]
                     genealogy.metadata.modified_date = datetime.now()
                     return True
 
         # Recherche et suppression dans les événements familiaux
         for family in genealogy.families.values():
-            for i, event in enumerate(family.events):
-                if hasattr(event, "unique_id") and event.unique_id == event_id:
+            for i, fev in enumerate(family.events):
+                uid = getattr(fev, "unique_id", None)
+                if uid is not None and uid == event_id:
+                    del family.events[i]
+                    genealogy.metadata.modified_date = datetime.now()
+                    return True
+                if (
+                    stable_event_id(
+                        fev, scope="family", scope_key=family.family_id, index=i
+                    )
+                    == event_id
+                ):
                     del family.events[i]
                     genealogy.metadata.modified_date = datetime.now()
                     return True
 
         return False
 
-    def search_events(self, search_params: Dict[str, Any]) -> Tuple[List[Event], int]:
+    def search_events(
+        self, search_params: Dict[str, Any]
+    ) -> Tuple[List[EventSearchHit], int]:
         """
         Recherche des événements selon les critères.
 
@@ -723,77 +810,100 @@ class GenealogyService:
             search_params: Paramètres de recherche
 
         Returns:
-            Tuple[List[Event], int]: (Événements trouvés, nombre total)
+            Tuple[List[EventSearchHit], int]: (résultats avec contexte, nombre total)
         """
         genealogy = self.genealogy
-        events = []
+        hits: List[EventSearchHit] = []
 
-        # Collecte de tous les événements
         for person in genealogy.persons.values():
-            events.extend(person.events)
+            for idx, pev in enumerate(person.events):
+                hits.append(
+                    EventSearchHit(
+                        event=pev,
+                        person_id=person.unique_id,
+                        family_id=None,
+                        index=idx,
+                    )
+                )
 
         for family in genealogy.families.values():
-            events.extend(family.events)
+            for idx, fev in enumerate(family.events):
+                hits.append(
+                    EventSearchHit(
+                        event=fev,
+                        person_id=None,
+                        family_id=family.family_id,
+                        index=idx,
+                    )
+                )
 
         # Filtrage par critères
         if search_params.get("query"):
             query_lower = search_params["query"].lower()
-            events = [
-                e
-                for e in events
+
+            def _match_notes(notes: List[str]) -> bool:
+                return any(query_lower in (n or "").lower() for n in notes)
+
+            hits = [
+                h
+                for h in hits
                 if (
-                    query_lower in (e.place or "").lower()
-                    or query_lower in (e.reason or "").lower()
-                    or query_lower in (e.notes or "").lower()
+                    query_lower in (h.event.place or "").lower()
+                    or query_lower in (h.event.reason or "").lower()
+                    or _match_notes(h.event.notes)
                 )
             ]
 
         if search_params.get("event_type"):
-            events = [e for e in events if e.event_type == search_params["event_type"]]
+            hits = [
+                h for h in hits if h.event.event_type == search_params["event_type"]
+            ]
 
         if search_params.get("person_id"):
-            events = [
-                e
-                for e in events
-                if hasattr(e, "person_id") and e.person_id == search_params["person_id"]
-            ]
+            pid = search_params["person_id"]
+            hits = [h for h in hits if h.person_id == pid]
 
         if search_params.get("family_id"):
-            events = [
-                e
-                for e in events
-                if hasattr(e, "family_id") and e.family_id == search_params["family_id"]
-            ]
+            fid = search_params["family_id"]
+            hits = [h for h in hits if h.family_id == fid]
 
         if search_params.get("place"):
-            events = [
-                e
-                for e in events
-                if search_params["place"].lower() in (e.place or "").lower()
+            hits = [
+                h
+                for h in hits
+                if search_params["place"].lower() in (h.event.place or "").lower()
             ]
 
         if search_params.get("has_witnesses") is not None:
             if search_params["has_witnesses"]:
-                events = [e for e in events if len(e.witnesses) > 0]
+                hits = [h for h in hits if len(h.event.witnesses) > 0]
             else:
-                events = [e for e in events if len(e.witnesses) == 0]
+                hits = [h for h in hits if len(h.event.witnesses) == 0]
 
         if search_params.get("has_sources") is not None:
             if search_params["has_sources"]:
-                events = [e for e in events if len(e.sources) > 0]
+                hits = [
+                    h
+                    for h in hits
+                    if h.event.source is not None and str(h.event.source).strip()
+                ]
             else:
-                events = [e for e in events if len(e.sources) == 0]
+                hits = [
+                    h
+                    for h in hits
+                    if not (h.event.source and str(h.event.source).strip())
+                ]
 
-        total = len(events)
+        total = len(hits)
 
         # Pagination
         page = search_params.get("page", 1)
         size = search_params.get("size", 20)
         start = (page - 1) * size
         end = start + size
-        events = events[start:end]
+        hits = hits[start:end]
 
-        return events, total
+        return hits, total
 
     # === VALIDATION ===
 
@@ -930,6 +1040,12 @@ class GenealogyService:
             },
         }
         base_stats["advanced"] = _build_advanced_genealogy_stats(genealogy)
+        base_stats["persons_by_birth_century"] = count_by_birth_century(genealogy)
+        base_stats["families_by_marriage_century"] = count_marriage_century(genealogy)
+        base_stats["events_by_century"] = count_event_century(genealogy)
+        fb_dates = family_events_breakdown(genealogy)
+        base_stats["families_with_marriage_date"] = fb_dates["with_marriage_date"]
+        base_stats["families_with_divorce_date"] = fb_dates["with_divorce_date"]
         return base_stats
 
 
