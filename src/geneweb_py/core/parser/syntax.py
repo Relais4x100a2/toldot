@@ -75,7 +75,8 @@ class FamilyBlockParser(BlockParser):
     def parse(self, tokens: List[Token], start_index: int) -> Tuple[SyntaxNode, int]:
         """Parse un bloc famille
 
-        Format: fam HusbandName FirstName [+ WeddingDate] [#mp WeddingPlace] WifeName FirstName  # noqa: E501
+        Format: fam HusbandName FirstName [+ WeddingDate]
+            [#mp WeddingPlace] WifeName FirstName
         """
         node = SyntaxNode(BlockType.FAMILY)
         i = start_index
@@ -174,49 +175,58 @@ class FamilyBlockParser(BlockParser):
     def _parse_personal_info(
         self, tokens: List[Token], start_index: int, node: SyntaxNode
     ) -> int:
-        """Parse les informations personnelles (dates, lieux, occupation, etc.)"""
+        """Parse les informations personnelles (dates, lieux, occupation, etc.)
+
+        Boucle jusqu'à ce qu'un token hors champ personnel soit rencontré,
+        pour supporter les lignes témoins où #occu précède #bp ou plusieurs dates.
+        """
         i = start_index
 
-        # Date de naissance
-        if i < len(tokens) and tokens[i].type == TokenType.DATE:
-            node.add_token(tokens[i])
-            i += 1
+        while i < len(tokens):
+            token = tokens[i]
 
-        # Lieu de naissance (#bp)
-        if i < len(tokens) and tokens[i].type == TokenType.BP:
-            node.add_token(tokens[i])
-            i += 1
-            if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-                node.add_token(tokens[i])
+            if token.type == TokenType.DATE:
+                node.add_token(token)
                 i += 1
+                continue
 
-        # Occupation (#occu)
-        if i < len(tokens) and tokens[i].type == TokenType.OCCU:
-            node.add_token(tokens[i])
-            i += 1
-            # Consommer tous les tokens de l'occupation jusqu'au prochain modificateur ou fin  # noqa: E501
-            while i < len(tokens) and tokens[i].type in [
-                TokenType.IDENTIFIER,
-                TokenType.STRING,
-                TokenType.PAREN_OPEN,
-                TokenType.PAREN_CLOSE,
-                TokenType.UNKNOWN,
-            ]:
-                node.add_token(tokens[i])
+            if token.type == TokenType.BP:
+                node.add_token(token)
                 i += 1
+                while i < len(tokens) and tokens[i].type in [
+                    TokenType.IDENTIFIER,
+                    TokenType.UNKNOWN,
+                ]:
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
 
-        # Date de décès
-        if i < len(tokens) and tokens[i].type == TokenType.DATE:
-            node.add_token(tokens[i])
-            i += 1
-
-        # Lieu de décès (#dp)
-        if i < len(tokens) and tokens[i].type == TokenType.DP:
-            node.add_token(tokens[i])
-            i += 1
-            if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-                node.add_token(tokens[i])
+            if token.type == TokenType.OCCU:
+                node.add_token(token)
                 i += 1
+                while i < len(tokens) and tokens[i].type in [
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                    TokenType.PAREN_OPEN,
+                    TokenType.PAREN_CLOSE,
+                    TokenType.UNKNOWN,
+                ]:
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+
+            if token.type == TokenType.DP:
+                node.add_token(token)
+                i += 1
+                while i < len(tokens) and tokens[i].type in [
+                    TokenType.IDENTIFIER,
+                    TokenType.UNKNOWN,
+                ]:
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+
+            break
 
         return i
 
@@ -238,7 +248,7 @@ class FamilyBlockParser(BlockParser):
                     i += 1
                 continue
 
-            # Modificateurs de statut
+            # Modificateurs de statut (#sep / #div + date optionnelle ou '-')
             if token.type in [
                 TokenType.NM,
                 TokenType.ENG,
@@ -247,6 +257,13 @@ class FamilyBlockParser(BlockParser):
             ]:
                 node.add_token(token)
                 i += 1
+                if token.type in (TokenType.SEP, TokenType.DIV):
+                    if i < len(tokens) and tokens[i].type == TokenType.DASH:
+                        node.add_token(tokens[i])
+                        i += 1
+                    elif i < len(tokens) and tokens[i].type == TokenType.DATE:
+                        node.add_token(tokens[i])
+                        i += 1
                 continue
 
             # Autres modificateurs

@@ -2,14 +2,34 @@
 Tests d'intégration pour vérifier la capture complète des personnes
 """
 
+from pathlib import Path
+
 import pytest
 
 from geneweb_py import GeneWebParser
 
 
-@pytest.mark.skip(reason="TODO: Fixtures manquants dans tests/fixtures/")
 class TestCompletePersonParsing:
     """Tests pour vérifier que toutes les personnes sont capturées"""
+
+    def test_minimal_iso8859_fixture(self) -> None:
+        """Fixture ISO-8859-1 : détection d'encodage et couples nom/prénom attendus."""
+        parser = GeneWebParser()
+        genealogy = parser.parse_file("tests/fixtures/minimal_iso8859.gw")
+        assert genealogy.metadata.encoding == "iso-8859-1"
+        pairs = {(p.last_name, p.first_name) for p in genealogy.persons.values()}
+        assert ("HéBERT", "Andrée") in pairs
+        assert ("LEMAIRE", "François") in pairs
+
+    def test_crlf_in_content_parses_witness_lines(self) -> None:
+        """Contenu avec CRLF : les lignes wit doivent produire les témoins attendus."""
+        parser = GeneWebParser()
+        lf = Path("tests/fixtures/test_witnesses.gw").read_text(encoding="utf-8")
+        crlf = lf.replace("\n", "\r\n")
+        genealogy = parser.parse_string(crlf)
+        names = {f"{p.last_name} {p.first_name}" for p in genealogy.persons.values()}
+        assert "LEROY Bernard_Marie" in names
+        assert "BLANC Jacques" in names
 
     def test_relations_block_parsing(self):
         """Test que les blocs rel créent bien les Person référencées"""
@@ -25,8 +45,8 @@ class TestCompletePersonParsing:
         ]
 
         # Personnes principales
-        assert "CORNO Joseph" in person_names
-        assert "MOREAU Marie_Julienne" in person_names
+        assert "CORNO Joseph_Marie_Vincent" in person_names
+        assert "THOMAS Marie_Julienne" in person_names
         assert "CORNO Paul_Henri" in person_names
         assert "CORNO Marie_Claire" in person_names
 
@@ -128,8 +148,6 @@ class TestCompletePersonParsing:
 
     def test_real_file_parsing(self):
         """Test avec le fichier réel pour vérifier le nombre de personnes"""
-        import pytest
-
         pytest.skip(
             "Fichier trop volumineux pour les tests de couverture, prend trop de temps"
         )
@@ -227,13 +245,16 @@ end
         """Test que les occupations avec caractères spéciaux sont parsées"""
         parser = GeneWebParser()
 
-        test_content = """
-fam CORNO Jean #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement_technique + MOREAU Marie  # noqa: E501
-wit m: LEROY Bernard #occu Dominicain,_Aumônier_de_l'enseignement_à_Rouen
-beg
-- h Pierre_Bernard #occu Ingénieur,_éditeur,_dirigeant
-end
-"""
+        test_content = (
+            "fam CORNO Jean "
+            "#occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement_technique "
+            "+ MOREAU Marie\n"
+            "wit m: LEROY Bernard "
+            "#occu Dominicain,_Aumônier_de_l'enseignement_à_Rouen\n"
+            "beg\n"
+            "- h Pierre_Bernard #occu Ingénieur,_éditeur,_dirigeant\n"
+            "end\n"
+        )
         genealogy = parser.parse_string(test_content)
 
         persons = list(genealogy.persons.values())
