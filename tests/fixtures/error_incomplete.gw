@@ -1,0 +1,19 @@
+# Fichier avec données incomplètes
+
+# Personne avec informations manquantes
+LEFEBVRE Paul
+    0
+    m
+    # Pas de dates
+
+# Famille incomplète
+fam MARTIN + 
+    0
+
+# Personne référencée mais non définie
+fam GHOST Robert + GHOST Anne
+    0
+    m 1950
+    - h GHOST_Junior
+    # GHOST_Junior n'est jamais défini
+
