@@ -7,6 +7,12 @@ pour tous les tests.
 
 import pytest
 
+try:
+    from geneweb_py.api.rate_limit import limiter
+except ImportError:
+    # Optional deps (ex. job « packaging » : wheel seul sans extra [api])
+    limiter = None
+
 from geneweb_py.core.models import (
     Date,
     Family,
@@ -14,6 +20,12 @@ from geneweb_py.core.models import (
     Genealogy,
     Person,
 )
+
+
+def pytest_configure(config):
+    """Désactive le rate limiting SlowAPI pendant les tests."""
+    if limiter is not None:
+        limiter.enabled = False
 
 
 @pytest.fixture

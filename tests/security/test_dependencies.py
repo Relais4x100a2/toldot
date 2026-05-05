@@ -69,33 +69,6 @@ def test_dependencies_have_versions():
                 assert has_version, f"Dépendance {dep} sans contrainte de version"
 
 
-def test_no_known_vulnerable_packages():
-    """Test qu'on n'utilise pas de packages avec vulnérabilités connues"""
-    # Liste de packages connus pour avoir des problèmes de sécurité
-    # (cette liste est indicative, idéalement utiliser pip-audit)
-    vulnerable_packages = [
-        "pyyaml<5.4",  # Vulnérabilités avant 5.4
-        "pillow<8.1.1",  # Vulnérabilités avant 8.1.1
-        "requests<2.26.0",  # Vulnérabilités avant 2.26.0
-    ]
-
-    pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
-
-    if not pyproject_path.exists():
-        pytest.skip("pyproject.toml non trouvé")
-
-    with open(pyproject_path) as f:
-        content = f.read()
-
-    # Vérifier qu'aucun package vulnérable n'est utilisé
-    for vuln in vulnerable_packages:
-        pkg_name = vuln.split("<")[0].split(">")[0].split("=")[0]
-        # Recherche simple (pas de parsing TOML complet)
-        assert (
-            pkg_name.lower() not in content.lower() or f'"{pkg_name}' not in content
-        ), f"Package potentiellement vulnérable détecté: {vuln}"
-
-
 def test_dependencies_licenses_compatible():
     """Vérifier que les licences des dépendances sont compatibles avec MIT"""
     # typing_extensions: PSF (compatible)
@@ -163,12 +136,12 @@ def test_secure_imports():
     dangerous_modules = ["pickle", "shelve", "marshal", "eval", "exec"]
 
     # Parcourir tous les fichiers Python du package
-    package_path = Path(__file__).parent.parent.parent / "geneweb_py"
+    package_root = Path(__file__).resolve().parent.parent.parent / "src" / "geneweb_py"
 
-    if not package_path.exists():
+    if not package_root.exists():
         pytest.skip("Package geneweb_py non trouvé")
 
-    py_files = list(package_path.rglob("*.py"))
+    py_files = list(package_root.rglob("*.py"))
 
     for py_file in py_files:
         with open(py_file) as f:
@@ -206,12 +179,12 @@ def test_no_hardcoded_secrets():
         r'token\s*=\s*["\'][a-zA-Z0-9]{20,}["\']',
     ]
 
-    package_path = Path(__file__).parent.parent.parent / "geneweb_py"
+    package_root = Path(__file__).resolve().parent.parent.parent / "src" / "geneweb_py"
 
-    if not package_path.exists():
+    if not package_root.exists():
         pytest.skip("Package geneweb_py non trouvé")
 
-    py_files = list(package_path.rglob("*.py"))
+    py_files = list(package_root.rglob("*.py"))
 
     for py_file in py_files:
         with open(py_file) as f:

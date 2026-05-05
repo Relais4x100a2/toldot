@@ -5,6 +5,7 @@ Ce module implémente un parsing en mode streaming pour réduire l'utilisation m
 lors du traitement de gros fichiers .gw (>10MB).
 """
 
+import os
 from pathlib import Path
 from typing import Iterator, Optional, TextIO, Union
 
@@ -12,6 +13,23 @@ import chardet
 
 from ..exceptions import GeneWebEncodingError, GeneWebParseError
 from .lexical import LexicalParser, Token, TokenType
+
+
+def _parse_int_env(name: str, default: int) -> int:
+    """Lit une variable d'environnement entière avec repli sur défaut."""
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+_DEFAULT_MULTILINE_BLOCK_MAX_BYTES = 10 * 1024 * 1024
+_MULTILINE_BLOCK_MAX_BYTES = _parse_int_env(
+    "GENEWEB_MAX_MULTILINE_BLOCK_BYTES", _DEFAULT_MULTILINE_BLOCK_MAX_BYTES
+)
 
 
 class StreamingLexicalParser:
@@ -87,6 +105,15 @@ class StreamingLexicalParser:
                 continue
             elif inside_multiline_block:
                 accumulated_text.append(line)
+                block_so_far = sum(len(part) for part in accumulated_text)
+                if block_so_far > _MULTILINE_BLOCK_MAX_BYTES:
+                    raise GeneWebParseError(
+                        (
+                            "Bloc multi-lignes trop volumineux (limite "
+                            f"{_MULTILINE_BLOCK_MAX_BYTES} octets)"
+                        ),
+                        line_number=self.line_number,
+                    )
                 # Vérifier la fin du bloc
                 end_markers = {
                     "notes": "end notes",

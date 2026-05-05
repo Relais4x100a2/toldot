@@ -38,6 +38,39 @@ def sample_genealogy():
 class TestImportGenealogy:
     """Tests pour l'import de fichiers généalogiques."""
 
+    def test_import_wrapped_filename_uses_basename_only(
+        self, client, mock_service, sample_genealogy
+    ):
+        """Le nom fourni par le client ne doit pas contenir de chemin (traversal)."""
+        mock_service.load_from_file.return_value = sample_genealogy
+        mock_service.get_stats.return_value = {
+            "total_persons": 1,
+            "total_families": 0,
+        }
+        files = {
+            "file": ("../../etc/passwd.gw", b"x", "text/plain"),
+        }
+        response = client.post("/api/v1/genealogy/import", files=files)
+        assert response.status_code == 200
+        assert response.json()["data"]["filename"] == "passwd.gw"
+
+    def test_import_rejects_oversized_body(
+        self, client, mock_service, sample_genealogy, monkeypatch
+    ):
+        """Le corps de l'upload est refusé au-delà de MAX_UPLOAD_BYTES."""
+        monkeypatch.setattr(
+            "geneweb_py.api.routers.genealogy.MAX_UPLOAD_BYTES",
+            10,
+        )
+        mock_service.load_from_file.return_value = sample_genealogy
+        mock_service.get_stats.return_value = {
+            "total_persons": 0,
+            "total_families": 0,
+        }
+        files = {"file": ("big.gw", b"x" * 20, "text/plain")}
+        response = client.post("/api/v1/genealogy/import", files=files)
+        assert response.status_code == 413
+
     def test_import_gw_file_success(self, client, mock_service, sample_genealogy):
         """Test import d'un fichier .gw."""
         mock_service.load_from_file.return_value = sample_genealogy
@@ -58,8 +91,7 @@ class TestImportGenealogy:
         files = {"file": ("test.txt", b"test content", "text/plain")}
         response = client.post("/api/v1/genealogy/import", files=files)
 
-        # Le middleware retourne 500 car HTTPException est wrappée
-        assert response.status_code == 500
+        assert response.status_code == 400
 
     def test_import_error(self, client, mock_service):
         """Test erreur lors de l'import."""
@@ -68,7 +100,11 @@ class TestImportGenealogy:
         files = {"file": ("test.gw", b"invalid content", "text/plain")}
         response = client.post("/api/v1/genealogy/import", files=files)
 
+        body = response.json()
         assert response.status_code == 500
+        assert body.get("message") == (
+            "Une erreur interne s'est produite. Réessayez plus tard."
+        )
 
 
 class TestExportGenealogy:
