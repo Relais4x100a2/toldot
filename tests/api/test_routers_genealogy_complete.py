@@ -205,7 +205,7 @@ class TestValidateGenealogy:
     """Tests pour la validation de généalogie."""
 
     def test_validate_success(self, client, mock_service):
-        """Test validation réussie."""
+        """Test validation réussie (stub route jusqu'à merge stats/QA)."""
         response = client.post("/api/v1/genealogy/validate")
 
         assert response.status_code == 200
@@ -213,8 +213,7 @@ class TestValidateGenealogy:
         assert "is_valid" in data["data"]
 
     def test_validate_error(self, client, mock_service):
-        """Test erreur lors de la validation."""
-        # Pour l'instant, la validation retourne toujours succès
+        """Le stub renvoie toujours succès sérialisable."""
         response = client.post("/api/v1/genealogy/validate")
         assert response.status_code == 200
 
