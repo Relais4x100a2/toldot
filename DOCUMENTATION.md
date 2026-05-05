@@ -117,7 +117,7 @@ geneweb-py/
 |----------|--------|------|
 | **Tests** | 704 passants | ✅ Excellent |
 | **Couverture** | 82% | ✅ Excellent |
-| **Compatibilité** | Python 3.7-3.12 | ✅ Multi-versions |
+| **Compatibilité** | Python 3.8-3.12 | ✅ Multi-versions |
 | **Plateformes** | Linux, macOS, Windows | ✅ Multi-OS |
 | **Performance** | ~80% économie mémoire (streaming) | ⚡ Optimisé |
 | **Publication** | Prêt pour PyPI | ✅ Prêt |
