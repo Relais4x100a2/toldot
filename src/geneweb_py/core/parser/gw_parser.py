@@ -5,6 +5,7 @@ Ce module implémente le parser principal qui orchestre le parsing lexical
 et syntaxique pour créer une représentation complète des données généalogiques.
 """
 
+import logging
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -21,6 +22,8 @@ from .streaming import (
     should_use_streaming,
 )
 from .syntax import BlockType, SyntaxNode, SyntaxParser
+
+logger = logging.getLogger(__name__)
 
 
 class GeneWebParser:
@@ -458,18 +461,23 @@ class GeneWebParser:
         """
         # Router vers le parser multi-passes si activé
         if self.use_multipass:
-            from .multipass_parser import MultiPassParser
+            try:
+                from .multipass_parser import MultiPassParser
+            except ImportError:
+                logger.warning(
+                    "use_multipass=True mais multipass_parser est absent "
+                    "(module non inclus) ; utilisation du mode incrémental."
+                )
+            else:
+                content = None
+                if self.lexical_parser and hasattr(self.lexical_parser, "text"):
+                    content = self.lexical_parser.text
 
-            # Récupérer le contenu original si disponible
-            content = None
-            if self.lexical_parser and hasattr(self.lexical_parser, "text"):
-                content = self.lexical_parser.text
+                multipass = MultiPassParser(content=content)
+                genealogy = multipass.parse_syntax_nodes(self.syntax_nodes)
+                return genealogy
 
-            multipass = MultiPassParser(content=content)
-            genealogy = multipass.parse_syntax_nodes(self.syntax_nodes)
-            return genealogy
-
-        # Sinon, utiliser le mode incrémental actuel
+        # Mode incrémental (ou repli depuis multipass indisponible)
         genealogy = Genealogy()
 
         # Dictionnaires pour stocker les entités pendant la construction
