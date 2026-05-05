@@ -5,6 +5,9 @@ Ces tests vérifient la tokenisation correcte des fichiers .gw
 avec tous les types de tokens supportés.
 """
 
+import pytest
+
+from geneweb_py.core.exceptions import GeneWebParseError
 from geneweb_py.core.parser.lexical import LexicalParser, Token, TokenType
 
 
@@ -249,6 +252,27 @@ end"""
         unknown_token = next((t for t in tokens if t.type == TokenType.UNKNOWN), None)
         assert unknown_token is not None
         assert unknown_token.value == "@"
+
+    def test_block_comment_well_formed(self):
+        """Un commentaire bloc (* ... *) est tokenisé comme BLOCK_COMMENT."""
+        content = "fam A B (* note *) + C D\n"
+        tokens = LexicalParser(content).tokenize()
+        bc = [t for t in tokens if t.type == TokenType.BLOCK_COMMENT]
+        assert len(bc) == 1
+        assert bc[0].value == "(* note *)"
+
+    def test_block_comment_unclosed_raises(self):
+        """Un (* sans *) avant EOF lève une erreur lexicale (évite DoS mémoire)."""
+        content = "fam A B (* pas de fin"
+        with pytest.raises(GeneWebParseError):
+            LexicalParser(content).tokenize()
+
+    def test_block_comment_too_long_raises(self):
+        """Un corps trop long lève après le seuil défini (protection DoS)."""
+        body = "x" * (256 * 1024 + 1)
+        content = f"(*{body}*)"
+        with pytest.raises(GeneWebParseError):
+            LexicalParser(content).tokenize()
 
 
 class TestToken:

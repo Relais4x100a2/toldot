@@ -11,6 +11,11 @@ from enum import Enum
 from functools import lru_cache
 from typing import Iterator, List, Optional, Pattern
 
+from ..exceptions import GeneWebParseError
+
+# Limites contre l'abus de ressources (commentaires bloc non fermés, etc.)
+_BLOCK_COMMENT_BODY_MAX_CHARS = 256 * 1024
+
 
 class TokenType(Enum):
     """Types de tokens dans le format .gw"""
@@ -121,6 +126,7 @@ class TokenType(Enum):
     NEWLINE = "newline"  # Nouvelle ligne
     WHITESPACE = "whitespace"  # Espace blanc
     COMMENT = "comment"  # Commentaire
+    BLOCK_COMMENT = "block_comment"  # Commentaire (* ... *)
     EOF = "eof"  # Fin de fichier
     UNKNOWN = "unknown"  # Token inconnu
 
@@ -362,6 +368,14 @@ class LexicalParser:
         start_line = self.line_number
         start_col = self.column
 
+        # Commentaires bloc (* ... *) — ignorés par le parser syntaxique
+        if (
+            char == "("
+            and self.position + 1 < len(self.text)
+            and self.text[self.position + 1] == "*"
+        ):
+            return self._parse_block_comment(start_line, start_col, start_pos)
+
         # Modificateurs avec # (y compris les événements)
         # Vérifier d'abord si c'est un modificateur connu
         if char == "#":
@@ -445,6 +459,47 @@ class LexicalParser:
         value = self.text[start_pos : self.position]
         return Token(
             type=TokenType.COMMENT,
+            value=value,
+            line_number=line,
+            column=col,
+            position=pos,
+        )
+
+    def _parse_block_comment(self, line: int, col: int, pos: int) -> Token:
+        """Parse un commentaire bloc GeneWeb du type (* ... *)."""
+        start_pos = pos
+        # Avancer au-delà de "(*"
+        self._advance_position()
+        self._advance_position()
+        body_len = 0
+        closed = False
+        while self.position + 1 < len(self.text):
+            if self.text[self.position] == "*" and self.text[self.position + 1] == ")":
+                self._advance_position()
+                self._advance_position()
+                closed = True
+                break
+            self._advance_position()
+            body_len += 1
+            if body_len > _BLOCK_COMMENT_BODY_MAX_CHARS:
+                raise GeneWebParseError(
+                    "Commentaire bloc (* ...) trop long ou non terminé avant la limite",
+                    line_number=line,
+                    token=self.text[start_pos : start_pos + 40],
+                    expected="*)",
+                )
+
+        if not closed:
+            raise GeneWebParseError(
+                "Commentaire bloc (* ...) non fermé avant la fin du flux",
+                line_number=line,
+                token=self.text[start_pos : start_pos + 40],
+                expected="*)",
+            )
+
+        value = self.text[start_pos : self.position]
+        return Token(
+            type=TokenType.BLOCK_COMMENT,
             value=value,
             line_number=line,
             column=col,

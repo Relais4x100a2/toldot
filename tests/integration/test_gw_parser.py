@@ -8,8 +8,6 @@ avec les modèles de données finaux.
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from geneweb_py import GeneWebParser
 
 
@@ -194,26 +192,26 @@ end"""
         assert len(genealogy.persons) == 0
         assert len(genealogy.families) == 0
 
-    @pytest.mark.skip(
-        reason="Parser ne parse pas encore tous les éléments inline (témoins, enfants beg/end)"
-    )
     def test_parse_complex_family(self):
         """Test parsing d'une famille complexe avec tous les éléments"""
-        content = """fam CORNO Joseph_Marie_Vincent 25/12/1990 #bp Paris + 10/08/2015 #mp Paris THOMAS Marie_Julienne 15/06/1992 #bp Lyon  # noqa: E501
-wit m: DUPONT Pierre
-wit f: MARTIN Claire
-src "Acte de mariage, mairie de Paris"
-comm "Mariage célébré en présence de nombreux témoins"
-beg
-- h CORNO Jean_Baptiste 10/03/2016 #bp Paris
-- f CORNO Sophie_Marie 05/07/2018 #bp Paris
-end
-
-notes CORNO Joseph_Marie_Vincent
-beg
-Notes personnelles de Joseph Marie Vincent CORNO.
-Né le 25 décembre 1990 à Paris.
-end notes"""
+        content = (
+            "fam CORNO Joseph_Marie_Vincent 25/12/1990 #bp Paris "
+            "+ 10/08/2015 #mp Paris THOMAS Marie_Julienne 15/06/1992 #bp Lyon\n"
+            "wit m: DUPONT Pierre\n"
+            "wit f: MARTIN Claire\n"
+            'src "Acte de mariage, mairie de Paris"\n'
+            'comm "Mariage célébré en présence de nombreux témoins"\n'
+            "beg\n"
+            "- h CORNO Jean_Baptiste 10/03/2016 #bp Paris\n"
+            "- f CORNO Sophie_Marie 05/07/2018 #bp Paris\n"
+            "end\n"
+            "\n"
+            "notes CORNO Joseph_Marie_Vincent\n"
+            "beg\n"
+            "Notes personnelles de Joseph Marie Vincent CORNO.\n"
+            "Né le 25 décembre 1990 à Paris.\n"
+            "end notes"
+        )
 
         parser = GeneWebParser()
         genealogy = parser.parse_string(content)
@@ -227,19 +225,10 @@ end notes"""
         # Vérifier Joseph
         joseph = genealogy.find_person("CORNO", "Joseph_Marie_Vincent")
         assert joseph is not None
-        # Le parser actuel ne parse pas les dates et lieux de naissance dans les familles  # noqa: E501
 
-        # Marie n'est pas parsée par le parser actuel
-
-        # Vérifier la famille
-        genealogy.families[list(genealogy.families.keys())[0]]
-        # Le parser actuel ne parse pas les dates et lieux de mariage
-        # assert family.marriage_date is not None
-        # assert family.marriage_date.year == 2015
-        # assert family.marriage_place == "Paris"
-        # Le parser actuel ne parse pas les témoins
-        # assert len(family.witnesses) == 1
-        # assert len(family.comments) > 0
+        family = genealogy.families[list(genealogy.families.keys())[0]]
+        assert len(family.witnesses) == 2
+        assert len(family.comments) >= 1
 
     def test_parse_error_handling(self):
         """Test gestion des erreurs de parsing"""
