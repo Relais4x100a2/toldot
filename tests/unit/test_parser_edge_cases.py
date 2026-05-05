@@ -12,7 +12,12 @@ Lignes manquantes principales :
 import pytest
 
 from geneweb_py.core.event import FamilyEventType
-from geneweb_py.core.exceptions import GeneWebEncodingError, GeneWebParseError
+from geneweb_py.core.exceptions import (
+    GeneWebEncodingError,
+    GeneWebParseError,
+    ParseWarning,
+)
+from geneweb_py.core.parser import gw_parser as gw_parser_module
 from geneweb_py.core.parser.gw_parser import GeneWebParser
 
 
@@ -123,13 +128,16 @@ class TestParserBlockParsing:
 
     def test_parse_family_with_all_fields(self):
         """Test parsing famille avec tous les champs (lignes 296-297)"""
-        content = """fam DUPONT Jean 1950 #bp Paris 2020 #dp Lyon #occu Ingénieur + MARTIN Marie 1955  # noqa: E501
-#marr 1975 #p Paris
-#div 2010
-beg
-- h Pierre 1976
-- f Sophie 1978
-end"""
+        content = (
+            "fam DUPONT Jean 1950 #bp Paris 2020 #dp Lyon #occu Ingénieur + "
+            "MARTIN Marie 1955\n"
+            "#marr 1975 #p Paris\n"
+            "#div 2010\n"
+            "beg\n"
+            "- h Pierre 1976\n"
+            "- f Sophie 1978\n"
+            "end"
+        )
         parser = GeneWebParser()
         genealogy = parser.parse_string(content)
 
@@ -204,6 +212,67 @@ end fevt"""
         assert ev.family_event_type == FamilyEventType.MARRIAGE
         assert ev.place == "Grenoble"
         assert ev.family_id == family.family_id
+
+    def test_fevt_unmatched_spouses_not_attached_to_wrong_family(self):
+        """fevt avec époux sans famille : pas de repli sur un fam leurre."""
+        content = """fam DUPONT Jean + MARTIN Marie
+
+fam LEURR Pierre + LEURR Pauline
+
+fevt DURAND Sophie + BERNARD Marc
+#marr 1/1/2000 #p Paris
+end fevt"""
+        parser = GeneWebParser(strict=False, validate=False)
+        genealogy = parser.parse_string(content)
+
+        fams = list(genealogy.families.values())
+        assert len(fams) == 2
+        assert all(len(f.events) == 0 for f in fams)
+        assert any(
+            isinstance(e, ParseWarning) and e.context == "fevt" and "époux" in e.message
+            for e in genealogy.validation_errors
+        )
+
+    def test_fevt_truncate_events_over_limit(self, monkeypatch):
+        """Plafond d'événements par bloc fevt : troncature + avertissement."""
+        monkeypatch.setattr(gw_parser_module, "_FEVT_MAX_EVENTS_PER_BLOCK", 2)
+        content = """fam DUPONT Jean + MARTIN Marie
+fevt
+#marr 1/1/2000
+#marr 2/1/2000
+#marr 3/1/2000
+#div 4/1/2010
+end fevt"""
+        parser = GeneWebParser(strict=False, validate=False)
+        genealogy = parser.parse_string(content)
+        family = next(iter(genealogy.families.values()))
+        assert len(family.events) == 2
+        assert any(
+            "limite" in e.message and "événements" in e.message
+            for e in genealogy.validation_errors
+            if isinstance(e, ParseWarning)
+        )
+
+    def test_fevt_truncate_witnesses_over_limit(self, monkeypatch):
+        """Plafond de témoins par bloc fevt : ignorer l'excédent."""
+        monkeypatch.setattr(gw_parser_module, "_FEVT_MAX_WITNESSES_PER_BLOCK", 2)
+        content = """fam DUPONT Jean + MARTIN Marie
+fevt
+#marr 1/1/2000
+wit m: A Alpha
+wit m: B Bravo
+wit m: C Charlie
+end fevt"""
+        parser = GeneWebParser(strict=False, validate=False)
+        genealogy = parser.parse_string(content)
+        family = next(iter(genealogy.families.values()))
+        assert len(family.events) == 1
+        assert len(family.events[0].witnesses) == 2
+        assert any(
+            "témoins" in e.message
+            for e in genealogy.validation_errors
+            if isinstance(e, ParseWarning)
+        )
 
     def test_parse_relations_block(self):
         """Test parsing bloc rel complet"""
@@ -658,33 +727,32 @@ class TestParserIntegration:
 
     def test_parse_complete_complex_file(self):
         """Test fichier complexe avec toutes les fonctionnalités"""
-        content = """encoding: utf-8
-gwplus
-
-fam DUPONT Jean .1 {Johnny} (Jean-Pierre) 1950 #bp Paris 2020 #dp Lyon #occu Ingénieur + MARTIN Marie .1 1955 #bp Lyon  # noqa: E501
-wit m: TEMOIN_M Pierre #occu Prêtre
-wit f: TEMOIN_F Sophie #occu Religieuse
-#marr 1975 #p Paris
-beg
-- h Paul 1976 #occu Médecin
-- f Anne 1978 #occu Avocate
-end
-
-notes
-Notes importantes sur cette famille
-end notes
-
-pevt DUPONT Jean .1
-#birt 1950 #p Paris
-#deat 2020 #p Lyon
-wit m: TEMOIN_M Pierre
-end pevt
-
-rel DUPONT Paul
-beg
-- godp fath: TEMOIN_M Pierre
-- godp moth: TEMOIN_F Sophie
-end"""
+        content = (
+            "encoding: utf-8\n"
+            "gwplus\n\n"
+            "fam DUPONT Jean .1 {Johnny} (Jean-Pierre) 1950 #bp Paris 2020 "
+            "#dp Lyon #occu Ingénieur + MARTIN Marie .1 1955 #bp Lyon\n"
+            "wit m: TEMOIN_M Pierre #occu Prêtre\n"
+            "wit f: TEMOIN_F Sophie #occu Religieuse\n"
+            "#marr 1975 #p Paris\n"
+            "beg\n"
+            "- h Paul 1976 #occu Médecin\n"
+            "- f Anne 1978 #occu Avocate\n"
+            "end\n\n"
+            "notes\n"
+            "Notes importantes sur cette famille\n"
+            "end notes\n\n"
+            "pevt DUPONT Jean .1\n"
+            "#birt 1950 #p Paris\n"
+            "#deat 2020 #p Lyon\n"
+            "wit m: TEMOIN_M Pierre\n"
+            "end pevt\n\n"
+            "rel DUPONT Paul\n"
+            "beg\n"
+            "- godp fath: TEMOIN_M Pierre\n"
+            "- godp moth: TEMOIN_F Sophie\n"
+            "end"
+        )
 
         parser = GeneWebParser()
         genealogy = parser.parse_string(content)
