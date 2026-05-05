@@ -113,6 +113,7 @@ markers = [
     "parser: marks parser-specific tests",
     "validation: marks validation tests",
     "formats: marks format conversion tests",
+    "security: marks security-related static checks",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",

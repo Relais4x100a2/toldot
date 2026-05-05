@@ -112,7 +112,26 @@ jobs:
       
       - name: Run security audit
         run: |
-          pip-audit --desc || true
+          python << 'PY'
+          from pathlib import Path
+
+          try:
+              import tomllib
+          except ImportError:
+              import tomli as tomllib  # type: ignore
+
+          data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+          project = data["project"]
+          lines = []
+          lines.extend(project.get("dependencies", []))
+          optional = project.get("optional-dependencies", {})
+          for group in ("dev", "api", "validation"):
+              lines.extend(optional.get(group, []))
+          Path("audit-requirements.txt").write_text(
+              "\n".join(lines) + "\n", encoding="utf-8"
+          )
+          PY
+          pip-audit -r audit-requirements.txt --desc --strict
       
       - name: Check licenses
         run: |
@@ -122,7 +141,7 @@ jobs:
       - name: Run security tests
         run: |
           pip install pytest
-          pytest tests/security/ -v --tb=short || true
+          pytest tests/security/ -v --tb=short
 
   publish-test-pypi:
     name: Publier sur TestPyPI
