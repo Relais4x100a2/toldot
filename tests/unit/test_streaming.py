@@ -81,6 +81,21 @@ class TestStreamingLexicalParser:
         assert len(tokens) > 0
         assert tokens[-1].type == TokenType.EOF
 
+    def test_multiline_block_exceeds_limit_raises(self, monkeypatch):
+        """Un bloc notes-db trop volumineux doit être rejeté avant explosion mémoire."""
+        import geneweb_py.core.parser.streaming as streaming_mod
+
+        monkeypatch.setattr(streaming_mod, "_MULTILINE_BLOCK_MAX_BYTES", 50)
+        huge_middle = "x" * 100
+        content = StringIO(
+            f"notes-db\n{huge_middle}\nend notes-db\nfam Jean /Dupont/\n"
+        )
+        parser = StreamingLexicalParser(content, "test.gw")
+        with pytest.raises(
+            GeneWebParseError, match="Bloc multi-lignes trop volumineux"
+        ):
+            list(parser.tokenize_lazy())
+
     def test_tokenize_notes_db_block(self):
         """Test tokenisation d'un bloc notes-db."""
         content = StringIO("notes-db\nDatabase note\nend notes-db\n")

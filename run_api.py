@@ -24,7 +24,9 @@ def main():
     )
 
     parser.add_argument(
-        "--host", default="0.0.0.0", help="Adresse IP du serveur (défaut: 0.0.0.0)"
+        "--host",
+        default="127.0.0.1",
+        help="Adresse IP du serveur (défaut: 127.0.0.1)",
     )
 
     parser.add_argument(

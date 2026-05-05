@@ -18,6 +18,7 @@ from ..models.responses import (
     PaginationInfo,
     SuccessResponse,
 )
+from ..router_helpers import raise_internal_server_error
 from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
@@ -63,9 +64,9 @@ async def create_personal_event(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Erreur lors de la création de l'événement: {exc}"
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la création d'un événement personnel", exc
+        )
 
 
 @router.post("/family", response_model=SuccessResponse, status_code=201)
@@ -108,9 +109,9 @@ async def create_family_event(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Erreur lors de la création de l'événement: {exc}"
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la création d'un événement familial", exc
+        )
 
 
 @router.get("/{event_id}", response_model=SuccessResponse)
@@ -156,10 +157,9 @@ async def get_event(
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erreur lors de la récupération de l'événement: {exc}",
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la récupération d'un événement par identifiant", exc
+        )
 
 
 @router.put("/{event_id}", response_model=SuccessResponse)
@@ -208,10 +208,7 @@ async def update_event(
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erreur lors de la mise à jour de l'événement: {exc}",
-        ) from exc
+        raise_internal_server_error("Erreur lors de la mise à jour d'un événement", exc)
 
 
 @router.delete("/{event_id}", response_model=SuccessResponse)
@@ -243,10 +240,7 @@ async def delete_event(
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erreur lors de la suppression de l'événement: {exc}",
-        ) from exc
+        raise_internal_server_error("Erreur lors de la suppression d'un événement", exc)
 
 
 @router.get("/", response_model=PaginatedResponse)
@@ -343,9 +337,9 @@ async def list_events(
         return PaginatedResponse(items=event_schemas, pagination=pagination_info)
 
     except Exception as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Erreur lors de la recherche des événements: {exc}"
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la liste ou recherche d'événements", exc
+        )
 
 
 @router.get("/stats/overview", response_model=SuccessResponse)
@@ -378,7 +372,6 @@ async def get_event_stats(
         )
 
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erreur lors de la récupération des statistiques: {exc}",
-        ) from exc
+        raise_internal_server_error(
+            "Erreur lors de la récupération des statistiques d'événements", exc
+        )
