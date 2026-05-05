@@ -5,8 +5,8 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests et couverture](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions?query=workflow%3A%22Tests+et+Couverture%22)
 [![TestPyPI / publication](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20PyPI%20et%20Publication/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions?query=workflow%3A%22Tests+PyPI+et+Publication%22)
-[![Coverage](https://img.shields.io/badge/coverage-82%25-green.svg)](htmlcov/index.html)
-[![Tests Passing](https://img.shields.io/badge/tests-704%20passing-success.svg)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-87%25-green.svg)](htmlcov/index.html)
+[![Tests Passing](https://img.shields.io/badge/tests-727%20passing-success.svg)](tests/)
 
 Librairie Python complète pour parser, manipuler et convertir les fichiers généalogiques au format GeneWeb (.gw).
 
@@ -289,13 +289,13 @@ parser = GeneWebParser(validate=False)
 
 ### Ressources
 - **[examples/](examples/)** - Scripts de démonstration
-- **[tests/](tests/)** - Suite de tests (858 tests, 84% couverture)
+- **[tests/](tests/)** - Suite de tests (~770 cas collectés ; voir section Tests)
 - **[Documentation API](http://localhost:8000/docs)** - Swagger UI (API REST)
 - **[GeneWeb Community](https://web.archive.org/web/20250802144922/https://geneweb.tuxfamily.org/wiki/GeneWeb)** - Documentation communautaire
 
 ## 🧪 Tests
 
-geneweb-py dispose d'une suite de tests **consolidée et organisée** avec **377 tests** et **80%+ de couverture**.
+geneweb-py dispose d'une suite de tests **consolidée et organisée** : **~770** cas collectés (**727** passants, **43** skippés avec l’installation `dev` + `api` + `validation`), **~87 %** de couverture sur `geneweb_py` (mesure locale `pytest --cov`).
 
 ### 📁 Structure des Tests
 
@@ -349,10 +349,10 @@ pytest -rs
 
 ### 📊 Métriques de Qualité
 
-- **Tests unitaires** : 349 passants, 28 skippés
-- **Couverture globale** : 80%+ (objectif atteint)
-- **Modules critiques** : 90%+ (parser, validation, exceptions)
-- **Temps d'exécution** : < 30s pour la suite complète
+- **Exécution complète** (extras `dev`, `api`, `validation`) : **727** passants, **43** skippés
+- **Couverture sur `src/geneweb_py`** : **~87 %** (total rapport `coverage`)
+- **Modules critiques** : parser, validation et exceptions restent au-dessus de **90 %** sur plusieurs fichiers (voir rapport détaillé)
+- **Temps d'exécution** : de l’ordre de quelques secondes pour la suite complète sur machine récente
 
 ### 🔧 Configuration des Tests
 
