@@ -121,6 +121,7 @@ class TokenType(Enum):
     NEWLINE = "newline"  # Nouvelle ligne
     WHITESPACE = "whitespace"  # Espace blanc
     COMMENT = "comment"  # Commentaire
+    BLOCK_COMMENT = "block_comment"  # Commentaire (* ... *)
     EOF = "eof"  # Fin de fichier
     UNKNOWN = "unknown"  # Token inconnu
 
@@ -362,6 +363,14 @@ class LexicalParser:
         start_line = self.line_number
         start_col = self.column
 
+        # Commentaires bloc (* ... *) — ignorés par le parser syntaxique
+        if (
+            char == "("
+            and self.position + 1 < len(self.text)
+            and self.text[self.position + 1] == "*"
+        ):
+            return self._parse_block_comment(start_line, start_col, start_pos)
+
         # Modificateurs avec # (y compris les événements)
         # Vérifier d'abord si c'est un modificateur connu
         if char == "#":
@@ -445,6 +454,28 @@ class LexicalParser:
         value = self.text[start_pos : self.position]
         return Token(
             type=TokenType.COMMENT,
+            value=value,
+            line_number=line,
+            column=col,
+            position=pos,
+        )
+
+    def _parse_block_comment(self, line: int, col: int, pos: int) -> Token:
+        """Parse un commentaire bloc GeneWeb du type (* ... *)."""
+        start_pos = pos
+        # Avancer au-delà de "(*"
+        self._advance_position()
+        self._advance_position()
+        while self.position + 1 < len(self.text):
+            if self.text[self.position] == "*" and self.text[self.position + 1] == ")":
+                self._advance_position()
+                self._advance_position()
+                break
+            self._advance_position()
+
+        value = self.text[start_pos : self.position]
+        return Token(
+            type=TokenType.BLOCK_COMMENT,
             value=value,
             line_number=line,
             column=col,

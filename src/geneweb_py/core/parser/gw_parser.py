@@ -12,7 +12,7 @@ from typing import List, Optional, Tuple, Union
 import chardet
 
 from ..exceptions import GeneWebEncodingError, GeneWebParseError
-from ..family import ChildSex
+from ..family import ChildSex, MarriageStatus
 from ..models import Date, Family, Genealogy, Person
 from ..person import Gender
 from .lexical import LexicalParser, Token, TokenType
@@ -213,6 +213,7 @@ class GeneWebParser:
                 "wnote",
                 "src",
                 "comm",
+                "+",
                 "-",
                 "#",
                 "notes-db",
@@ -229,6 +230,7 @@ class GeneWebParser:
                 "sep",
                 "eng",
                 "note",
+                "(*",
             }
             inside_block = False
             current_block = None
@@ -243,6 +245,10 @@ class GeneWebParser:
                     continue
 
                 word = line.split()[0].lower()
+
+                # Commentaires bloc GeneWeb (* ... *)
+                if line.startswith("(*"):
+                    continue
 
                 # Gestion des blocs spéciaux
                 if word in {"notes-db", "page-ext", "wizard-note", "notes"}:
@@ -299,7 +305,8 @@ class GeneWebParser:
             # Si pas de blocs de contenu, vérifier s'il y a des commentaires
             if not has_content_blocks:
                 has_comments = any(
-                    token.type == TokenType.COMMENT for token in self.tokens
+                    token.type in (TokenType.COMMENT, TokenType.BLOCK_COMMENT)
+                    for token in self.tokens
                 )
                 if not has_comments:
                     raise GeneWebParseError(
@@ -606,28 +613,152 @@ class GeneWebParser:
                 wife_id=wife_id,
                 marriage_date=family_info["marriage_date"],
                 marriage_place=family_info["marriage_place"],
+                marriage_status=family_info["marriage_status"],
+                divorce_date=family_info["divorce_date"],
+                is_separated=family_info["is_separated"],
             )
 
             # Parser les enfants
             for child_node in node.children:
                 self._parse_child(child_node, family, persons, genealogy)
 
-            # Parser les témoins dans les tokens du nœud famille
-            i = 0
-            while i < len(tokens):
-                if tokens[i].type == TokenType.WIT:
-                    next_i, witness_id, witness_type = self._parse_witness_person(
-                        tokens, i, persons, genealogy
-                    )
-                    i = next_i
-                else:
-                    i += 1
+            # Modificateurs de ligne (#sep / #div), témoins, sources et commentaires
+            self._apply_family_extra_tokens(family, tokens, persons, genealogy)
 
             families[family_id] = family
             genealogy.add_family(family)
             return family
 
         return None
+
+    def _apply_family_extra_tokens(
+        self,
+        family: Family,
+        tokens: List[Token],
+        persons: dict,
+        genealogy: Genealogy,
+    ) -> None:
+        """Applique les tokens famille hors ligne époux/enfants (#div, wit, src, comm).
+
+        Les modificateurs inline sont traités dans `_parse_family_line`; cette passe
+        couvre les lignes suivantes (témoins multi-lignes, etc.).
+        """
+        i = 0
+        while i < len(tokens):
+            tok = tokens[i]
+            if tok.type == TokenType.WIT:
+                next_i, witness_id, witness_type = self._parse_witness_person(
+                    tokens, i, persons, genealogy
+                )
+                if witness_id:
+                    family.add_witness(witness_id, witness_type)
+                i = next_i
+                continue
+            if tok.type == TokenType.SEP:
+                family.marriage_status = MarriageStatus.SEPARATED
+                family.is_separated = True
+                i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.DASH:
+                    i += 1
+                elif i < len(tokens) and tokens[i].type == TokenType.DATE:
+                    try:
+                        family.divorce_date = Date.parse_with_fallback(tokens[i].value)
+                    except Exception:
+                        pass
+                    i += 1
+                continue
+            if tok.type == TokenType.DIV:
+                family.marriage_status = MarriageStatus.DIVORCED
+                i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.DASH:
+                    i += 1
+                elif i < len(tokens) and tokens[i].type == TokenType.DATE:
+                    try:
+                        family.divorce_date = Date.parse_with_fallback(tokens[i].value)
+                    except Exception:
+                        pass
+                    i += 1
+                continue
+            if tok.type == TokenType.NM:
+                family.marriage_status = MarriageStatus.NOT_MARRIED
+                i += 1
+                continue
+            if tok.type == TokenType.ENG:
+                family.marriage_status = MarriageStatus.ENGAGED
+                i += 1
+                continue
+            if tok.type == TokenType.MARR:
+                i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.DATE:
+                    try:
+                        family.marriage_date = Date.parse_with_fallback(tokens[i].value)
+                    except Exception:
+                        pass
+                    i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.P:
+                    i += 1
+                    if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                        family.marriage_place = tokens[i].value
+                        i += 1
+                continue
+            if tok.type == TokenType.DIV_EVENT:
+                i += 1
+                family.marriage_status = MarriageStatus.DIVORCED
+                if i < len(tokens) and tokens[i].type == TokenType.DATE:
+                    try:
+                        family.divorce_date = Date.parse_with_fallback(tokens[i].value)
+                    except Exception:
+                        pass
+                    i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.P:
+                    i += 1
+                    if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                        i += 1
+                continue
+            if tok.type == TokenType.SEP_EVENT:
+                i += 1
+                family.marriage_status = MarriageStatus.SEPARATED
+                family.is_separated = True
+                if i < len(tokens) and tokens[i].type == TokenType.DATE:
+                    try:
+                        family.divorce_date = Date.parse_with_fallback(tokens[i].value)
+                    except Exception:
+                        pass
+                    i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.P:
+                    i += 1
+                    if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                        i += 1
+                continue
+            if tok.type == TokenType.SRC:
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    family.family_source = tokens[i].value
+                    i += 1
+                continue
+            if tok.type == TokenType.COMM:
+                i += 1
+                parts: List[str] = []
+                while i < len(tokens) and tokens[i].type not in (
+                    TokenType.NEWLINE,
+                    TokenType.WIT,
+                    TokenType.SRC,
+                    TokenType.BEG,
+                    TokenType.END,
+                ):
+                    if tokens[i].type in (
+                        TokenType.IDENTIFIER,
+                        TokenType.STRING,
+                    ):
+                        parts.append(tokens[i].value)
+                    i += 1
+                if parts:
+                    family.add_comment(" ".join(parts))
+                continue
+            i += 1
 
     def _parse_family_line(self, tokens: List[Token]) -> dict:
         """Parse une ligne fam et extrait toutes les informations
@@ -656,10 +787,58 @@ class GeneWebParser:
             "wife_occupation": None,
             "marriage_date": None,
             "marriage_place": None,
+            "marriage_status": MarriageStatus.MARRIED,
+            "divorce_date": None,
+            "is_separated": False,
         }
 
         i = 0
         current_person = "husband"  # 'husband' ou 'wife'
+
+        def consume_sep_div(i_: int) -> int:
+            """Consomme #sep / #div (+ date ou '-') après une époux/se."""
+            while i_ < len(tokens):
+                tok = tokens[i_]
+                if tok.type == TokenType.SEP:
+                    result["marriage_status"] = MarriageStatus.SEPARATED
+                    result["is_separated"] = True
+                    i_ += 1
+                    if i_ < len(tokens) and tokens[i_].type == TokenType.DASH:
+                        i_ += 1
+                    elif i_ < len(tokens) and tokens[i_].type == TokenType.DATE:
+                        try:
+                            result["divorce_date"] = Date.parse_with_fallback(
+                                tokens[i_].value
+                            )
+                        except Exception:
+                            pass
+                        i_ += 1
+                    continue
+                if tok.type == TokenType.DIV:
+                    result["marriage_status"] = MarriageStatus.DIVORCED
+                    result["divorce_date"] = None
+                    i_ += 1
+                    if i_ < len(tokens) and tokens[i_].type == TokenType.DASH:
+                        i_ += 1
+                    elif i_ < len(tokens) and tokens[i_].type == TokenType.DATE:
+                        try:
+                            result["divorce_date"] = Date.parse_with_fallback(
+                                tokens[i_].value
+                            )
+                        except Exception:
+                            pass
+                        i_ += 1
+                    continue
+                if tok.type == TokenType.NM:
+                    result["marriage_status"] = MarriageStatus.NOT_MARRIED
+                    i_ += 1
+                    continue
+                if tok.type == TokenType.ENG:
+                    result["marriage_status"] = MarriageStatus.ENGAGED
+                    i_ += 1
+                    continue
+                break
+            return i_
 
         while i < len(tokens):
             token = tokens[i]
@@ -673,6 +852,35 @@ class GeneWebParser:
             elif token.type == TokenType.PLUS:
                 current_person = "wife"
                 i += 1
+                i = consume_sep_div(i)
+                continue
+
+            # Modificateurs union (#sep / #div / #nm / #eng) hors position époux/se
+            elif token.type in (
+                TokenType.SEP,
+                TokenType.DIV,
+                TokenType.NM,
+                TokenType.ENG,
+            ):
+                i = consume_sep_div(i)
+                continue
+
+            # Date de mariage (#marr ou événement mariage gwplus)
+            elif token.type == TokenType.MARR:
+                i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.DATE:
+                    try:
+                        result["marriage_date"] = Date.parse_with_fallback(
+                            tokens[i].value
+                        )
+                    except Exception:
+                        pass
+                    i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.P:
+                    i += 1
+                    if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                        result["marriage_place"] = tokens[i].value
+                        i += 1
                 continue
 
             # Nom de famille
@@ -863,6 +1071,10 @@ class GeneWebParser:
                 occurrence_num = int(occurrence_str)
             except ValueError:
                 occurrence_num = 0
+            i += 1
+
+        # Dates seules avant #bp / #occu (ex: "- h Pierre 1976")
+        while i < len(tokens) and tokens[i].type == TokenType.DATE:
             i += 1
 
         if first_name:
