@@ -353,6 +353,28 @@ class TestGenealogyValidation:
         assert len(errors) == 1
         assert "Enfant 'INEXISTANT_Jean_0'" in str(errors[0])
 
+    def test_validate_consistency_strict_idempotent(self):
+        """Mode strict : états sans cumul si la validation est rappelée."""
+        genealogy = Genealogy()
+
+        mother = Person(last_name="THOMAS", first_name="Marie")
+        genealogy.add_person(mother)
+
+        family = Family(
+            family_id="FAM001",
+            husband_id="MANQUANT_Joseph_0",
+            wife_id="THOMAS_Marie_0",
+        )
+        genealogy.add_family(family)
+
+        genealogy.validate_consistency(strict=True)
+        n1 = len(genealogy.validation_errors)
+
+        genealogy.validate_consistency(strict=True)
+        n2 = len(genealogy.validation_errors)
+
+        assert n1 == n2 == 1
+
 
 class TestGenealogyStatistics:
     """Tests pour les statistiques"""
