@@ -54,6 +54,20 @@ def _package_source_root() -> Path:
     return package_root
 
 
+def test_security_scans_use_src_package_layout():
+    """Garantit que l'analyse statique cible ``src/geneweb_py``.
+
+    Pas un package cloné à la racine du dépôt : les chemins du type
+    ``/workspace/geneweb_py`` (hors ``src/``) ne doivent pas être utilisés après
+    migration vers un layout PEP 517 ``src``.
+    """
+    root = _repo_root()
+    expected = root.joinpath("src", "geneweb_py").resolve()
+    assert _package_source_root().resolve() == expected
+    assert expected.is_dir()
+    assert (expected / "__init__.py").is_file()
+
+
 def test_minimal_dependencies():
     """Vérifier qu'on n'a pas trop de dépendances obligatoires"""
     # Lire pyproject.toml
