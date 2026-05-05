@@ -11,6 +11,11 @@ from enum import Enum
 from functools import lru_cache
 from typing import Iterator, List, Optional, Pattern
 
+from ..exceptions import GeneWebParseError
+
+# Limites contre l'abus de ressources (commentaires bloc non fermés, etc.)
+_BLOCK_COMMENT_BODY_MAX_CHARS = 256 * 1024
+
 
 class TokenType(Enum):
     """Types de tokens dans le format .gw"""
@@ -466,12 +471,31 @@ class LexicalParser:
         # Avancer au-delà de "(*"
         self._advance_position()
         self._advance_position()
+        body_len = 0
+        closed = False
         while self.position + 1 < len(self.text):
             if self.text[self.position] == "*" and self.text[self.position + 1] == ")":
                 self._advance_position()
                 self._advance_position()
+                closed = True
                 break
             self._advance_position()
+            body_len += 1
+            if body_len > _BLOCK_COMMENT_BODY_MAX_CHARS:
+                raise GeneWebParseError(
+                    "Commentaire bloc (* ...) trop long ou non terminé avant la limite",
+                    line_number=line,
+                    token=self.text[start_pos : start_pos + 40],
+                    expected="*)",
+                )
+
+        if not closed:
+            raise GeneWebParseError(
+                "Commentaire bloc (* ...) non fermé avant la fin du flux",
+                line_number=line,
+                token=self.text[start_pos : start_pos + 40],
+                expected="*)",
+            )
 
         value = self.text[start_pos : self.position]
         return Token(

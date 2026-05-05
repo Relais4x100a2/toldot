@@ -663,3 +663,32 @@ end"""
         assert hasattr(parser, "syntax_nodes")
         assert len(parser.tokens) > 0
         assert len(parser.syntax_nodes) > 0
+
+
+class TestParserResourceLimits:
+    """Bornes contre une agrégation excessive via `comm` (DoS mémoire)."""
+
+    def test_family_comm_aggregate_length_capped(self):
+        """Une suite très longue après `comm` est tronquée au plafond configuré."""
+        chunk = "a" * 70_000
+        long_comm = "comm " + " ".join([chunk] * 8)
+        content = f"fam DUPONT Jean + MARTIN Marie\n{long_comm}\n"
+        parser = GeneWebParser(validate=False)
+        genealogy = parser.parse_string(content)
+        family = next(iter(genealogy.families.values()))
+        assert family.comments
+        assert len(family.comments[0]) <= 524_288 + 1024
+
+    def test_family_comm_fragment_count_capped(self):
+        """Le nombre maximal de fragments `comm` est appliqué."""
+        identifiers = ["abc"] * 10_050
+        content = (
+            "fam LEROY Paul + DENIS Jeanne\ncomm "
+            + " ".join(identifiers)
+            + " wit m: MARIE Jean\n"
+        )
+        parser = GeneWebParser(validate=False)
+        genealogy = parser.parse_string(content)
+        family = next(iter(genealogy.families.values()))
+        assert family.comments
+        assert len(family.comments[0].split()) == 10000
