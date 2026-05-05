@@ -7,13 +7,18 @@ et syntaxique pour créer une représentation complète des données généalogi
 
 import logging
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import chardet
 
-from ..exceptions import GeneWebEncodingError, GeneWebParseError
+from ..event import EventType
+from ..exceptions import (
+    GeneWebEncodingError,
+    GeneWebParseError,
+    ParseWarning,
+)
 from ..family import ChildSex, MarriageStatus
-from ..models import Date, Family, Genealogy, Person
+from ..models import Date, Family, FamilyEvent, FamilyEventType, Genealogy, Person
 from ..person import Gender
 from .lexical import LexicalParser, Token, TokenType
 from .streaming import (
@@ -32,6 +37,10 @@ _FAMILY_COMM_MAX_FRAGMENTS = 10000
 # Autres accumulations texte (notes, occupations, métadonnées) : même discipline.
 _TEXT_AGGREGATE_MAX_CHARS = 512 * 1024
 _TEXT_AGGREGATE_MAX_FRAGMENTS = 10000
+
+# Bloc ``fevt`` (gwplus) : plafonds événements / témoins (DoS).
+_FEVT_MAX_EVENTS_PER_BLOCK = 500
+_FEVT_MAX_WITNESSES_PER_BLOCK = 200
 
 
 def _bounded_append_text_fragment(
@@ -109,10 +118,14 @@ class GeneWebParser:
 
         Args:
             validate: Si True, valide la cohérence des données après parsing
-            stream_mode: Si True, force le mode streaming. Si None, détection automatique.  # noqa: E501
-            streaming_threshold_mb: Seuil en MB pour activer le streaming automatiquement  # noqa: E501
-            strict: Si True, lève une exception à la première erreur. Si False, parsing gracieux.  # noqa: E501
-            use_multipass: Si True, utilise le parser multi-passes (recommandé pour fichiers complexes)  # noqa: E501
+            stream_mode: Si True, force le mode streaming.
+                Si None, détection automatique.
+            streaming_threshold_mb: Seuil en MB pour activer le streaming
+                automatiquement.
+            strict: Si True, lève une exception à la première erreur. Si False,
+                parsing gracieux.
+            use_multipass: Si True, utilise le parser multi-passes
+                (recommandé pour fichiers complexes).
         """
         self.validate = validate
         self.stream_mode = stream_mode
@@ -179,11 +192,6 @@ class GeneWebParser:
                 genealogy.metadata.source_file = str(file_path)
                 genealogy.metadata.encoding = encoding
 
-                # Transférer les erreurs de parsing à la généalogie
-                if self.error_collector.has_errors():
-                    for error in self.error_collector.get_errors():
-                        genealogy.add_validation_error(error)
-
                 return genealogy
 
         except Exception as e:
@@ -212,6 +220,7 @@ class GeneWebParser:
 
         # Construction des modèles (identique)
         genealogy = self._build_genealogy()
+        self._copy_parse_errors_to_genealogy(genealogy)
 
         # Validation si demandée
         if self.validate:
@@ -370,8 +379,8 @@ class GeneWebParser:
 
         # Construction des modèles de données
         genealogy = self._build_genealogy()
+        self._copy_parse_errors_to_genealogy(genealogy)
 
-        # Validation si demandée
         if self.validate:
             errors = genealogy.validate_consistency()
             if errors:
@@ -385,6 +394,16 @@ class GeneWebParser:
             genealogy.metadata.encoding = encoding
         return genealogy
 
+    def _copy_parse_errors_to_genealogy(self, genealogy: Genealogy) -> None:
+        """Recopie les erreurs collectées pendant le build vers la généalogie."""
+        from ..exceptions import GeneWebError
+
+        if not self.error_collector.has_errors():
+            return
+        for err in self.error_collector.get_errors():
+            if isinstance(err, GeneWebError):
+                genealogy.add_validation_error(err)
+
     def _get_or_create_person(
         self,
         last_name: str,
@@ -394,7 +413,8 @@ class GeneWebParser:
         genealogy: Genealogy,
         gender: Gender = Gender.UNKNOWN,
     ) -> str:
-        """Crée ou récupère une personne avec gestion intelligente des numéros d'occurrence  # noqa: E501
+        """Crée ou récupère une personne avec gestion intelligente des numéros
+        d'occurrence.
 
         Args:
             last_name: Nom de famille
@@ -552,7 +572,8 @@ class GeneWebParser:
         # Parser chaque bloc
         for node in self.syntax_nodes:
             if node.type == BlockType.FAMILY:
-                # Vérifier si c'est un vrai bloc famille (avec token FAM) ou des enfants (avec token BEG)
+                # Vérifier si c'est un vrai bloc famille (token FAM) ou des
+                # enfants (token BEG)
                 if node.tokens and node.tokens[0].type == TokenType.FAM:
                     # C'est un bloc famille normal
                     current_family = self._parse_family_block(
@@ -577,9 +598,10 @@ class GeneWebParser:
             elif node.type == BlockType.PERSON_EVENTS:
                 self._parse_person_events_block(node, persons, genealogy)
             elif node.type == BlockType.FAMILY_EVENTS:
-                # Parser les événements familiaux (fevt)
-                # TODO: Associer à current_family si nécessaire
-                self._parse_family_events_block(node, families, genealogy)
+                # Parser les événements familiaux (fevt) et les rattacher à la famille
+                self._parse_family_events_block(
+                    node, persons, families, genealogy, current_family
+                )
             elif node.type == BlockType.DATABASE_NOTES:
                 self._parse_database_notes_block(node, genealogy)
             elif node.type == BlockType.EXTENDED_PAGE:
@@ -590,7 +612,8 @@ class GeneWebParser:
         # Mettre à jour les références croisées
         genealogy._update_cross_references()
 
-        # Ajouter ou mettre à jour toutes les personnes créées (témoins, relations, etc.)
+        # Ajouter ou mettre à jour toutes les personnes créées (témoins,
+        # relations, etc.)
         for person in persons.values():
             genealogy.add_or_update_person(person)
 
@@ -815,7 +838,8 @@ class GeneWebParser:
     def _parse_family_line(self, tokens: List[Token]) -> dict:
         """Parse une ligne fam et extrait toutes les informations
 
-        Format: fam LastName FirstName [infos personnelles] + LastName FirstName [infos personnelles]  # noqa: E501
+        Format: fam LastName FirstName [infos perso] + LastName FirstName
+            [infos perso]
 
         Returns:
             Dictionnaire avec toutes les informations extraites
@@ -1344,64 +1368,356 @@ class GeneWebParser:
                 else:
                     i += 1
 
+    def _parse_fevt_spouse_header(
+        self,
+        tokens: List[Token],
+        start_index: int,
+        persons: Dict[str, Person],
+        genealogy: Genealogy,
+    ) -> Tuple[Optional[str], Optional[str], int]:
+        """Lit l'en-tête époux après ``fevt``.
+
+        S'arrête au premier jeton d'événement ou à la fin du bloc.
+
+        Returns:
+            Tuple ``(husband_id, wife_id, index_du_premier_token_non_entête)``.
+        """
+        i = start_index
+        current = "husband"
+        h_name: Optional[str] = None
+        h_fn: Optional[str] = None
+        h_occ: Optional[int] = None
+        w_name: Optional[str] = None
+        w_fn: Optional[str] = None
+        w_occ: Optional[int] = None
+
+        while i < len(tokens):
+            tok = tokens[i]
+            if tok.type == TokenType.END_FEVT:
+                break
+            if tok.type in (
+                TokenType.MARR,
+                TokenType.DIV_EVENT,
+                TokenType.SEP_EVENT,
+                TokenType.ENGA,
+                TokenType.WIT,
+                TokenType.SRC,
+                TokenType.COMM,
+                TokenType.NOTE,
+            ):
+                break
+            if tok.type == TokenType.PLUS:
+                current = "wife"
+                i += 1
+                continue
+            if tok.type == TokenType.NUMBER:
+                occ_str = tok.value.lstrip(".")
+                try:
+                    occ_val = int(occ_str)
+                except ValueError:
+                    occ_val = 0
+                if current == "husband" and h_fn is not None:
+                    h_occ = occ_val
+                elif current == "wife" and w_fn is not None:
+                    w_occ = occ_val
+                i += 1
+                continue
+            if tok.type == TokenType.IDENTIFIER:
+                if current == "husband":
+                    if h_name is None:
+                        h_name = tok.value
+                    elif h_fn is None:
+                        h_fn = tok.value
+                    elif w_name is None:
+                        current = "wife"
+                        w_name = tok.value
+                    else:
+                        break
+                else:
+                    if w_name is None:
+                        w_name = tok.value
+                    elif w_fn is None:
+                        w_fn = tok.value
+                    else:
+                        break
+                i += 1
+                continue
+            i += 1
+
+        husband_id: Optional[str] = None
+        wife_id: Optional[str] = None
+        if h_name and h_fn:
+            husband_id = self._get_or_create_person(
+                h_name, h_fn, h_occ, persons, genealogy, Gender.MALE
+            )
+        if w_name and w_fn:
+            wife_id = self._get_or_create_person(
+                w_name, w_fn, w_occ, persons, genealogy, Gender.FEMALE
+            )
+        return husband_id, wife_id, i
+
+    def _find_family_for_fevt_spouses(
+        self,
+        families: Dict[str, Family],
+        husband_id: Optional[str],
+        wife_id: Optional[str],
+    ) -> Optional[Family]:
+        """Retrouve la famille dont les époux correspondent au bloc ``fevt``."""
+        if husband_id and wife_id:
+            for fam in families.values():
+                pair = {fam.husband_id, fam.wife_id}
+                if husband_id in pair and wife_id in pair:
+                    return fam
+            return None
+        sole = husband_id or wife_id
+        if sole is None:
+            return None
+        candidates = [
+            fam for fam in families.values() if sole in (fam.husband_id, fam.wife_id)
+        ]
+        if len(candidates) == 1:
+            return candidates[0]
+        return None
+
+    def _consume_family_event_optional_fields(
+        self, tokens: List[Token], start_index: int, event: FamilyEvent
+    ) -> int:
+        """Consomme date, lieu ``#p`` et source ``#s`` après le type d'événement."""
+        i = start_index
+        while i < len(tokens):
+            tok = tokens[i]
+            if tok.type == TokenType.DATE:
+                event.date = Date.parse_with_fallback(tok.value)
+                i += 1
+                continue
+            if tok.type == TokenType.P:
+                i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                    event.place = tokens[i].value
+                    i += 1
+                continue
+            if tok.type == TokenType.S:
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    event.source = tokens[i].value
+                    i += 1
+                continue
+            break
+        return i
+
+    def _family_event_from_token(self, token_type: TokenType) -> FamilyEvent:
+        """Construit un ``FamilyEvent`` à partir du jeton de type d'événement."""
+        mapping: Dict[TokenType, FamilyEventType] = {
+            TokenType.MARR: FamilyEventType.MARRIAGE,
+            TokenType.DIV_EVENT: FamilyEventType.DIVORCE,
+            TokenType.SEP_EVENT: FamilyEventType.SEPARATION,
+            TokenType.ENGA: FamilyEventType.ENGAGEMENT,
+        }
+        fet = mapping[token_type]
+        evt_type = {
+            FamilyEventType.MARRIAGE: EventType.MARRIAGE,
+            FamilyEventType.DIVORCE: EventType.DIVORCE,
+            FamilyEventType.SEPARATION: EventType.SEPARATION,
+            FamilyEventType.ENGAGEMENT: EventType.ENGAGEMENT,
+        }[fet]
+        return FamilyEvent(event_type=evt_type, family_event_type=fet)
+
     def _parse_family_events_block(
-        self, node: SyntaxNode, families: dict, genealogy: Genealogy
+        self,
+        node: SyntaxNode,
+        persons: Dict[str, Person],
+        families: Dict[str, Family],
+        genealogy: Genealogy,
+        current_family: Optional[Family],
     ) -> None:
-        """Parse un bloc événements familiaux et met à jour la famille correspondante"""
+        """Parse ``fevt`` et rattache les événements à ``Family.events``.
+
+        Famille cible : correspondance par époux du bloc ; sans correspondance mais
+        avec des identifiants d'époux, aucune famille n'est choisie (avertissement).
+        Sans ligne d'époux, repli sur ``current_family`` (dernier bloc ``fam``).
+
+        Plafonds par bloc (entrées volumineuses) : voir
+        ``_FEVT_MAX_EVENTS_PER_BLOCK`` et ``_FEVT_MAX_WITNESSES_PER_BLOCK``.
+        """
         tokens = node.tokens
+        witness_persons: Dict[str, Person] = {}
 
-        # Créer un dictionnaire temporaire pour les personnes
-        persons = {}
+        husband_id: Optional[str]
+        wife_id: Optional[str]
+        husband_id, wife_id, i = self._parse_fevt_spouse_header(
+            tokens, 1, persons, genealogy
+        )
 
-        i = 1  # Passer 'fevt'
-        # Créer un événement familial générique courant si besoin (ex: MARR si présent)
-        from ..event import Event, EventType
+        resolved = self._find_family_for_fevt_spouses(families, husband_id, wife_id)
+        line_number = tokens[0].line_number if tokens else None
+        target_family: Optional[Family]
+        if resolved is not None:
+            target_family = resolved
+        elif husband_id is not None or wife_id is not None:
+            _hint_parts: List[str] = []
+            if husband_id is not None:
+                _hint_parts.append(f"père={husband_id}")
+            if wife_id is not None:
+                _hint_parts.append(f"mère={wife_id}")
+            spouse_hint = ", ".join(_hint_parts)
+            msg = (
+                "Bloc fevt: aucune famille ne correspond aux époux indiqués ; "
+                "événements non rattachés (évite une mauvaise famille cible)."
+            )
+            if spouse_hint:
+                msg = f"{msg} Époux: {spouse_hint}."
+            self.error_collector.add_error(
+                ParseWarning(
+                    msg,
+                    line_number=line_number,
+                    context="fevt",
+                )
+            )
+            target_family = None
+        else:
+            target_family = current_family
 
-        current_event: Optional[Event] = None
+        parsed_events: List[FamilyEvent] = []
+        current_event: Optional[FamilyEvent] = None
+        fevt_event_count = 0
+        fevt_witness_count = 0
+        fevt_events_truncated = False
+        fevt_witnesses_truncated = False
+
         while i < len(tokens):
             token = tokens[i]
 
-            # Témoins
+            if token.type == TokenType.END_FEVT:
+                break
+
             if token.type == TokenType.WIT:
+                if fevt_witness_count >= _FEVT_MAX_WITNESSES_PER_BLOCK:
+                    if not fevt_witnesses_truncated:
+                        self.error_collector.add_error(
+                            ParseWarning(
+                                f"Bloc fevt: limite de {_FEVT_MAX_WITNESSES_PER_BLOCK} "
+                                "témoins atteinte ; témoins supplémentaires ignorés "
+                                "(protection ressource).",
+                                line_number=token.line_number,
+                                context="fevt",
+                            )
+                        )
+                        fevt_witnesses_truncated = True
+                    i = self._skip_fevt_witness_person(tokens, i)
+                    continue
+                fevt_witness_count += 1
                 next_i, witness_id, witness_type = self._parse_witness_person(
-                    tokens, i, persons, genealogy
+                    tokens, i, witness_persons, genealogy
                 )
                 if witness_id and current_event is not None:
                     current_event.add_witness(witness_id, witness_type)
                 i = next_i
                 continue
 
-            # Détecter un type d'événement familial simple (ex: #marr déjà géré en syntaxe autrement)  # noqa: E501
-            if token.type in [
+            if token.type in (
                 TokenType.MARR,
                 TokenType.DIV_EVENT,
                 TokenType.SEP_EVENT,
                 TokenType.ENGA,
-            ]:
-                mapped = {
-                    TokenType.MARR: EventType.MARRIAGE,
-                    TokenType.DIV_EVENT: EventType.DIVORCE,
-                    TokenType.SEP_EVENT: EventType.SEPARATION,
-                    TokenType.ENGA: EventType.ENGAGEMENT,
-                }[token.type]
-                current_event = Event(event_type=mapped)
+            ):
+                if fevt_event_count >= _FEVT_MAX_EVENTS_PER_BLOCK:
+                    if not fevt_events_truncated:
+                        self.error_collector.add_error(
+                            ParseWarning(
+                                f"Bloc fevt: limite de {_FEVT_MAX_EVENTS_PER_BLOCK} "
+                                "événements atteinte ; suite du bloc ignorée "
+                                "(protection ressource).",
+                                line_number=token.line_number,
+                                context="fevt",
+                            )
+                        )
+                        fevt_events_truncated = True
+                    discard_evt = self._family_event_from_token(token.type)
+                    i += 1
+                    i = self._consume_family_event_optional_fields(
+                        tokens, i, discard_evt
+                    )
+                    continue
+                fevt_event_count += 1
+                current_event = self._family_event_from_token(token.type)
+                parsed_events.append(current_event)
                 i += 1
+                i = self._consume_family_event_optional_fields(tokens, i, current_event)
                 continue
 
-            # Autres tokens
+            if token.type == TokenType.SRC:
+                i += 1
+                if (
+                    current_event is not None
+                    and i < len(tokens)
+                    and tokens[i].type in (TokenType.IDENTIFIER, TokenType.STRING)
+                ):
+                    current_event.source = tokens[i].value
+                    i += 1
+                continue
+
+            if token.type == TokenType.COMM:
+                i += 1
+                if (
+                    current_event is not None
+                    and i < len(tokens)
+                    and tokens[i].type in (TokenType.IDENTIFIER, TokenType.STRING)
+                ):
+                    current_event.add_note(tokens[i].value)
+                    i += 1
+                continue
+
+            if token.type == TokenType.NOTE:
+                i += 1
+                note_content: List[str] = []
+                note_agg = 0
+                while i < len(tokens) and tokens[i].type not in [
+                    TokenType.NEWLINE,
+                    TokenType.END_FEVT,
+                    TokenType.MARR,
+                    TokenType.DIV_EVENT,
+                    TokenType.SEP_EVENT,
+                    TokenType.ENGA,
+                    TokenType.WIT,
+                ]:
+                    note_agg, stop = _bounded_append_text_fragment(
+                        note_content,
+                        note_agg,
+                        tokens[i].value,
+                        inter_fragment_sep_len=1,
+                        max_fragments=_TEXT_AGGREGATE_MAX_FRAGMENTS,
+                        max_aggregate_chars=_TEXT_AGGREGATE_MAX_CHARS,
+                        log_context="Note fevt",
+                    )
+                    i += 1
+                    if stop:
+                        break
+                if note_content and current_event is not None:
+                    current_event.add_note(" ".join(note_content))
+                continue
+
             i += 1
 
-        # Stocker les témoins créés dans les métadonnées du nœud
-        # Toujours initialiser la liste des témoins, même si elle est vide
+        for pid, person in witness_persons.items():
+            if pid not in persons:
+                persons[pid] = person
+
+        if target_family is not None and parsed_events:
+            for fev in parsed_events:
+                fev.family_id = target_family.family_id
+                target_family.add_event(fev)
+
         witnesses = []
-        if persons:
-            # Convertir les objets Person en dictionnaires pour les tests
-            for person in persons.values():
+        if witness_persons:
+            for person in witness_persons.values():
                 witness_dict = {
                     "person_id": person.unique_id,
                     "type": "male" if person.gender == Gender.MALE else "female",
                     "name": f"{person.last_name} {person.first_name}",
-                    "person": person,  # Garder l'objet Person pour référence
+                    "person": person,
                 }
                 witnesses.append(witness_dict)
         node.metadata["witnesses"] = witnesses
@@ -1523,6 +1839,41 @@ class GeneWebParser:
             }
 
         return None
+
+    def _skip_fevt_witness_person(self, tokens: List[Token], start_index: int) -> int:
+        """Avance après un jeton ``wit`` sans créer de personne témoin.
+
+        Utilisé lorsque le plafond de témoins par bloc ``fevt`` est atteint, pour
+        rester aligné sur ``_parse_witness_person`` sans alimenter la généalogie.
+
+        Args:
+            tokens: Liste des tokens du bloc.
+            start_index: Position du ``wit``.
+
+        Returns:
+            Index du prochain jeton après la séquence témoin.
+        """
+        i = start_index
+        if i >= len(tokens) or tokens[i].type != TokenType.WIT:
+            return min(start_index + 1, len(tokens))
+        i += 1
+        if i < len(tokens) and tokens[i].type in (TokenType.H, TokenType.F):
+            i += 1
+        if i < len(tokens) and tokens[i].type == TokenType.COLON:
+            i += 1
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            i += 1
+        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+            i += 1
+        if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
+            i += 1
+        dummy = Person(
+            last_name="_fevt_skip",
+            first_name="_",
+            gender=Gender.UNKNOWN,
+            occurrence_number=-1,
+        )
+        return self._parse_inline_personal_info(tokens, i, dummy)
 
     def _parse_witness_person(
         self, tokens: List[Token], start_index: int, persons: dict, genealogy: Genealogy
