@@ -6,14 +6,58 @@ et que les versions sont appropriées.
 """
 
 from pathlib import Path
+from typing import Set
 
 import pytest
+
+pytestmark = pytest.mark.security
+
+
+def _repo_root() -> Path:
+    """Retourne la racine du dépôt (répertoire contenant ``pyproject.toml``).
+
+    Raises:
+        RuntimeError: Si aucun ``pyproject.toml`` n'est trouvé en remontant depuis
+            ce fichier de test.
+
+    Returns:
+        Chemin absolu vers la racine du dépôt.
+    """
+    test_file = Path(__file__).resolve()
+    for parent in test_file.parents:
+        if (parent / "pyproject.toml").is_file():
+            return parent
+    raise RuntimeError(
+        f"Racine du dépôt introuvable (aucun pyproject.toml parent de {test_file})."
+    )
+
+
+def _package_source_root() -> Path:
+    """Racine du code source du package ``geneweb_py`` sous ``src/``.
+
+    Cible ``src/geneweb_py`` (layout src) et non un dossier ``geneweb_py``
+    à la racine du clone.
+
+    Raises:
+        FileNotFoundError: Si ``src/geneweb_py`` n'existe pas.
+
+    Returns:
+        Chemin absolu vers ``src/geneweb_py``.
+    """
+    root = _repo_root()
+    package_root = root / "src" / "geneweb_py"
+    if not package_root.is_dir():
+        raise FileNotFoundError(
+            f"Package source attendu introuvable: {package_root} (layout standard: "
+            "src/geneweb_py/)."
+        )
+    return package_root
 
 
 def test_minimal_dependencies():
     """Vérifier qu'on n'a pas trop de dépendances obligatoires"""
     # Lire pyproject.toml
-    pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
+    pyproject_path = _repo_root() / "pyproject.toml"
 
     if not pyproject_path.exists():
         pytest.skip("pyproject.toml non trouvé")
@@ -42,7 +86,7 @@ def test_minimal_dependencies():
 
 def test_dependencies_have_versions():
     """Vérifier que les dépendances ont des contraintes de version"""
-    pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
+    pyproject_path = _repo_root() / "pyproject.toml"
 
     if not pyproject_path.exists():
         pytest.skip("pyproject.toml non trouvé")
@@ -78,7 +122,7 @@ def test_dependencies_licenses_compatible():
 
     # Pour l'instant, test simple : vérifier qu'on n'a pas de dépendances GPL
     # (nécessiterait pip-licenses pour un test complet)
-    pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
+    pyproject_path = _repo_root() / "pyproject.toml"
 
     if not pyproject_path.exists():
         pytest.skip("pyproject.toml non trouvé")
@@ -95,7 +139,7 @@ def test_dependencies_licenses_compatible():
 
 def test_no_test_dependencies_in_main():
     """Vérifier qu'aucune dépendance de test n'est dans dependencies"""
-    pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
+    pyproject_path = _repo_root() / "pyproject.toml"
 
     if not pyproject_path.exists():
         pytest.skip("pyproject.toml non trouvé")
@@ -130,46 +174,51 @@ def test_no_test_dependencies_in_main():
 def test_secure_imports():
     """Vérifier qu'on n'importe pas de modules dangereux"""
     import ast
-    from pathlib import Path
 
-    # Modules potentiellement dangereux
-    dangerous_modules = ["pickle", "shelve", "marshal", "eval", "exec"]
+    # Modules potentiellement dangereux (import / from … import)
+    dangerous_modules: Set[str] = {"pickle", "shelve", "marshal"}
 
-    # Parcourir tous les fichiers Python du package
-    package_root = Path(__file__).resolve().parent.parent.parent / "src" / "geneweb_py"
-
-    if not package_root.exists():
-        pytest.skip("Package geneweb_py non trouvé")
-
+    package_root = _package_source_root()
     py_files = list(package_root.rglob("*.py"))
 
+    assert py_files, f"Aucun fichier .py sous {package_root}"
+
     for py_file in py_files:
-        with open(py_file) as f:
+        with open(py_file, encoding="utf-8") as f:
             try:
-                tree = ast.parse(f.read())
-
-                for node in ast.walk(tree):
-                    if isinstance(node, ast.Import):
-                        for alias in node.names:
-                            assert alias.name not in dangerous_modules, (
-                                f"Import dangereux '{alias.name}' dans {py_file}"
-                            )
-
-                    elif isinstance(node, ast.ImportFrom):
-                        if node.module in dangerous_modules:
-                            # Exception: pickle peut être OK dans certains contextes
-                            # On warning juste
-                            print(f"Warning: Import de {node.module} dans {py_file}")
-
+                tree = ast.parse(f.read(), filename=str(py_file))
             except SyntaxError:
                 # Ignorer les erreurs de syntaxe (fichiers templates, etc.)
-                pass
+                continue
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        top = alias.name.split(".", 1)[0]
+                        assert top not in dangerous_modules, (
+                            f"Import dangereux {alias.name!r} dans {py_file}"
+                        )
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module is None:
+                        continue
+                    top = node.module.split(".", 1)[0]
+                    assert top not in dangerous_modules, (
+                        f"Import dangereux depuis {node.module!r} dans {py_file}"
+                    )
+                elif isinstance(node, ast.Call):
+                    if isinstance(node.func, ast.Name):
+                        assert node.func.id not in {"eval", "exec"}, (
+                            f"Appel à {node.func.id!r} dans {py_file}"
+                        )
+                    elif isinstance(node.func, ast.Attribute):
+                        assert node.func.attr not in {"eval", "exec"}, (
+                            f"Appel à {node.func.attr!r} dans {py_file}"
+                        )
 
 
 def test_no_hardcoded_secrets():
     """Vérifier absence de secrets hardcodés"""
     import re
-    from pathlib import Path
 
     # Patterns de secrets communs
     secret_patterns = [
@@ -179,15 +228,13 @@ def test_no_hardcoded_secrets():
         r'token\s*=\s*["\'][a-zA-Z0-9]{20,}["\']',
     ]
 
-    package_root = Path(__file__).resolve().parent.parent.parent / "src" / "geneweb_py"
-
-    if not package_root.exists():
-        pytest.skip("Package geneweb_py non trouvé")
-
+    package_root = _package_source_root()
     py_files = list(package_root.rglob("*.py"))
 
+    assert py_files, f"Aucun fichier .py sous {package_root}"
+
     for py_file in py_files:
-        with open(py_file) as f:
+        with open(py_file, encoding="utf-8") as f:
             content = f.read()
 
             for pattern in secret_patterns:
