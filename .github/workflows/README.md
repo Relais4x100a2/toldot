@@ -48,9 +48,9 @@ Ce dossier contient les workflows CI/CD pour le projet geneweb-py.
 **Déclenchement** : Ouverture/mise à jour PR
 
 **Actions** :
-- Vérifie non-régression de couverture
-- Détecte nouveaux tests
-- Commente la PR automatiquement
+- Mesure la couverture au **merge-base** avec la base (`coverage_baseline.json`) puis sur la **tête de la PR** avec `--cov-report=json` et `--cov-fail-under=84`
+- Compare la PR à la baseline (échec si la couverture baisse par rapport au merge-base)
+- Met à jour **un seul** commentaire (bot) avec tableau + delta, évite le spam de commentaires
 
 ### 6. `weekly-report.yml` - Rapport Hebdomadaire
 **Déclenchement** : Tous les lundis à 8h, manuel
