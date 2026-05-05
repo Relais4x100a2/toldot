@@ -205,17 +205,33 @@ class TestValidateGenealogy:
     """Tests pour la validation de généalogie."""
 
     def test_validate_success(self, client, mock_service):
-        """Test validation réussie (stub route jusqu'à merge stats/QA)."""
+        """Test validation réussie."""
+        mock_service.validate_genealogy.return_value = {
+            "is_valid": True,
+            "warnings": [],
+            "errors": [],
+            "suggestions": [],
+        }
         response = client.post("/api/v1/genealogy/validate")
 
         assert response.status_code == 200
         data = response.json()
-        assert "is_valid" in data["data"]
+        assert data["data"]["is_valid"] is True
+        assert "aucune erreur" in data["message"].lower()
 
     def test_validate_error(self, client, mock_service):
-        """Le stub renvoie toujours succès sérialisable."""
+        """Réponse HTTP 200 avec données indiquant des erreurs de cohérence."""
+        mock_service.validate_genealogy.return_value = {
+            "is_valid": False,
+            "warnings": [],
+            "errors": [{"severity": "error", "message": "Famille orpheline"}],
+            "suggestions": ["Vérifier les identifiants."],
+        }
         response = client.post("/api/v1/genealogy/validate")
         assert response.status_code == 200
+        body = response.json()
+        assert body["data"]["is_valid"] is False
+        assert "erreurs" in body["message"].lower()
 
 
 class TestClearGenealogy:

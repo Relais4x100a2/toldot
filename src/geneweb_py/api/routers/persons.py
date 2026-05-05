@@ -217,6 +217,25 @@ async def list_persons(
     surname: Optional[str] = Query(None, description="Filtrer par nom de famille"),
     sex: Optional[str] = Query(None, description="Filtrer par sexe"),
     access_level: Optional[str] = Query(None, description="Filtrer par niveau d'accès"),
+    birth_year_from: Optional[int] = Query(
+        None, ge=1000, le=3000, description="Année de naissance minimum"
+    ),
+    birth_year_to: Optional[int] = Query(
+        None, ge=1000, le=3000, description="Année de naissance maximum"
+    ),
+    death_year_from: Optional[int] = Query(
+        None, ge=1000, le=3000, description="Année de décès minimum"
+    ),
+    death_year_to: Optional[int] = Query(
+        None, ge=1000, le=3000, description="Année de décès maximum"
+    ),
+    place: Optional[str] = Query(
+        None,
+        description=(
+            "Filtrer par lieu (naissance, décès, baptême, sépulture) ; "
+            "sous-chaîne après NFKC et sans tenir compte de la casse"
+        ),
+    ),
     service: GenealogyService = Depends(get_genealogy_service),
 ) -> PaginatedResponse:
     """
@@ -230,6 +249,11 @@ async def list_persons(
         surname: Filtre par nom de famille
         sex: Filtre par sexe
         access_level: Filtre par niveau d'accès
+        birth_year_from: Borne inférieure année de naissance (filtre par overlap)
+        birth_year_to: Borne supérieure année de naissance
+        death_year_from: Borne inférieure année de décès
+        death_year_to: Borne supérieure année de décès
+        place: Sous-chaîne de lieu (NFKC + insensible à la casse)
         service: Service de généalogie
 
     Returns:
@@ -244,11 +268,11 @@ async def list_persons(
         surname=surname,
         sex=sex,  # TODO: Conversion depuis string
         access_level=access_level,  # TODO: Conversion depuis string
-        birth_year_from=None,
-        birth_year_to=None,
-        death_year_from=None,
-        death_year_to=None,
-        place=None,
+        birth_year_from=birth_year_from,
+        birth_year_to=birth_year_to,
+        death_year_from=death_year_from,
+        death_year_to=death_year_to,
+        place=place,
     )
 
     persons, total = service.search_persons(search_params)
