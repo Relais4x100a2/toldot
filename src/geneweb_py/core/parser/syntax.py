@@ -296,6 +296,34 @@ class FamilyBlockParser(BlockParser):
                 i = self._parse_witnesses(tokens, i, node)
                 continue
 
+            # Événements d'union sur lignes suivantes (#marr, #div, #sep gwplus)
+            if token.type in [
+                TokenType.MARR,
+                TokenType.DIV_EVENT,
+                TokenType.SEP_EVENT,
+                TokenType.ENGA,
+            ]:
+                i = self._parse_union_event_tokens(tokens, i, node)
+                continue
+
+            # Modificateurs #sep / #div / #nm / #eng sur lignes suivantes
+            if token.type in [
+                TokenType.SEP,
+                TokenType.DIV,
+                TokenType.NM,
+                TokenType.ENG,
+            ]:
+                node.add_token(token)
+                i += 1
+                if token.type in (TokenType.SEP, TokenType.DIV):
+                    if i < len(tokens) and tokens[i].type == TokenType.DASH:
+                        node.add_token(tokens[i])
+                        i += 1
+                    elif i < len(tokens) and tokens[i].type == TokenType.DATE:
+                        node.add_token(tokens[i])
+                        i += 1
+                continue
+
             # Sources (src)
             if token.type == TokenType.SRC:
                 node.add_token(token)
@@ -312,11 +340,22 @@ class FamilyBlockParser(BlockParser):
             if token.type == TokenType.COMM:
                 node.add_token(token)
                 i += 1
-                if i < len(tokens) and tokens[i].type in [
-                    TokenType.IDENTIFIER,
-                    TokenType.STRING,
+                while i < len(tokens) and tokens[i].type not in [
+                    TokenType.NEWLINE,
+                    TokenType.WIT,
+                    TokenType.SRC,
+                    TokenType.BEG,
+                    TokenType.END,
+                    TokenType.MARR,
+                    TokenType.DIV_EVENT,
+                    TokenType.SEP_EVENT,
+                    TokenType.ENGA,
                 ]:
-                    node.add_token(tokens[i])
+                    if tokens[i].type in [
+                        TokenType.IDENTIFIER,
+                        TokenType.STRING,
+                    ]:
+                        node.add_token(tokens[i])
                     i += 1
                 continue
 
@@ -341,6 +380,24 @@ class FamilyBlockParser(BlockParser):
             # Token inattendu, on s'arrête
             break
 
+        return i
+
+    def _parse_union_event_tokens(
+        self, tokens: List[Token], start_index: int, node: SyntaxNode
+    ) -> int:
+        """Ajoute un événement d'union (#marr / #div / #sep / #enga) et date/lieu optionnels."""
+        i = start_index
+        node.add_token(tokens[i])
+        i += 1
+        if i < len(tokens) and tokens[i].type == TokenType.DATE:
+            node.add_token(tokens[i])
+            i += 1
+        if i < len(tokens) and tokens[i].type == TokenType.P:
+            node.add_token(tokens[i])
+            i += 1
+            if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                node.add_token(tokens[i])
+                i += 1
         return i
 
     def _parse_witnesses(
@@ -1228,6 +1285,7 @@ class SyntaxParser:
             # Ignorer les commentaires et espaces
             if token.type in [
                 TokenType.COMMENT,
+                TokenType.BLOCK_COMMENT,
                 TokenType.WHITESPACE,
                 TokenType.NEWLINE,
             ]:

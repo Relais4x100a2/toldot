@@ -189,7 +189,6 @@ end notes"""
 class TestParserWitnessHandling:
     """Tests du parsing des témoins (lignes 567-568, 578-579, 584-585)"""
 
-    @pytest.mark.skip(reason="TODO: Fonctionnalité parsing témoins à implémenter")
     def test_parse_witness_male(self):
         """Test témoin masculin (ligne 567-568)"""
         content = """fam DUPONT Jean + MARTIN Marie
@@ -200,7 +199,6 @@ wit m: TEMOIN_M Martin #occu Prêtre"""
         family = list(genealogy.families.values())[0]
         assert len(family.witnesses) >= 1
 
-    @pytest.mark.skip(reason="TODO: Fonctionnalité parsing témoins à implémenter")
     def test_parse_witness_female(self):
         """Test témoin féminin (ligne 578-579)"""
         content = """fam DUPONT Jean + MARTIN Marie
@@ -211,7 +209,6 @@ wit f: TEMOIN_F Marie #occu Religieuse"""
         family = list(genealogy.families.values())[0]
         assert len(family.witnesses) >= 1
 
-    @pytest.mark.skip(reason="TODO: Fonctionnalité parsing témoins à implémenter")
     def test_parse_multiple_witnesses(self):
         """Test plusieurs témoins (ligne 584-585)"""
         content = """fam DUPONT Jean + MARTIN Marie
@@ -241,7 +238,6 @@ wit f: LAMBERT Marie_Thérèse"""
         assert family is not None
 
 
-@pytest.mark.skip(reason="TODO: Tests à adapter au parsing actuel des enfants")
 class TestParserChildrenParsing:
     """Tests du parsing des enfants (lignes 628-633, 646)"""
 
@@ -395,7 +391,6 @@ class TestParserPersonalInfo:
         assert jean is not None
 
 
-@pytest.mark.skip(reason="TODO: Tests à adapter - commentaires non gérés actuellement")
 class TestParserSpecialCases:
     """Tests de cas spéciaux (lignes 972, 1022, 1042)"""
 
