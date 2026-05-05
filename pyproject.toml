@@ -180,6 +180,10 @@ ignore = ["E203"]
 # B008 : function call in default (faux positif pour FastAPI Depends/File/Query)
 extend-ignore = ["B008"]
 
+[tool.ruff.lint.per-file-ignores]
+# Scripts CI : syntaxe compat 3.8 (Optional / Dict depuis typing — pas PEP 604)
+"scripts/ci/**" = ["UP006", "UP045"]
+
 [tool.ruff.lint.isort]
 # Configuration des imports
 known-first-party = ["geneweb_py"]
