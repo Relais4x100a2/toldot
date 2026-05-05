@@ -142,6 +142,9 @@ Thumbs.db
 # Project specific - GeneWeb files
 *.gw
 *.gwplus
+# Fixtures de tests (.gw versionnées malgré le motif ci-dessus)
+!tests/fixtures/*.gw
+!tests/fixtures/*.gwplus
 *.ged
 *.gedcom
 

@@ -8,6 +8,7 @@ Les tests sont organisés par module principal avec une structure cohérente :
 
 ```
 tests/
+├── fixtures/               # Fichiers .gw de référence (voir section ci-dessous)
 ├── unit/                    # Tests unitaires par module
 │   ├── test_date.py         # Tests pour core.date
 │   ├── test_event.py        # Tests pour core.event  
@@ -42,13 +43,28 @@ tests/
 - **Modules critiques** : 90%+ (parser, validation, exceptions)
 - **Tests de couverture** : Intégrés dans les fichiers principaux
 
+### Répertoire `tests/fixtures/`
+
+Fichiers `.gw` de référence pour les tests d'intégration et le mode gracieux.
+
+| Fichier | Rôle |
+| :--- | :--- |
+| `simple_test.gw` | Cas minimal : une famille `fam` avec deux époux (id 0). Utilisé par `test_error_recovery.py`. |
+| `minimal_iso8859.gw` | Même usage qu'un fichier minimal mais encodé en **ISO-8859-1** (sans ligne `[encoding: utf-8]`) pour valider la détection d'encodage par `chardet`. |
+| `test_relations.gw` | Famille et bloc **`rel`** avec parrains/marraines (`godp`). |
+| `test_witnesses.gw` | **Témoins** (`wit`), infos époux inline sur la ligne `fam`, **séparation/divorce** (`#sep`, `#div`) avant les noms de l'épouse. |
+| `test_complete.gw` | Combinaison : témoins, séparation/divorce, enfants `beg`/`end`, plusieurs blocs `rel`. |
+| `malformed_fragment.gw` | **Cas erroné** : première ligne invalide puis une famille valide ; avec `strict=False` le parsing doit encore produire au moins une personne (`test_malformed_fixture_still_recoverable`). |
+
+Les lignes `[encoding: utf-8]` en tête de fichier sont évitées dans ces fixtures : elles ne correspondent pas au préfixe attendu par la validation initiale du parser (`encoding:` avec deux-points sans crochet).
+
 ### 🚫 Tests Skippés
 
 Certains tests sont skippés pour les raisons suivantes :
 
-1. **Fixtures manquantes** : Tests nécessitant des fichiers .gw spécifiques
+1. **Données ou environnement indisponibles** : Par exemple fichier exemple très volumineux ou dépendances optionnelles
 2. **Fonctionnalités non implémentées** : Features en développement
-3. **Tests d'intégration complexes** : Nécessitant des données complètes
+3. **Tests d'intégration complexes** : Nécessitant des données complètes ou du temps d'exécution élevé
 
 ### 🧪 Types de Tests
 
