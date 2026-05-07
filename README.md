@@ -31,6 +31,8 @@ Librairie Python complète pour parser, manipuler et convertir les fichiers gén
 pip install geneweb-py
 ```
 
+**→ [Démarrage rapide après `pip install`](QUICK_START_PYPI.md)** : parsing, export GEDCOM/JSON, lancement de l’API en quelques minutes.
+
 Pour le développement :
 
 ```bash
@@ -285,7 +287,7 @@ parser = GeneWebParser(validate=False)
 
 ### Guides spécialisés
 - **[doc/PERFORMANCE.md](doc/PERFORMANCE.md)** ⚡ - Optimisations et benchmarks
-- **[QUICK_START_PYPI.md](QUICK_START_PYPI.md)** 📦 - Publication PyPI
+- **[QUICK_START_PYPI.md](QUICK_START_PYPI.md)** 📦 - Démarrage rapide (install PyPI)
 - **[doc/geneweb/gw_format_documentation.md](doc/geneweb/gw_format_documentation.md)** - Format .gw
 
 ### Ressources
