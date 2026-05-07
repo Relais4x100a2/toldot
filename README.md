@@ -24,6 +24,17 @@ Librairie Python complète pour parser, manipuler et convertir les fichiers gén
   - Mode streaming automatique pour gros fichiers (>10MB)
   - Réduction mémoire de ~80% sur fichiers volumineux
   - Optimisations CPU : ~15-20% plus rapide sur petits fichiers
+  - Parser **multi-passes** (`use_multipass=True`) pour renforcer la résolution des références croisées sur des bases complexes
+
+### Quand utiliser le streaming vs le mode multi-passes ?
+
+| Besoin | Réglage recommandé |
+|--------|-------------------|
+| Fichier très volumineux, limiter la **mémoire** (lexique + tokens en flux) | Laisser le seuil par défaut ou forcer `stream_mode=True` sur `GeneWebParser` ; le streaming s’active automatiquement au-delà du seuil (10 Mo par défaut). |
+| Fichier chargé en mémoire (taille modeste à grande) avec **beaucoup de références croisées** (familles, témoins, blocs dispersés) | `GeneWebParser(use_multipass=True)` : une passe supplémentaire met à jour les liens personnes ↔ familles après fusion de toutes les personnes. |
+| Très gros fichier **et** références difficiles | `stream_mode=True` **et** `use_multipass=True` : le pipeline streaming produit les mêmes nœuds syntaxiques, puis la phase multi-passes reconstruit les modèles avec la passe de références renforcée. |
+
+Le streaming agit sur la **lecture et la tokenisation** ; le multi-passes agit sur la **construction du graphe généalogique**. Ils ne s’excluent pas.
 
 ## 📦 Installation
 
