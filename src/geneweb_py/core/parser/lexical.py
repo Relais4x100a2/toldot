@@ -191,7 +191,7 @@ class LexicalParser:
     def _compile_patterns(self) -> None:
         """Compile les expressions régulières pour la tokenisation
 
-        Note: Utilise des dictionnaires pour des lookups O(1) au lieu de conditionnels multiples  # noqa: E501
+        Note: dictionnaires pour des lookups O(1) plutôt que conditionnels.
         """
 
         # Symboles simples (pre-compilés pour accès rapide)
