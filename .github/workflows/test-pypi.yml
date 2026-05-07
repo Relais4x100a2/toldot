@@ -62,9 +62,7 @@ jobs:
       - name: Run packaging tests
         run: |
           pip install pytest pytest-cov
-          pytest tests/packaging/ -v --tb=short \
-            --cov=geneweb_py \
-            --cov-report=term
+          pytest tests/packaging/ -v --tb=short --cov=src/geneweb_py --cov-report=term
 
   test-compatibility:
     name: Test Python ${{ matrix.python-version }} sur ${{ matrix.os }}
@@ -92,16 +90,11 @@ jobs:
       
       - name: Run unit tests
         run: |
-          pytest tests/unit/ tests/compatibility/ -v --tb=short -m "not slow" \
-            --cov=src/geneweb_py \
-            --cov-report=term
+          pytest tests/unit/ tests/compatibility/ -v --tb=short -m "not slow" --cov=src/geneweb_py --cov-report=term
       
       - name: Run integration tests (fast only)
         run: |
-          pytest tests/integration/test_complete_person_parsing.py -v --tb=short \
-            --cov=src/geneweb_py \
-            --cov-report=term \
-            --cov-append
+          pytest tests/integration/test_complete_person_parsing.py -v --tb=short --cov=src/geneweb_py --cov-report=term --cov-append
 
   test-security:
     name: Audit de sécurité
@@ -153,9 +146,7 @@ jobs:
       - name: Run security tests
         run: |
           pip install pytest pytest-cov
-          pytest tests/security/ -v --tb=short \
-            --cov=src/geneweb_py \
-            --cov-report=term
+          pytest tests/security/ -v --tb=short --cov=src/geneweb_py --cov-report=term
 
   publish-test-pypi:
     name: Publier sur TestPyPI
