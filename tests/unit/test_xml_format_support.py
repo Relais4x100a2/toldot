@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from geneweb_py.core.date import Date
-from geneweb_py.core.event import Event, EventType
+from geneweb_py.core.date import CalendarType, Date, DatePrefix
+from geneweb_py.core.event import Event, EventType, FamilyEventType
 from geneweb_py.core.family import Family
 from geneweb_py.core.genealogy import Genealogy
 from geneweb_py.core.person import Gender, Person
@@ -193,7 +193,6 @@ class TestXMLImporter:
         importer = XMLImporter(encoding="utf-8")
         assert importer.encoding == "utf-8"
 
-    @pytest.mark.skip(reason="Désérialisation famille à corriger - issue #XXX")
     def test_import_complete_family(self, tmp_path):
         """Test import famille complète avec tous attributs."""
         xml_content = """<?xml version="1.0" encoding="UTF-8"?>
@@ -228,12 +227,18 @@ class TestXMLImporter:
         genealogy = importer.import_from_file(str(xml_file))
 
         assert len(genealogy.families) >= 1
-        # Vérifier attributs de famille
         family = list(genealogy.families.values())[0]
-        assert family.husband_id == "1"
-        assert family.wife_id == "2"
+        assert family.husband_id == "Dupont_Jean_0"
+        assert family.wife_id == "Martin_Marie_0"
+        assert family.marriage_date is not None
+        assert family.marriage_date.year == 1975
+        assert family.marriage_place == "Paris"
+        assert family.family_source == "Acte de mariage"
+        assert len(family.witnesses) == 2
+        assert family.witnesses[0]["person_id"] == "Témoin 1"
+        assert len(family.events) == 1
+        assert family.events[0].family_event_type == FamilyEventType.MARRIAGE
 
-    @pytest.mark.skip(reason="Désérialisation famille à corriger - issue #XXX")
     def test_import_family_with_divorce(self, tmp_path):
         """Test import famille avec divorce."""
         xml_content = """<?xml version="1.0" encoding="UTF-8"?>
@@ -256,9 +261,10 @@ class TestXMLImporter:
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
 
-        assert len(genealogy.families) >= 1
+        family = list(genealogy.families.values())[0]
+        assert family.divorce_date is not None
+        assert family.divorce_date.year == 1985
 
-    @pytest.mark.skip(reason="Désérialisation événement à corriger - issue #XXX")
     def test_import_event_with_all_fields(self, tmp_path):
         """Test import événement avec tous les champs."""
         xml_content = """<?xml version="1.0" encoding="UTF-8"?>
@@ -290,7 +296,18 @@ class TestXMLImporter:
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
 
-        assert len(genealogy.persons) >= 1
+        person = list(genealogy.persons.values())[0]
+        assert len(person.events) == 1
+        evt = person.events[0]
+        assert evt.event_type == EventType.BIRTH
+        assert evt.date is not None
+        assert evt.date.prefix == DatePrefix.ABOUT
+        assert evt.date.calendar == CalendarType.GREGORIAN
+        assert evt.place == "Paris"
+        assert evt.source == "Acte de naissance"
+        assert len(evt.witnesses) == 1
+        assert evt.witnesses[0]["person_id"] == "Témoin 1"
+        assert evt.notes == ["Note 1", "Note 2"]
 
     def test_import_date_with_prefix(self, tmp_path):
         """Test import date avec préfixe."""
@@ -331,8 +348,10 @@ class TestXMLImporter:
         genealogy = importer.import_from_file(str(xml_file))
 
         assert len(genealogy.persons) >= 1
+        person = list(genealogy.persons.values())[0]
+        assert person.birth_date is not None
+        assert person.birth_date.calendar == CalendarType.JULIAN
 
-    @pytest.mark.skip(reason="Désérialisation événement à corriger - issue #XXX")
     def test_import_event_without_type(self, tmp_path):
         """Test import événement sans type spécifié."""
         xml_content = """<?xml version="1.0" encoding="UTF-8"?>
@@ -355,7 +374,10 @@ class TestXMLImporter:
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
 
-        assert len(genealogy.persons) >= 1
+        person = list(genealogy.persons.values())[0]
+        assert len(person.events) == 1
+        assert person.events[0].event_type == EventType.OTHER
+        assert person.events[0].place == "Paris"
 
     def test_import_from_string_simple(self):
         """Test d'import depuis chaîne simple."""
@@ -524,3 +546,50 @@ class TestXMLImporter:
         assert imported_person.birth_place == "Paris, France"
         assert len(imported_person.events) == 1
         assert imported_person.events[0].event_type == EventType.GRADUATION
+
+    def test_roundtrip_export_import_person_family_event(self):
+        """Export XML puis import : Person, Family et événement familial cohérents."""
+        from geneweb_py.core.event import FamilyEvent, FamilyEventType
+
+        genealogy = Genealogy()
+        husband = Person(last_name="DUPONT", first_name="Jean", gender=Gender.MALE)
+        wife = Person(last_name="MARTIN", first_name="Marie", gender=Gender.FEMALE)
+        genealogy.add_person(husband)
+        genealogy.add_person(wife)
+
+        family = Family(
+            family_id="fam_rt_1",
+            husband_id=husband.unique_id,
+            wife_id=wife.unique_id,
+            marriage_date=Date(year=2000, month=5, day=1),
+            marriage_place="Lyon",
+        )
+        family.add_witness("Temoin_A", "m")
+        fe = FamilyEvent(
+            event_type=EventType.MARRIAGE,
+            family_event_type=FamilyEventType.MARRIAGE,
+            date=Date(year=2000, month=5, day=1),
+            place="Lyon",
+            notes=["convocation"],
+        )
+        family.add_event(fe)
+        genealogy.add_family(family)
+
+        xml_string = XMLExporter().export_to_string(genealogy)
+        imported = XMLImporter().import_from_string(xml_string)
+
+        assert len(imported.persons) == 2
+        assert len(imported.families) == 1
+        imp_h = imported.find_person_by_id(husband.unique_id)
+        imp_w = imported.find_person_by_id(wife.unique_id)
+        assert imp_h is not None and imp_w is not None
+        fam = list(imported.families.values())[0]
+        assert fam.family_id == "fam_rt_1"
+        assert fam.husband_id == husband.unique_id
+        assert fam.wife_id == wife.unique_id
+        assert fam.marriage_place == "Lyon"
+        assert len(fam.witnesses) == 1
+        assert fam.witnesses[0]["person_id"] == "Temoin_A"
+        assert len(fam.events) == 1
+        assert fam.events[0].family_event_type == FamilyEventType.MARRIAGE
+        assert fam.events[0].notes == ["convocation"]
