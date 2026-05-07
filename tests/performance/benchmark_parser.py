@@ -31,14 +31,17 @@ def generate_test_file(size_kb: int) -> str:
         Contenu du fichier
     """
     # Taille approximative d'une famille avec 3 enfants: ~500 bytes
-    family_template = """fam Dupont Jean 15/03/1950 #bp Paris #occu Ingénieur 10/02/2020 #dp Lyon + Durand Marie 20/05/1952 #bp Marseille  # noqa: E501
-beg
+    family_template = (
+        "fam Dupont Jean 15/03/1950 #bp Paris #occu Ingénieur "
+        "10/02/2020 #dp Lyon + Durand Marie 20/05/1952 #bp Marseille\n"
+        """beg
 - h Dupont Pierre 10/01/1975 #bp Paris #occu Médecin
 - f Dupont Sophie 15/06/1978 #bp Lyon #occu Professeur
 - h Dupont Paul 22/09/1982 #bp Nice
 end
 
 """
+    )
 
     num_families = (size_kb * 1024) // len(family_template.encode("utf-8"))
     content_parts = []
