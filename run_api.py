@@ -7,6 +7,7 @@ et la production.
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -68,6 +69,9 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Mode API pour CORS (doit être défini avant le chargement de l'app par uvicorn).
+    os.environ["GENEWEB_API_ENV"] = args.env
 
     # Configuration selon l'environnement
     if args.env == "prod":
