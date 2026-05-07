@@ -9,6 +9,7 @@ La documentation de geneweb-py est organisée de manière claire et hiérarchiqu
 ```
 geneweb-py/
 ├── README.md                      # 👉 COMMENCER ICI - Guide principal
+├── QUICK_START_PYPI.md            # Démarrage rapide après pip install
 ├── CHANGELOG.md                   # Historique des versions
 ├── LICENSE                        # Licence MIT
 ├── DOCUMENTATION.md              # Ce fichier - Index de navigation
@@ -39,6 +40,9 @@ geneweb-py/
 ### Je débute avec geneweb-py
 → Lisez **[README.md](README.md)** - Installation, utilisation rapide, exemples
 
+### Je viens d’installer depuis PyPI (≤ 5 min)
+→ Suivez **[QUICK_START_PYPI.md](QUICK_START_PYPI.md)** - `pip install`, parsing `.gw`, export GEDCOM/JSON, API
+
 ### Je veux comprendre l'état du projet
 → Consultez **[doc/status.md](doc/status.md)** - Fonctionnalités, métriques, couverture
 
@@ -63,6 +67,7 @@ geneweb-py/
 | Document | Description | Public |
 |----------|-------------|--------|
 | **[README.md](README.md)** | Guide principal et démarrage | Tous |
+| **[QUICK_START_PYPI.md](QUICK_START_PYPI.md)** | Parcours court après installation PyPI | Utilisateurs pip |
 | **[examples/](examples/)** | Scripts de démonstration | Développeurs |
 
 ### Documentation technique
@@ -88,9 +93,10 @@ geneweb-py/
 ## 🚀 Parcours recommandés
 
 ### Nouveau utilisateur (30 min)
-1. **[README.md](README.md)** (15 min) - Installation et utilisation de base
-2. **[examples/basic_usage.py](examples/basic_usage.py)** (5 min) - Exemple pratique
-3. **[doc/geneweb/gw_format_documentation.md](doc/geneweb/gw_format_documentation.md)** (10 min) - Format GeneWeb
+1. **[README.md](README.md)** (10 min) - Vue d’ensemble et installation
+2. **[QUICK_START_PYPI.md](QUICK_START_PYPI.md)** (5 min) - Premier parsing et exports
+3. **[examples/basic_usage.py](examples/basic_usage.py)** (5 min) - Exemple pratique
+4. **[doc/geneweb/gw_format_documentation.md](doc/geneweb/gw_format_documentation.md)** (10 min) - Format GeneWeb
 
 ### Contributeur (1h)
 1. **[README.md](README.md)** (10 min) - Vue d'ensemble
@@ -180,7 +186,7 @@ python run_api.py
 
 Ce document est maintenu à jour à chaque modification majeure de la structure documentaire.
 
-**Dernière mise à jour** : 9 janvier 2025
+**Dernière mise à jour** : 7 mai 2026
 
 ---
 
