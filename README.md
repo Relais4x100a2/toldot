@@ -5,8 +5,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests et couverture](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions?query=workflow%3A%22Tests+et+Couverture%22)
 [![TestPyPI / publication](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20PyPI%20et%20Publication/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions?query=workflow%3A%22Tests+PyPI+et+Publication%22)
-[![Coverage](https://img.shields.io/badge/coverage-87%25-green.svg)](htmlcov/index.html)
-[![Tests Passing](https://img.shields.io/badge/tests-727%20passing-success.svg)](tests/)
+[![Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py/branch/main/graph/badge.svg)](https://codecov.io/gh/Relais4x100a2/geneweb-py)
 
 Librairie Python complète pour parser, manipuler et convertir les fichiers généalogiques au format GeneWeb (.gw).
 
@@ -289,13 +288,13 @@ parser = GeneWebParser(validate=False)
 
 ### Ressources
 - **[examples/](examples/)** - Scripts de démonstration
-- **[tests/](tests/)** - Suite de tests (~770 cas collectés ; voir section Tests)
+- **[tests/](tests/)** - Suite de tests (volume à jour dans [doc/status.md](doc/status.md))
 - **[Documentation API](http://localhost:8000/docs)** - Swagger UI (API REST)
 - **[GeneWeb Community](https://web.archive.org/web/20250802144922/https://geneweb.tuxfamily.org/wiki/GeneWeb)** - Documentation communautaire
 
 ## 🧪 Tests
 
-geneweb-py dispose d'une suite de tests **consolidée et organisée** : **~770** cas collectés (**727** passants, **43** skippés avec l’installation `dev` + `api` + `validation`), **~87 %** de couverture sur `geneweb_py` (mesure locale `pytest --cov`).
+geneweb-py dispose d'une suite de tests **consolidée et organisée**. Les comptages exacts et l’instantané de couverture documenté sont tenus à jour dans **[doc/status.md](doc/status.md)** ; la tendance sur `main` est visible sur **[Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py)** (CI). En local : `python3 -m pytest tests/ --cov=src/geneweb_py` (extras `dev`, `api`, `validation`).
 
 ### 📁 Structure des Tests
 
@@ -349,9 +348,8 @@ pytest -rs
 
 ### 📊 Métriques de Qualité
 
-- **Exécution complète** (extras `dev`, `api`, `validation`) : **727** passants, **43** skippés
-- **Couverture sur `src/geneweb_py`** : **~87 %** (total rapport `coverage`)
-- **Modules critiques** : parser, validation et exceptions restent au-dessus de **90 %** sur plusieurs fichiers (voir rapport détaillé)
+- **Tests et couverture** : voir **[doc/status.md](doc/status.md)** (instantané versionné) et le badge **Codecov** en tête de ce README.
+- **Modules critiques** : parser, validation et exceptions sont en majorité très couverts ; le détail par fichier est dans le rapport `htmlcov/` après `pytest --cov`.
 - **Temps d'exécution** : de l’ordre de quelques secondes pour la suite complète sur machine récente
 
 ### 🔧 Configuration des Tests

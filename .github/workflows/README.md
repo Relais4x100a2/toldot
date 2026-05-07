@@ -11,7 +11,7 @@ Ce dossier contient les workflows CI/CD pour le projet geneweb-py.
 - Lance les tests sur Python 3.8, 3.9, 3.10, 3.11, 3.12
 - Génère les rapports de couverture
 - Upload vers Codecov
-- Vérifie le seuil minimum (84%)
+- Vérifie le seuil minimum (`--cov-fail-under=80` dans le job de tests)
 - Commente les PR avec les résultats
 
 **Badges** :
@@ -52,12 +52,11 @@ Ce dossier contient les workflows CI/CD pour le projet geneweb-py.
 - Met à jour **un seul** commentaire (bot) avec tableau + delta, évite le spam de commentaires
 
 ### 6. `weekly-report.yml` - Rapport Hebdomadaire
-**Déclenchement** : Tous les lundis à 8h, manuel
+**Déclenchement** : Tous les lundis à 8h UTC, manuel
 
 **Actions** :
-- Résumé hebdomadaire
-- Statistiques commits
-- État de la couverture
+- Vérifie la présence des fichiers de référence (`doc/status.md`, `README.md`, etc.)
+- Lance `pytest` avec un résumé de couverture en logs (les chiffres « officiels » pour la doc restent dans `doc/status.md` et sur Codecov)
 
 ### 7. `release.yml` - Publication
 **Déclenchement** : Tags v*.*.*
@@ -85,10 +84,10 @@ Pour activer toutes les fonctionnalités, configurez ces secrets dans GitHub :
 
 ### Seuils de Couverture
 
-Actuellement configurés dans `tests.yml` :
-- **Minimum** : 84%
-- **Cible court terme** : 90%
-- **Objectif final** : 100%
+Actuellement :
+- **Job tests (`tests.yml`)** : `--cov-fail-under=80`
+- **Vérifications PR (`pr-checks.yml`)** : `--cov-fail-under=84`
+- **Objectifs documentés** : voir `doc/status.md` et [Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py)
 
 ## 📊 Badges Disponibles
 
@@ -97,7 +96,7 @@ Ajoutez ces badges dans votre README.md :
 ```markdown
 [![Tests](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
 [![Linting](https://github.com/Relais4x100a2/geneweb-py/workflows/Linting%20et%20Formatage/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions)
-[![Coverage](https://img.shields.io/badge/coverage-84%25-green)](htmlcov/index.html)
+[![Coverage](https://codecov.io/gh/Relais4x100a2/geneweb-py/branch/main/graph/badge.svg)](https://codecov.io/gh/Relais4x100a2/geneweb-py)
 [![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)](https://www.python.org/downloads/)
 ```
 

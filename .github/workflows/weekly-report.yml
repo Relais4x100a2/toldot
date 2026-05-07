@@ -1,0 +1,57 @@
+# Synthèse hebdomadaire : vérifie les fichiers de référence et affiche un résumé
+# de couverture sans dupliquer de métriques versionnées ailleurs dans le dépôt.
+name: Rapport hebdomadaire
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+jobs:
+  weekly-summary:
+    name: Résumé hebdomadaire
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Vérifier les fichiers de référence documentaire
+        run: |
+          set -euo pipefail
+          for f in \
+            doc/status.md \
+            doc/roadmap.md \
+            CHANGELOG.md \
+            DOCUMENTATION.md \
+            README.md
+          do
+            test -f "$f" || { echo "::error::Fichier attendu manquant : $f"; exit 1; }
+            echo "OK — $f"
+          done
+
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Installer les dépendances (tests + API)
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -e ".[dev,api,validation]"
+          pip install pytest-cov
+
+      - name: Exécuter la suite avec résumé de couverture
+        run: |
+          python3 -m pytest tests/ \
+            --cov=src/geneweb_py \
+            --cov-report=term \
+            -q
+
+      - name: Rappel des sources de vérité (pas de chiffres figés dans ce workflow)
+        run: |
+          echo "## Sources de vérité pour les métriques"
+          echo "- Documentation versionnée : doc/status.md"
+          echo "- Couverture agrégée sur main : https://codecov.io/gh/Relais4x100a2/geneweb-py"
+          echo "- Workflows associés : .github/workflows/tests.yml, coverage-report.yml"
