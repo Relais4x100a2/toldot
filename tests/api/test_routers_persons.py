@@ -264,6 +264,40 @@ class TestListPersons:
         assert len(data["items"]) == 0
         assert data["pagination"]["total"] == 0
 
+    def test_list_persons_invalid_sex_returns_422(self, client, mock_service):
+        """Paramètre sex hors périmètre → 422 et code d'erreur homogène."""
+        response = client.get("/api/v1/persons/", params={"sex": "badvalue"})
+
+        assert response.status_code == 422
+        body = response.json()
+        assert body.get("code") == "REQUEST_VALIDATION_ERROR"
+
+    def test_list_persons_invalid_access_level_returns_422(self, client, mock_service):
+        """Paramètre access_level hors périmètre → 422 (symétrie avec sex)."""
+        response = client.get(
+            "/api/v1/persons/", params={"access_level": "not_a_level"}
+        )
+
+        assert response.status_code == 422
+        body = response.json()
+        assert body.get("code") == "REQUEST_VALIDATION_ERROR"
+
+    def test_list_persons_sex_aliases_ok(self, client, mock_service, sample_person):
+        """Codes et alias documentés pour le filtre sexe."""
+        mock_service.search_persons.return_value = ([sample_person], 1)
+        for value in ("unknown", "?", "m", "f", "male", "female"):
+            r = client.get("/api/v1/persons/", params={"sex": value})
+            assert r.status_code == 200, value
+
+    def test_list_persons_access_level_aliases_ok(
+        self, client, mock_service, sample_person
+    ):
+        """Codes GeneWeb et libellés REST pour le filtre access_level."""
+        mock_service.search_persons.return_value = ([sample_person], 1)
+        for value in ("public", "private", "default", "apubl", "apriv"):
+            r = client.get("/api/v1/persons/", params={"access_level": value})
+            assert r.status_code == 200, value
+
 
 class TestGetPersonFamilies:
     """Tests pour la récupération des familles d'une personne."""

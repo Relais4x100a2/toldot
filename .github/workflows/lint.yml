@@ -5,6 +5,7 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  workflow_call:
 
 permissions:
   contents: read
@@ -44,6 +45,8 @@ jobs:
       run: |
         echo "Vérification des types avec mypy..."
         mypy src/geneweb_py/ --ignore-missing-imports
+      # Rapport informatif : le dépôt n'est pas encore entièrement propre pour mypy
+      # strict sur tout src/geneweb_py/ ; le gate bloquant reste Ruff + tests.
       continue-on-error: true
     
     - name: Summary
