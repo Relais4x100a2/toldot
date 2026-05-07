@@ -116,6 +116,7 @@ markers = [
     "validation: marks validation tests",
     "formats: marks format conversion tests",
     "security: marks security-related static checks",
+    "performance: marks performance / benchmark comparisons",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",
@@ -189,6 +190,8 @@ extend-ignore = ["B008"]
 "src/geneweb_py/api/serialization.py" = ["UP006", "UP045", "UP007"]
 "src/geneweb_py/api/person_payload.py" = ["UP006", "UP045"]
 "src/geneweb_py/api/family_payload.py" = ["UP006", "UP045"]
+"src/geneweb_py/core/parser/multipass_parser.py" = ["UP006", "UP045"]
+"tests/performance/test_multipass_vs_streaming.py" = ["UP006"]
 
 [tool.ruff.lint.isort]
 # Configuration des imports

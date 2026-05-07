@@ -221,7 +221,7 @@ class TestXMLImporter:
 </genealogy>"""
 
         xml_file = tmp_path / "family.xml"
-        xml_file.write_text(xml_content)
+        xml_file.write_text(xml_content, encoding="utf-8")
 
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
@@ -256,7 +256,7 @@ class TestXMLImporter:
 </genealogy>"""
 
         xml_file = tmp_path / "divorce.xml"
-        xml_file.write_text(xml_content)
+        xml_file.write_text(xml_content, encoding="utf-8")
 
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
@@ -291,7 +291,7 @@ class TestXMLImporter:
 </genealogy>"""
 
         xml_file = tmp_path / "event.xml"
-        xml_file.write_text(xml_content)
+        xml_file.write_text(xml_content, encoding="utf-8")
 
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
@@ -322,7 +322,7 @@ class TestXMLImporter:
 </genealogy>"""
 
         xml_file = tmp_path / "date_prefix.xml"
-        xml_file.write_text(xml_content)
+        xml_file.write_text(xml_content, encoding="utf-8")
 
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
@@ -342,7 +342,7 @@ class TestXMLImporter:
 </genealogy>"""
 
         xml_file = tmp_path / "date_calendar.xml"
-        xml_file.write_text(xml_content)
+        xml_file.write_text(xml_content, encoding="utf-8")
 
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))
@@ -369,7 +369,7 @@ class TestXMLImporter:
 </genealogy>"""
 
         xml_file = tmp_path / "event_no_type.xml"
-        xml_file.write_text(xml_content)
+        xml_file.write_text(xml_content, encoding="utf-8")
 
         importer = XMLImporter()
         genealogy = importer.import_from_file(str(xml_file))

@@ -17,6 +17,7 @@ Optimisations de performance :
 
 from .gw_parser import GeneWebParser
 from .lexical import LexicalParser, Token, TokenType
+from .multipass_parser import MultiPassParser
 from .streaming import (
     StreamingGeneWebParser,
     estimate_memory_usage,
@@ -31,6 +32,7 @@ __all__ = [
     "SyntaxParser",
     "BlockParser",
     "GeneWebParser",
+    "MultiPassParser",
     "StreamingGeneWebParser",
     "should_use_streaming",
     "estimate_memory_usage",
