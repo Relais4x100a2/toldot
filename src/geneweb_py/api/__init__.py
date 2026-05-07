@@ -5,7 +5,7 @@ Ce module fournit une API REST moderne pour manipuler les données généalogiqu
 au format GeneWeb (.gw) avec FastAPI.
 """
 
-from .main import app
+from .main import app, create_app
 from .services.genealogy_service import GenealogyService
 
-__all__ = ["app", "GenealogyService"]
+__all__ = ["app", "create_app", "GenealogyService"]
