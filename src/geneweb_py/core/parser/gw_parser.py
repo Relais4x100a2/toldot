@@ -555,11 +555,32 @@ class GeneWebParser:
                 if self.lexical_parser and hasattr(self.lexical_parser, "text"):
                     content = self.lexical_parser.text
 
-                multipass = MultiPassParser(content=content)
-                genealogy = multipass.parse_syntax_nodes(self.syntax_nodes)
-                return genealogy
+                multipass = MultiPassParser(
+                    content=content,
+                    gene_web_parser=self,
+                )
+                return multipass.parse_syntax_nodes(self.syntax_nodes)
 
-        # Mode incrémental (ou repli depuis multipass indisponible)
+        return self._build_genealogy_incremental(
+            self.syntax_nodes,
+            second_cross_ref_pass=False,
+        )
+
+    def _build_genealogy_incremental(
+        self,
+        syntax_nodes: List[SyntaxNode],
+        second_cross_ref_pass: bool = False,
+    ) -> Genealogy:
+        """Construit Genealogy à partir d'une liste de nœuds syntaxiques.
+
+        Args:
+            syntax_nodes: Arborescence produite par le parser syntaxique.
+            second_cross_ref_pass: Si True, relance la mise à jour des références
+                croisées après fusion finale des personnes (mode multi-passes).
+
+        Returns:
+            Instance de Genealogy complète
+        """
         genealogy = Genealogy()
 
         # Dictionnaires pour stocker les entités pendant la construction
@@ -570,7 +591,7 @@ class GeneWebParser:
         current_family = None  # Référence à la dernière famille créée
 
         # Parser chaque bloc
-        for node in self.syntax_nodes:
+        for node in syntax_nodes:
             if node.type == BlockType.FAMILY:
                 # Vérifier si c'est un vrai bloc famille (token FAM) ou des
                 # enfants (token BEG)
@@ -616,6 +637,9 @@ class GeneWebParser:
         # relations, etc.)
         for person in persons.values():
             genealogy.add_or_update_person(person)
+
+        if second_cross_ref_pass:
+            genealogy._update_cross_references()
 
         return genealogy
 

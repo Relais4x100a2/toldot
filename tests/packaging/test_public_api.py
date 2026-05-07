@@ -8,9 +8,10 @@ et que l'API est stable.
 
 def test_main_imports():
     """Test des imports principaux depuis geneweb_py"""
-    from geneweb_py import GeneWebParser
+    from geneweb_py import GeneWebParser, MultiPassParser
 
     assert GeneWebParser is not None
+    assert MultiPassParser is not None
 
     from geneweb_py import Genealogy
 
@@ -41,9 +42,10 @@ def test_core_imports():
 
 def test_parser_imports():
     """Test import du parser"""
-    from geneweb_py.core.parser import GeneWebParser
+    from geneweb_py.core.parser import GeneWebParser, MultiPassParser
 
     assert GeneWebParser is not None
+    assert MultiPassParser is not None
 
 
 def test_exceptions_imports():
@@ -165,10 +167,18 @@ def test_all_public_classes_have_docstrings():
         Family,
         Genealogy,
         GeneWebParser,
+        MultiPassParser,
         Person,
     )
 
-    public_classes = [GeneWebParser, Genealogy, Person, Family, Date]
+    public_classes = [
+        GeneWebParser,
+        MultiPassParser,
+        Genealogy,
+        Person,
+        Family,
+        Date,
+    ]
 
     for cls in public_classes:
         assert cls.__doc__ is not None, f"Classe {cls.__name__} sans docstring"
