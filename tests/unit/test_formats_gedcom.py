@@ -227,9 +227,12 @@ class TestGEDCOMImporter:
 
         genealogy = importer.import_from_string(gedcom_string)
 
-        # Note: L'importeur GEDCOM est simplifié dans cette implémentation
-        # Dans une version complète, il faudrait parser tous les champs
-        assert isinstance(genealogy, Genealogy)
+        assert len(genealogy.persons) == 1
+        p = genealogy.find_person("DUPONT", "Jean", 0)
+        assert p is not None
+        assert p.gender == Gender.MALE
+        assert p.first_name == "Jean"
+        assert p.last_name == "DUPONT"
 
     def test_import_from_file(self):
         """Test d'import depuis fichier."""
@@ -255,7 +258,8 @@ class TestGEDCOMImporter:
                 f.write(gedcom_string)
 
             genealogy = importer.import_from_file(str(temp_file))
-            assert isinstance(genealogy, Genealogy)
+            assert len(genealogy.persons) == 1
+            assert genealogy.find_person("DUPONT", "Jean", 0) is not None
         finally:
             if temp_file.exists():
                 temp_file.unlink()
@@ -286,3 +290,29 @@ class TestGEDCOMImporter:
 
         with pytest.raises(ConversionError, match="Le fichier n'existe pas"):
             importer.import_from_file("nonexistent.ged")
+
+    def test_conversion_error_is_geneweb_error(self):
+        """Les erreurs d'import GEDCOM héritent de GeneWebError."""
+        from geneweb_py.core.exceptions import GeneWebError
+
+        assert issubclass(ConversionError, GeneWebError)
+
+    def test_import_duplicate_indi_raises(self):
+        """Deux blocs INDI avec la même xref lèvent ConversionError."""
+        from geneweb_py.core.exceptions import GeneWebError
+
+        importer = GEDCOMImporter()
+        ged = """0 HEAD
+1 CHAR UTF-8
+0 @I1@ INDI
+1 NAME
+2 GIVN A
+2 SURN A
+0 @I1@ INDI
+1 NAME
+2 GIVN B
+2 SURN B
+0 TRLR
+"""
+        with pytest.raises(GeneWebError):
+            importer.import_from_string(ged)

@@ -135,46 +135,40 @@ class TestGEDCOMImporter:
         try:
             exporter.export(sample_genealogy, temp_path)
 
-            # Maintenant importer
             importer = GEDCOMImporter()
             imported_genealogy = importer.import_from_file(temp_path)
 
-            # Vérifier que la généalogie a été importée
-            assert imported_genealogy is not None
-            # Note: L'importateur GEDCOM n'est pas encore implémenté
-            # assert len(imported_genealogy.persons) == 2
-            # assert len(imported_genealogy.families) == 1
-
+            assert len(imported_genealogy.persons) == 2
+            assert len(imported_genealogy.families) == 1
+            p1 = imported_genealogy.find_person("DUPONT", "Jean", 0)
+            p2 = imported_genealogy.find_person("MARTIN", "Marie", 0)
+            assert p1 is not None and p2 is not None
+            assert p1.birth_date is not None and p1.birth_date.year == 1990
+            assert p2.birth_date is not None and p2.birth_date.year == 1992
         finally:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
 
     def test_import_from_string(self, sample_genealogy):
         """Test import depuis une chaîne GEDCOM."""
-        # D'abord exporter vers une chaîne
         exporter = GEDCOMExporter()
         gedcom_string = exporter.export_to_string(sample_genealogy)
 
-        # Maintenant importer
         importer = GEDCOMImporter()
         imported_genealogy = importer.import_from_string(gedcom_string)
 
-        # Vérifier que la généalogie a été importée
-        assert imported_genealogy is not None
-        # Note: L'importateur GEDCOM n'est pas encore implémenté
-        # assert len(imported_genealogy.persons) == 2
-        # assert len(imported_genealogy.families) == 1
+        assert len(imported_genealogy.persons) == 2
+        assert len(imported_genealogy.families) == 1
+        fam = next(iter(imported_genealogy.families.values()))
+        assert fam.husband_id and fam.wife_id
 
     def test_import_invalid_gedcom(self):
-        """Test import avec GEDCOM invalide."""
+        """Test import avec GEDCOM invalide (lignes non structurées)."""
         importer = GEDCOMImporter()
 
-        # Note: L'importateur GEDCOM n'est pas encore implémenté
-        # Il ne lève pas d'exception pour l'instant
         result = importer.import_from_string("invalid gedcom")
         assert result is not None
-
-    def test_import_from_nonexistent_file(self):
+        assert len(result.persons) == 0
         """Test import depuis fichier inexistant."""
         importer = GEDCOMImporter()
 
@@ -185,10 +179,9 @@ class TestGEDCOMImporter:
         """Test import avec GEDCOM vide."""
         importer = GEDCOMImporter()
 
-        # Note: L'importateur GEDCOM n'est pas encore implémenté
-        # Il ne lève pas d'exception pour l'instant
         result = importer.import_from_string("")
         assert result is not None
+        assert len(result.persons) == 0
 
 
 class TestGEDCOMConverterIntegration:
@@ -205,8 +198,8 @@ class TestGEDCOMConverterIntegration:
         # Import
         imported_genealogy = importer.import_from_string(gedcom_string)
 
-        # Vérifier que les données sont identiques
-        # Note: L'importateur GEDCOM n'est pas encore implémenté
-        # assert len(imported_genealogy.persons) == len(sample_genealogy.persons)
-        # assert len(imported_genealogy.families) == len(sample_genealogy.families)
-        assert imported_genealogy is not None
+        assert len(imported_genealogy.persons) == len(sample_genealogy.persons)
+        assert len(imported_genealogy.families) == len(sample_genealogy.families)
+        imp1 = imported_genealogy.find_person("DUPONT", "Jean", 0)
+        assert imp1 is not None
+        assert imp1.birth_place == "Paris"
