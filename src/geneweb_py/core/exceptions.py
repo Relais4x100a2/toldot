@@ -387,7 +387,7 @@ class GeneWebErrorCollector:
         """Initialise le collecteur
 
         Args:
-            strict: Si True, les erreurs de sévérité ERROR ou CRITICAL lèvent une exception  # noqa: E501
+            strict: Si True, les erreurs ERROR ou CRITICAL lèvent une exception.
         """
         self.errors: List[GeneWebError] = []
         self.strict = strict
@@ -563,9 +563,9 @@ class GeneWebErrorCollector:
 
 
 class ValidationResult:
-    """Résultat de validation avec gestion des erreurs et avertissements
+    """Résultat de validation avec erreurs et avertissements.
 
-    Distingue les erreurs (validation échouée) des avertissements (validation réussie avec remarques).  # noqa: E501
+    Distingue erreurs (échec) et avertissements (succès avec remarques).
     """
 
     def __init__(self) -> None:

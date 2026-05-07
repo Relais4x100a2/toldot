@@ -20,6 +20,7 @@ Librairie Python complète pour parser, manipuler et convertir les fichiers gén
 - **Messages d'erreur enrichis** : Erreurs contextuelles avec numéro de ligne, tokens, et suggestions ✅
 - **Validation gracieuse** : Mode strict/gracieux pour collecter toutes les erreurs ou s'arrêter à la première ✅
 - **Conversion** : Export/import vers GEDCOM, JSON, XML et autres formats ✅
+- **CLI** : commande `geneweb-py` (parse / export) avec l’extra `[cli]` ✅
 - **Performance** : Optimisations avancées (streaming, cache LRU, __slots__) ✅
   - Mode streaming automatique pour gros fichiers (>10MB)
   - Réduction mémoire de ~80% sur fichiers volumineux
@@ -43,6 +44,21 @@ pip install geneweb-py
 ```
 
 **→ [Démarrage rapide après `pip install`](QUICK_START_PYPI.md)** : parsing, export GEDCOM/JSON, lancement de l’API en quelques minutes.
+
+### Ligne de commande (`geneweb-py`)
+
+Avec l’extra **`cli`** (Click + Rich) :
+
+```bash
+pip install "geneweb-py[cli]"
+geneweb-py --help
+geneweb-py parse ma_base.gw
+geneweb-py export ma_base.gw --format gedcom -o sortie.ged
+geneweb-py export ma_base.gw --format json -o sortie.json
+geneweb-py export ma_base.gw --format xml -o sortie.xml
+```
+
+Les erreurs de parsing ou d’export sont affichées sur la sortie d’erreur avec des panneaux Rich.
 
 Pour le développement :
 

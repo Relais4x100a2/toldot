@@ -385,7 +385,10 @@ class FamilyBlockParser(BlockParser):
     def _parse_union_event_tokens(
         self, tokens: List[Token], start_index: int, node: SyntaxNode
     ) -> int:
-        """Ajoute un événement d'union (#marr / #div / #sep / #enga) et date/lieu optionnels."""
+        """Ajoute un événement d'union (#marr / #div / #sep / #enga).
+
+        Date et lieu sont optionnels.
+        """
         i = start_index
         node.add_token(tokens[i])
         i += 1

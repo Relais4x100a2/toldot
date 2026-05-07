@@ -243,14 +243,18 @@ class TestComplexScenarios:
     """Tests pour des scénarios complexes combinant plusieurs améliorations"""
 
     @pytest.mark.skip(
-        reason="Parser ne parse pas encore témoins et enfants inline - limitation connue"
+        reason=(
+            "Parser ne parse pas encore témoins et enfants inline — limitation connue"
+        )
     )
     def test_complete_improvements_integration(self):
         """Test d'intégration de toutes les améliorations"""
         parser = GeneWebParser()
 
-        content = """
-fam d'Arc Jean-Marie .1 #occu Ingénieur_(ENSIA),_Aumônier_de_l'enseignement + O'Brien Marie-Claire .2  # noqa: E501
+        content = (
+            """
+fam d'Arc Jean-Marie .1 #occu Ingénieur_(ENSIA), """
+            """_Aumônier_de_l'enseignement + O'Brien Marie-Claire .2
 wit m: LEROY Bernard .1 #occu Dominicain,_Aumônier_de_l'enseignement_technique_à_Rouen
 beg
 - h Pierre_Bernard .1 #occu Ingénieur,_éditeur
@@ -269,6 +273,7 @@ wizard-note O'Brien Marie-Claire .2
 Note générée par le wizard pour Marie-Claire
 end wizard-note
 """
+        )
         genealogy = parser.parse_string(content)
 
         # Vérifier que toutes les personnes sont créées avec les bons numéros d'occurrence  # noqa: E501
