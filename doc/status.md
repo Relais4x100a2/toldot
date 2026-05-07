@@ -4,6 +4,14 @@
 
 geneweb-py est une librairie Python pour parser, manipuler et convertir les fichiers généalogiques GeneWeb (.gw), assortie d'une API REST moderne. Le projet dispose d'une architecture modulaire, d'un parser avancé, de convertisseurs (GEDCOM/JSON/XML), d'exemples et d'une suite de tests.
 
+## Source de vérité des métriques
+
+Pour éviter des pourcentages ou des comptages de tests contradictoires entre README, `CHANGELOG.md`, `DOCUMENTATION.md` et la CI :
+
+- **Couverture agrégée (CI / branche `main`)** : [Codecov — geneweb-py](https://codecov.io/gh/Relais4x100a2/geneweb-py) (rapports générés par le workflow *Tests et Couverture*).
+- **Instantané chiffré dans le dépôt** : ce fichier (`doc/status.md`) est **le seul** document où l’on consigne des nombres absolus (tests passants/skippés, total de couverture) pour la documentation ; les autres fichiers **renvoient** ici ou vers Codecov.
+- **Seuils automatiques** : le job principal des tests utilise `--cov-fail-under=80` ; les vérifications de PR utilisent `--cov-fail-under=84` (voir `.github/workflows/tests.yml` et `pr-checks.yml`).
+
 ## ✅ Fonctionnalités implémentées
 
 ### 1. Structure du projet et configuration
@@ -75,23 +83,20 @@ geneweb-py est une librairie Python pour parser, manipuler et convertir les fich
 
 ## 🧪 Qualité et tests
 
-### Couverture de tests : **82%** ✅
+### Couverture de tests : **88%** ✅
 
-**Dernière mise à jour** : 9 janvier 2025 - **Nettoyage documentation et mise à jour métriques** ✅
+**Dernière mise à jour documentaire** : 7 mai 2026 — instantané obtenu avec  
+`python3 -m pytest tests/ --cov=src/geneweb_py` (extras `dev`, `api`, `validation`).
 
-| Catégorie | Couverture | État |
-|-----------|-----------|------|
-| **Modules Core** | 90-99% | ⭐ Excellent |
-| **Parser** | 82-96% | ⭐ Excellent |
-| **Streaming** | **97%** | 🌟 Excellent |
-| **API** | **33-100%** | 🟡 Variable |
-| **API Services** | 67% | 🟢 Bon |
-| **API Models** | 90-100% | ✅ Excellent |
-| **API Middleware** | 67-100% | 🟢 Bon |
-| **Formats** | 75-87% | 🟡 Bon |
-| **TOTAL** | **82%** | ⭐ Excellent |
+| Catégorie | Indication | Détail |
+|-----------|------------|--------|
+| **Core** (date, person, family, validation…) | Très majorité > 90 % sur les modules ciblés | Rapport HTML local `htmlcov/index.html` |
+| **Parser** (lexical, syntax, gw_parser, streaming) | Majorité > 85 % | idem |
+| **API** | Variable selon routers/services | idem |
+| **Formats** | Variable (ex. XML plus bas que JSON/GEDCOM) | idem |
+| **TOTAL sur `src/geneweb_py`** | **88 %** | Doit rester ≥ seuil CI ; tendance : [Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py) |
 
-**704 tests passants** ✅ - 57 tests skippés
+**786 tests passants** ✅ — **28 tests skippés**
 
 **Consolidation accomplie** : 
 - **Réduction de 42 à 18 fichiers** de tests unitaires
@@ -123,8 +128,8 @@ tests/
 ```
 
 ### Tests disponibles
-- **704 tests passants** (92.5%) - TOUS les tests passent (0 erreur) ✅
-- **57 tests skippés** (7.5%) - Documentés avec raisons claires
+- **786 tests passants** — TOUS les tests passent (0 erreur) ✅
+- **28 tests skippés** — Documentés avec raisons claires (`tests/SKIPPED_TESTS.md`)
 - Tests de récupération d'erreurs (`test_error_recovery.py`)
 - Tests de validation gracieuse (`test_validation_graceful.py`)
 - Tests de parsing complet avec vrais fichiers
@@ -132,31 +137,24 @@ tests/
 - Couverture mesurée automatiquement (rapport HTML dans `htmlcov/index.html`)
 
 ### Configuration des tests
-- **Couverture minimale** : 80% (objectif dépassé ✅)
-- **Couverture actuelle** : 82% (objectif dépassé ✅)
+- **Couverture minimale CI** : 80 % (`--cov-fail-under` dans `tests.yml`)
+- **Couverture instantanée (doc)** : 88 % sur `src/geneweb_py` (voir date ci-dessus ; confirmer sur Codecov)
 - **Marqueurs** : `slow`, `integration`, `unit`, `coverage`, `parser`, `validation`, `formats`, `api`
 - **Filtres d'avertissements** : Déprecations ignorées
 - **Traceback court** : Pour des rapports concis
-- Seuil CI défini à 80% dans `pyproject.toml`
 
-### Améliorations récentes (Nettoyage documentation - COMPLÈTE)
-- 🧹 **24 fichiers Markdown** supprimés de la racine (conformité aux règles Cursor)
-- 📊 **Métriques actualisées** : 704 tests passants, 82% couverture
-- 📝 **Structure documentaire** : Seuls README.md, CHANGELOG.md, DOCUMENTATION.md à la racine
-- 🏗️ **Conformité règles** : Documentation organisée selon les standards du projet
-- ✅ **Tests maintenus** : Tous les tests passent après nettoyage
-- 🔥 **Méthodologie "Clean-Document-Update"** : Validée et reproductible
+### Améliorations récentes (documentation / métriques)
+- **Source unique des chiffres** : `doc/status.md` + badge Codecov ; README et index sans pourcentages divergents.
+- 🧹 **Nettoyage antérieur** : 24 fichiers Markdown retirés de la racine (conformité aux règles Cursor)
+- 📝 **Structure documentaire** : README, CHANGELOG, DOCUMENTATION à la racine ; détail technique dans `doc/`
 
 ## 🚧 Travaux en cours
-- **Documentation** ✅ (Complété)
-  - Nettoyage fichiers obsolètes : ✅ 24 fichiers supprimés
-  - Mise à jour métriques : ✅ 704 tests, 82% couverture
-  - Conformité structure : ✅ Selon règles Cursor
+- **Documentation** ✅ (structure stabilisée)
 - **Améliorations potentielles**
-  - Réduire tests skippés (57 tests, 7.5%)
-  - Tests XML additionnels (75% → 80%+)
+  - Réduire tests skippés (voir `pytest -rs`)
+  - Tests XML / formats (couverture encore plus homogène)
   - Extension tests de performance sur fichiers réels volumineux
-  - Améliorer couverture API services (67% → 80%+)
+  - Renforcer la couverture des services API où c’est pertinent
 
 ## 🏗️ Architecture (vue d'ensemble)
 ```
@@ -205,8 +203,8 @@ Consultez les exemples dans `examples/` ainsi que la documentation d'API (Swagge
 
 | Critère | État | Notes |
 |---------|------|-------|
-| **Tests fonctionnels** | ✅ 82% | 704 tests passants |
-| **Tests packaging** | ✅ 23 tests | API publique et métadonnées |
+| **Tests fonctionnels** | ✅ Voir Codecov / tableau ci-dessus | 786 tests passants (instantané doc) |
+| **Tests packaging** | ✅ 24 tests | API publique et métadonnées |
 | **Tests compatibilité** | ✅ Python 3.8-3.12 | 13 tests multi-versions (CI : 5 versions × `tests.yml`) |
 | **Tests sécurité** | ✅ 7 tests | Dépendances et vulnérabilités |
 | **CI/CD** | ✅ GitHub Actions | 7 jobs automatisés |
@@ -241,7 +239,7 @@ twine upload dist/*
 
 - [Guide publication complet](PYPI_PUBLICATION_GUIDE.md)
 - [Stratégie de tests](PYPI_TESTING_STRATEGY.md)
-- [Démarrage rapide](../QUICK_START_PYPI.md)
+- [Guide publication](PYPI_PUBLICATION_GUIDE.md) (démarrage inclus)
 - [Script validation](../scripts/validate_pypi.sh)
 
 ## 🔗 Liens utiles

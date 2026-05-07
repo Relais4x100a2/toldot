@@ -27,7 +27,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Documentation
 - 🧹 **Nettoyage documentation** : Suppression de 24 fichiers Markdown non conformes à la racine
-- 📊 **Mise à jour métriques** : 704 tests passants, 82% couverture
+- 📊 **Métriques de tests / couverture** : source unique **[doc/status.md](doc/status.md)** ; tendance CI sur [Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py) ; README et index sans pourcentages dupliqués divergents
 - 📝 **Conformité structure** : Seuls README.md, CHANGELOG.md, DOCUMENTATION.md à la racine
 - 🏗️ **Organisation** : Documentation conforme aux règles Cursor du projet
 - Consolidation complète de la documentation
@@ -55,7 +55,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - ⚡ **__slots__** : ~40% réduction mémoire par token
 
 ### Tests & Qualité
-- ✅ **858 tests passants** (84% couverture)
+- ✅ **Suite de tests étendue** : à la v0.1.0, couverture et volumétrie conformes aux objectifs du projet (détail historique : tag de release, rapport d’époque)
 - ✅ **Multi-versions** : Python 3.8-3.12
 - ✅ **Multi-OS** : Linux, macOS, Windows
 - ✅ **Structure consolidée** : 18 fichiers de tests unitaires
