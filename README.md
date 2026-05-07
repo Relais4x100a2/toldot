@@ -69,6 +69,8 @@ uvicorn.run(app, host="0.0.0.0", port=8000)
 # L'API sera disponible sur http://localhost:8000/docs
 ```
 
+**CORS (déploiement)** : définir `GENEWEB_API_ENV=prod` (ou lancer `python run_api.py --env prod`, qui positionne cette variable avant le chargement de l’app) et lister les origines autorisées dans `ALLOWED_ORIGINS` (URLs séparées par des virgules, ex. `https://app.example.com,https://admin.example.com`). En production, tant que ni `ALLOWED_ORIGINS` ni `CORS_ORIGINS` ne sont définies, aucune origine cross-origin n’est autorisée par défaut. La variable `CORS_ORIGINS` reste prise en charge pour compatibilité, mais `ALLOWED_ORIGINS` est prioritaire.
+
 ### Rechercher une personne
 
 ```python
