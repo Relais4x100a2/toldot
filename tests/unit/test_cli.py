@@ -17,9 +17,16 @@ SIMPLE_GW = FIXTURES_DIR / "simple_test.gw"
 
 
 def _combined_output(result: Result) -> str:
-    """Concatène stdout/stderr selon la version de Click."""
-    out = getattr(result, "stdout", None) or result.output
-    err = getattr(result, "stderr", None) or ""
+    """Concatène stdout/stderr selon CliRunner.mix_stderr (Click 8+).
+
+    Par défaut Click mélange stderr dans ``result.output`` : accéder à
+    ``result.stderr`` lève alors ``ValueError`` (CI Python 3.8/3.9).
+    """
+    try:
+        err = result.stderr or ""
+    except ValueError:
+        return result.output or ""
+    out = result.stdout or ""
     return f"{out}{err}"
 
 
