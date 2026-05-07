@@ -2,7 +2,7 @@
 Schémas Pydantic pour les personnes dans l'API geneweb-py.
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -179,6 +179,61 @@ class PersonSearchSchema(BaseModel):
     )
     page: int = Field(1, ge=1, description="Numéro de page")
     size: int = Field(20, ge=1, le=100, description="Taille de la page")
+
+    @field_validator("sex", mode="before")
+    @classmethod
+    def normalize_search_sex(cls, v: Any) -> Optional[Gender]:
+        """Normalise le filtre sexe (REST, codes GeneWeb) ou absence de filtre."""
+        if v is None:
+            return None
+        if isinstance(v, Gender):
+            return v
+        if isinstance(v, str):
+            key = v.strip().lower()
+            if not key:
+                return None
+            mapping = {
+                "male": Gender.MALE,
+                "m": Gender.MALE,
+                "female": Gender.FEMALE,
+                "f": Gender.FEMALE,
+                "unknown": Gender.UNKNOWN,
+                "?": Gender.UNKNOWN,
+            }
+            if key in mapping:
+                return mapping[key]
+            raise ValueError(
+                "Valeur de sexe invalide pour le filtre ; utiliser male, female, "
+                "unknown, m, f ou ?."
+            )
+        raise TypeError("Type invalide pour le filtre sexe.")
+
+    @field_validator("access_level", mode="before")
+    @classmethod
+    def normalize_search_access_level(cls, v: Any) -> Optional[AccessLevel]:
+        """Normalise le filtre niveau d'accès (REST ou codes GeneWeb) ou absence."""
+        if v is None:
+            return None
+        if isinstance(v, AccessLevel):
+            return v
+        if isinstance(v, str):
+            key = v.strip().lower()
+            if not key:
+                return None
+            mapping = {
+                "public": AccessLevel.PUBLIC,
+                "apubl": AccessLevel.PUBLIC,
+                "private": AccessLevel.PRIVATE,
+                "apriv": AccessLevel.PRIVATE,
+                "default": AccessLevel.DEFAULT,
+            }
+            if key in mapping:
+                return mapping[key]
+            raise ValueError(
+                "Valeur de niveau d'accès invalide pour le filtre ; utiliser public, "
+                "private, default, apubl ou apriv."
+            )
+        raise TypeError("Type invalide pour le filtre access_level.")
 
 
 class PersonStatsSchema(BaseModel):
