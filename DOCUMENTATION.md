@@ -111,18 +111,15 @@ geneweb-py/
 
 ## 📊 Métriques clés
 
-État actuel du projet (à jour) :
+Les **chiffres** (nombre de tests, pourcentage de couverture, instantané daté) sont documentés uniquement dans **[doc/status.md](doc/status.md)** ; la **couverture sur `main`** suit le badge Codecov dans le README et sur [Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py).
 
-| Métrique | Valeur | État |
-|----------|--------|------|
-| **Tests** | 704 passants | ✅ Excellent |
-| **Couverture** | 82% | ✅ Excellent |
-| **Compatibilité** | Python 3.8-3.12 | ✅ Multi-versions |
-| **Plateformes** | Linux, macOS, Windows | ✅ Multi-OS |
-| **Performance** | ~80% économie mémoire (streaming) | ⚡ Optimisé |
-| **Publication** | Prêt pour PyPI | ✅ Prêt |
-
-Voir **[doc/status.md](doc/status.md)** pour les détails complets.
+| Thème | Où lire l’info |
+|-------|----------------|
+| **Tests & couverture (doc versionnée)** | **[doc/status.md](doc/status.md)** |
+| **Couverture agrégée CI** | [Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py), badge README |
+| **Compatibilité Python** | 3.8–3.12 (voir CI, README) |
+| **Performance (streaming)** | **[doc/PERFORMANCE.md](doc/PERFORMANCE.md)** |
+| **Publication PyPI** | **[doc/PYPI_PUBLICATION_GUIDE.md](doc/PYPI_PUBLICATION_GUIDE.md)** |
 
 ## 🔧 Outils et scripts
 

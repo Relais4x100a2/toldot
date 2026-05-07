@@ -8,6 +8,8 @@
 
 Ce guide fournit toutes les instructions pour publier geneweb-py sur PyPI.
 
+**Métriques de tests / couverture** : ne pas utiliser de pourcentage figé dans ce guide comme « vérité » — consulter **[doc/status.md](status.md)** et [Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py). La CI impose au minimum `--cov-fail-under=80` dans `tests.yml` ; les PR utilisent `84` % dans `pr-checks.yml`.
+
 ## ✅ Pré-requis
 
 ### Outils nécessaires
@@ -141,8 +143,7 @@ Si tout fonctionne sur TestPyPI :
 # Lancer tous les tests une dernière fois
 pytest tests/ -v --cov=geneweb_py
 
-# Vérifier la couverture
-# Doit être ≥ 90%
+# Vérifier la couverture (seuil min. CI : voir tests.yml, actuellement 80 % avec --cov-fail-under)
 ```
 
 ### Étape 7 : Publication sur PyPI
@@ -248,8 +249,8 @@ Ajouter dans Settings > Secrets and variables > Actions :
 
 - [ ] Version mise à jour dans `__init__.py` et `pyproject.toml`
 - [ ] `CHANGELOG.md` mis à jour
-- [ ] Tous les tests passent (858 tests)
-- [ ] Couverture ≥ 90% (actuellement 84%)
+- [ ] Tous les tests passent (`pytest tests/` comme en CI)
+- [ ] Couverture au moins au seuil des workflows (voir `doc/status.md` et `--cov-fail-under` dans `tests.yml` / `pr-checks.yml`)
 - [ ] `./scripts/validate_pypi.sh` réussit
 - [ ] `python scripts/check_pypi_readiness.py` réussit
 - [ ] Documentation à jour (README, STATUS)

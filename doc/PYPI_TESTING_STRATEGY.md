@@ -1,5 +1,7 @@
 # Stratégie de tests pour déploiement PyPI
 
+> **Métriques à jour** : ne pas s’appuyer sur les pourcentages éventuellement cités plus bas dans ce document historique — consulter **[doc/status.md](status.md)** et le [tableau de bord Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py). Les objectifs ci-dessous restent des **cibles**, pas un état courant.
+
 **Date** : 9 octobre 2025  
 **Version cible** : 0.1.0  
 **État** : En préparation 🚧
@@ -15,20 +17,16 @@ Préparer geneweb-py pour publication sur PyPI avec une suite de tests garantiss
 
 ## 📋 Checklist PyPI - Tests requis
 
-### 1. ✅ Tests fonctionnels (83% → 90%+)
-**État actuel** : 858 tests passent, 84% de couverture
+### 1. Tests fonctionnels (objectif de couverture à définir par rapport au seuil CI)
 
-| Catégorie | Couverture | Objectif | Priorité |
-|-----------|-----------|----------|----------|
-| Core | 88-97% | 95%+ | ✅ Excellent |
-| Parser | 84-97% | 90%+ | ✅ Excellent |
-| API | 59-94% | 85%+ | 🟡 À améliorer |
-| Formats | 76-90% | 90%+ | 🟡 À améliorer |
+**État** : volumétrie et pourcentage courants — **[doc/status.md](status.md)** ; tendance CI — [Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py).
 
-**Actions** :
-- Améliorer couverture API services (59% → 85%)
-- Compléter tests formats XML (76% → 90%)
-- Atteindre 90% global minimum avant publication
+| Catégorie | Objectif documentaire (priorité) |
+|-----------|-----------------------------------|
+| Core | Maintenir une couverture élevée (priorité haute) |
+| Parser | Idem |
+| API | Renforcer les zones sous-couvertes (services, certains routers) |
+| Formats | Renforcer XML / cas limites si besoin |
 
 ### 2. ⚠️ Tests de packaging (À créer)
 **Priorité : CRITIQUE** 🔴
