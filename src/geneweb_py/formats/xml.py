@@ -8,10 +8,10 @@ et l'échange de données généalogiques.
 
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
-from ..core.date import Date
-from ..core.event import Event
+from ..core.date import CalendarType, Date, DatePrefix, DeathType
+from ..core.event import Event, EventType, FamilyEvent, FamilyEventType, PersonalEvent
 from ..core.family import Family
 from ..core.genealogy import Genealogy
 from ..core.person import Person
@@ -75,9 +75,12 @@ class XMLExporter(BaseExporter):
             if self.pretty_print:
                 self._indent_xml(root)
 
-            return ET.tostring(
-                root, encoding=self.encoding, xml_declaration=True
-            ).decode(self.encoding)
+            return cast(
+                str,
+                ET.tostring(root, encoding=self.encoding, xml_declaration=True).decode(
+                    self.encoding
+                ),
+            )
 
         except Exception as e:
             raise ConversionError(f"Erreur lors de la sérialisation XML : {e}") from e
@@ -119,7 +122,7 @@ class XMLExporter(BaseExporter):
     def _serialize_person(self, person: Person) -> ET.Element:
         """Sérialise une personne en élément XML."""
         person_elem = ET.Element("person")
-        person_elem.set("id", str(id(person)))
+        person_elem.set("id", person.unique_id)
 
         # Noms
         if person.last_name:
@@ -198,7 +201,7 @@ class XMLExporter(BaseExporter):
     def _serialize_family(self, family: Family) -> ET.Element:
         """Sérialise une famille en élément XML."""
         family_elem = ET.Element("family")
-        family_elem.set("id", str(id(family)))
+        family_elem.set("id", family.family_id)
 
         # Époux
         if family.husband_id:
@@ -245,7 +248,11 @@ class XMLExporter(BaseExporter):
             witnesses_elem = ET.SubElement(family_elem, "witnesses")
             for witness in family.witnesses:
                 witness_elem = ET.SubElement(witnesses_elem, "witness")
-                witness_elem.text = witness
+                w_pid = witness.get("person_id")
+                witness_elem.set("person_id", str(w_pid or ""))
+                w_type = witness.get("type")
+                if w_type:
+                    witness_elem.set("type", str(w_type))
 
         return family_elem
 
@@ -270,10 +277,11 @@ class XMLExporter(BaseExporter):
             witnesses_elem = ET.SubElement(event_elem, "witnesses")
             for witness in event.witnesses:
                 witness_elem = ET.SubElement(witnesses_elem, "witness")
-                if isinstance(witness, dict):
-                    witness_elem.text = str(witness.get("person_id", ""))
-                else:
-                    witness_elem.text = str(witness)
+                w_pid = witness.get("person_id")
+                witness_elem.set("person_id", str(w_pid or ""))
+                w_type = witness.get("type")
+                if w_type:
+                    witness_elem.set("type", str(w_type))
 
         if event.notes:
             notes_elem = ET.SubElement(event_elem, "notes")
@@ -344,8 +352,7 @@ class XMLImporter(BaseImporter):
             encoding: Encodage à utiliser (défaut: utf-8)
         """
         super().__init__(encoding)
-        self._person_map: Dict[int, Person] = {}
-        self._family_map: Dict[int, Family] = {}
+        self._xml_attrib_id_to_unique_id: Dict[str, str] = {}
 
     def import_from_file(self, input_path: Union[str, Path]) -> Genealogy:
         """
@@ -388,9 +395,7 @@ class XMLImporter(BaseImporter):
             # Parser le XML
             root = ET.fromstring(data)
 
-            # Réinitialiser les maps
-            self._person_map.clear()
-            self._family_map.clear()
+            self._xml_attrib_id_to_unique_id.clear()
 
             # Créer la généalogie
             genealogy = Genealogy()
@@ -411,20 +416,35 @@ class XMLImporter(BaseImporter):
                     if family:
                         genealogy.add_family(family)
 
+            genealogy._update_cross_references()
+
             return genealogy
 
         except Exception as e:
             raise ConversionError(f"Erreur lors du parsing XML : {e}") from e
+
+    def _register_xml_person_id(
+        self, xml_attrib_id: Optional[str], person: Person
+    ) -> None:
+        """Associe l'attribut XML ``id`` d'une personne à son ``unique_id``."""
+        if xml_attrib_id:
+            self._xml_attrib_id_to_unique_id[xml_attrib_id] = person.unique_id
+
+    def _resolve_person_ref(self, ref: Optional[str]) -> Optional[str]:
+        """Résout une référence personne (attribut XML ou ``unique_id``)."""
+        if ref is None or ref == "":
+            return None
+        return self._xml_attrib_id_to_unique_id.get(ref, ref)
 
     def _deserialize_person(self, elem: ET.Element) -> Optional[Person]:
         """Désérialise une personne depuis un élément XML."""
         try:
             # Genre
             gender_value = elem.get("gender")
-            gender = None
-            if gender_value:
-                from ..core.person import Gender
+            from ..core.person import Gender
 
+            gender: Gender = Gender.UNKNOWN
+            if gender_value:
                 try:
                     gender = Gender(gender_value)
                 except ValueError:
@@ -437,21 +457,24 @@ class XMLImporter(BaseImporter):
                 gender=gender,
             )
 
-            # Stocker dans la map pour les références
-            person_id = elem.get("id")
-            if person_id:
-                self._person_map[int(person_id)] = person
+            self._register_xml_person_id(elem.get("id"), person)
 
-            # Dates
+            # Dates (noms d'éléments exportés + variantes)
             birth_elem = elem.find("birth")
+            if birth_elem is None:
+                birth_elem = elem.find("birth_date")
             if birth_elem is not None:
                 person.birth_date = self._deserialize_date(birth_elem)
 
             death_elem = elem.find("death")
+            if death_elem is None:
+                death_elem = elem.find("death_date")
             if death_elem is not None:
                 person.death_date = self._deserialize_date(death_elem)
 
             baptism_elem = elem.find("baptism")
+            if baptism_elem is None:
+                baptism_elem = elem.find("baptism_date")
             if baptism_elem is not None:
                 person.baptism_date = self._deserialize_date(baptism_elem)
 
@@ -486,16 +509,24 @@ class XMLImporter(BaseImporter):
 
             # Notes
             notes_elem = elem.find("notes")
-            if notes_elem is not None and notes_elem.text:
-                person.notes = notes_elem.text.strip()
+            if notes_elem is not None:
+                note_children = notes_elem.findall("note")
+                if note_children:
+                    person.notes = [
+                        n.text.strip()
+                        for n in note_children
+                        if n.text and n.text.strip()
+                    ]
+                elif notes_elem.text and notes_elem.text.strip():
+                    person.notes = [notes_elem.text.strip()]
 
             # Événements
             events_elem = elem.find("events")
             if events_elem is not None:
                 for event_elem in events_elem.findall("event"):
-                    event = self._deserialize_event(event_elem)
-                    if event:
-                        person.add_event(event)
+                    pevt = self._deserialize_personal_event(event_elem)
+                    if pevt is not None:
+                        person.add_event(pevt)
 
             # Relations
             relations_elem = elem.find("relations")
@@ -507,7 +538,7 @@ class XMLImporter(BaseImporter):
                     if rel_id:
                         if rel_type not in person.relations:
                             person.relations[rel_type] = []
-                        person.relations[rel_type].append(rel_id)
+                        person.relations[rel_type].append(rel_id.strip())
 
             return person
 
@@ -519,16 +550,14 @@ class XMLImporter(BaseImporter):
     def _deserialize_family(self, elem: ET.Element) -> Optional[Family]:
         """Désérialise une famille depuis un élément XML."""
         try:
-            family = Family(
-                family_id=elem.get("id", "F001"),
-                husband_id=elem.get("husband_id"),
-                wife_id=elem.get("wife_id"),
-            )
+            raw_family_id = elem.get("id")
+            family_id = raw_family_id if raw_family_id else "F001"
 
-            # Stocker dans la map pour les références
-            family_id = elem.get("id")
-            if family_id:
-                self._family_map[int(family_id)] = family
+            family = Family(
+                family_id=family_id,
+                husband_id=self._resolve_person_ref(elem.get("husband_id")),
+                wife_id=self._resolve_person_ref(elem.get("wife_id")),
+            )
 
             # Dates de mariage et divorce
             marriage_elem = elem.find("marriage")
@@ -544,13 +573,22 @@ class XMLImporter(BaseImporter):
             if marriage_place_elem is not None and marriage_place_elem.text:
                 family.marriage_place = marriage_place_elem.text.strip()
 
-            # Événements
+            # Enfants
+            children_elem = elem.find("children")
+            if children_elem is not None:
+                for child_elem in children_elem.findall("child"):
+                    raw_pid = child_elem.get("person_id")
+                    resolved = self._resolve_person_ref(raw_pid)
+                    if resolved:
+                        family.add_child(resolved)
+
+            # Événements familiaux
             events_elem = elem.find("events")
             if events_elem is not None:
                 for event_elem in events_elem.findall("event"):
-                    event = self._deserialize_event(event_elem)
-                    if event:
-                        family.add_event(event)
+                    fevt = self._deserialize_family_event(event_elem)
+                    if fevt is not None:
+                        family.add_event(fevt)
 
             # Sources et témoins
             family_source_elem = elem.find("family_source")
@@ -559,11 +597,7 @@ class XMLImporter(BaseImporter):
 
             witnesses_elem = elem.find("witnesses")
             if witnesses_elem is not None:
-                family.witnesses = [
-                    witness_elem.text
-                    for witness_elem in witnesses_elem.findall("witness")
-                    if witness_elem.text
-                ]
+                family.witnesses = self._deserialize_witness_dicts(witnesses_elem)
 
             return family
 
@@ -572,72 +606,141 @@ class XMLImporter(BaseImporter):
                 f"Erreur lors de la désérialisation de la famille : {e}"
             ) from e
 
-    def _deserialize_event(self, elem: ET.Element) -> Optional[Event]:
-        """Désérialise un événement depuis un élément XML."""
+    def _deserialize_witness_dicts(
+        self, witnesses_elem: ET.Element
+    ) -> List[Dict[str, Any]]:
+        """Construit la liste de témoins au format attendu par les modèles."""
+        out: List[Dict[str, Any]] = []
+        for witness_elem in witnesses_elem.findall("witness"):
+            attr_pid = witness_elem.get("person_id")
+            text = (witness_elem.text or "").strip()
+            wtype = witness_elem.get("type")
+            if attr_pid is not None and attr_pid != "":
+                pid = self._resolve_person_ref(attr_pid) or attr_pid
+            elif text:
+                pid = self._resolve_person_ref(text) or text
+            else:
+                continue
+            w: Dict[str, Any] = {"person_id": pid}
+            if wtype is not None and wtype != "":
+                w["type"] = wtype
+            out.append(w)
+        return out
+
+    def _deserialize_personal_event(self, elem: ET.Element) -> Optional[PersonalEvent]:
+        """Désérialise un événement personnel depuis un élément XML."""
+
+        event_type_str = (elem.get("type") or "").strip()
         try:
-            event_type_str = elem.get("type", "")
-            # Convertir le string en enum EventType
-            from ..core.event import EventType
-
-            try:
-                event_type = EventType(event_type_str)
-            except ValueError:
-                # Si le type n'est pas reconnu, utiliser OTHER
-                event_type = EventType.OTHER
-
-            # Date
-            date_elem = elem.find("date")
-            date = None
-            if date_elem is not None:
-                date = self._deserialize_date(date_elem)
-
-            # Lieu
-            place_elem = elem.find("place")
-            place = (
-                place_elem.text.strip()
-                if place_elem is not None and place_elem.text
-                else None
+            event_type = (
+                EventType(event_type_str) if event_type_str else EventType.OTHER
             )
+        except ValueError:
+            event_type = EventType.OTHER
 
-            # Source
-            source = None
-            source_elem = elem.find("source")
-            if source_elem is not None and source_elem.text:
-                source = source_elem.text.strip()
+        date_elem = elem.find("date")
+        date = self._deserialize_date(date_elem) if date_elem is not None else None
 
-            # Témoins
-            witnesses = []
-            witnesses_elem = elem.find("witnesses")
-            if witnesses_elem is not None:
-                witnesses = [
-                    witness_elem.text
-                    for witness_elem in witnesses_elem.findall("witness")
-                    if witness_elem.text
-                ]
+        place_elem = elem.find("place")
+        place = (
+            place_elem.text.strip()
+            if place_elem is not None and place_elem.text
+            else None
+        )
 
-            # Notes
-            notes = []
-            notes_elem = elem.find("notes")
-            if notes_elem is not None:
-                notes = [
-                    note_elem.text
-                    for note_elem in notes_elem.findall("note")
-                    if note_elem.text
-                ]
+        source = None
+        source_elem = elem.find("source")
+        if source_elem is not None and source_elem.text:
+            source = source_elem.text.strip()
 
-            return Event(
-                event_type=event_type,
-                date=date,
-                place=place,
-                source=source,
-                witnesses=witnesses,
-                notes=notes,
+        witnesses: List[Dict[str, Any]] = []
+        witnesses_elem = elem.find("witnesses")
+        if witnesses_elem is not None:
+            witnesses = self._deserialize_witness_dicts(witnesses_elem)
+
+        notes: List[str] = []
+        notes_elem = elem.find("notes")
+        if notes_elem is not None:
+            notes = [
+                note_elem.text.strip()
+                for note_elem in notes_elem.findall("note")
+                if note_elem.text and note_elem.text.strip()
+            ]
+
+        return PersonalEvent(
+            event_type=event_type,
+            date=date,
+            place=place,
+            source=source,
+            witnesses=witnesses,
+            notes=notes,
+        )
+
+    def _deserialize_family_event(self, elem: ET.Element) -> Optional[FamilyEvent]:
+        """Désérialise un événement familial depuis un élément XML."""
+
+        event_type_str = (elem.get("type") or "").strip()
+        try:
+            event_type = (
+                EventType(event_type_str) if event_type_str else EventType.OTHER
             )
+        except ValueError:
+            event_type = EventType.OTHER
 
-        except Exception as e:
-            raise ConversionError(
-                f"Erreur lors de la désérialisation de l'événement : {e}"
-            ) from e
+        fet = self._event_type_to_family_event_type(event_type)
+
+        date_elem = elem.find("date")
+        date = self._deserialize_date(date_elem) if date_elem is not None else None
+
+        place_elem = elem.find("place")
+        place = (
+            place_elem.text.strip()
+            if place_elem is not None and place_elem.text
+            else None
+        )
+
+        source = None
+        source_elem = elem.find("source")
+        if source_elem is not None and source_elem.text:
+            source = source_elem.text.strip()
+
+        witnesses: List[Dict[str, Any]] = []
+        witnesses_elem = elem.find("witnesses")
+        if witnesses_elem is not None:
+            witnesses = self._deserialize_witness_dicts(witnesses_elem)
+
+        notes: List[str] = []
+        notes_elem = elem.find("notes")
+        if notes_elem is not None:
+            notes = [
+                note_elem.text.strip()
+                for note_elem in notes_elem.findall("note")
+                if note_elem.text and note_elem.text.strip()
+            ]
+
+        return FamilyEvent(
+            event_type=event_type,
+            family_event_type=fet,
+            date=date,
+            place=place,
+            source=source,
+            witnesses=witnesses,
+            notes=notes,
+        )
+
+    def _event_type_to_family_event_type(
+        self, event_type: EventType
+    ) -> FamilyEventType:
+        """Associe un ``EventType`` générique à un ``FamilyEventType``."""
+
+        mapping = {
+            EventType.MARRIAGE: FamilyEventType.MARRIAGE,
+            EventType.DIVORCE: FamilyEventType.DIVORCE,
+            EventType.SEPARATION: FamilyEventType.SEPARATION,
+            EventType.ENGAGEMENT: FamilyEventType.ENGAGEMENT,
+            EventType.PACS: FamilyEventType.PACS,
+        }
+        return mapping.get(event_type, FamilyEventType.NO_MENTION)
 
     def _deserialize_date(self, elem: ET.Element) -> Optional[Date]:
         """Désérialise une date depuis un élément XML."""
@@ -649,15 +752,19 @@ class XMLImporter(BaseImporter):
             if not year and not month and not day and not elem.text:
                 return None
 
-            from ..core.date import CalendarType, DatePrefix, DeathType
+            calendar = self._parse_calendar_token(elem.get("calendar"))
 
-            calendar = None
-            if elem.get("calendar"):
-                calendar = CalendarType(elem.get("calendar"))
-
-            prefix = None
+            prefix: Optional[DatePrefix] = None
             if elem.get("prefix"):
                 prefix = DatePrefix(elem.get("prefix"))
+            elif elem.get("approximate", "").lower() in ("1", "true", "yes"):
+                prefix = DatePrefix.ABOUT
+            elif elem.get("before", "").lower() in ("1", "true", "yes"):
+                prefix = DatePrefix.BEFORE
+            elif elem.get("after", "").lower() in ("1", "true", "yes"):
+                prefix = DatePrefix.AFTER
+            elif elem.get("uncertain", "").lower() in ("1", "true", "yes"):
+                prefix = DatePrefix.MAYBE
 
             death_type = None
             if elem.get("death_type"):
@@ -667,13 +774,35 @@ class XMLImporter(BaseImporter):
                 year=int(year) if year else None,
                 month=int(month) if month else None,
                 day=int(day) if day else None,
-                calendar=calendar,
+                calendar=calendar if calendar is not None else CalendarType.GREGORIAN,
                 prefix=prefix,
                 text_date=elem.text.strip() if elem.text else None,
-                death_type=death_type,
+                death_type=death_type if death_type is not None else DeathType.NORMAL,
             )
 
         except Exception as e:
             raise ConversionError(
                 f"Erreur lors de la désérialisation de la date : {e}"
             ) from e  # noqa: E501
+
+    def _parse_calendar_token(self, raw: Optional[str]) -> Optional[CalendarType]:
+        """Interprète l'attribut calendrier (valeurs enum ou alias courants)."""
+        if raw is None or raw.strip() == "":
+            return None
+
+        key = raw.strip().lower()
+        aliases = {
+            "gregorian": CalendarType.GREGORIAN,
+            "gregoire": CalendarType.GREGORIAN,
+            "julian": CalendarType.JULIAN,
+            "julien": CalendarType.JULIAN,
+            "french_republican": CalendarType.FRENCH_REPUBLICAN,
+            "republican": CalendarType.FRENCH_REPUBLICAN,
+            "hebrew": CalendarType.HEBREW,
+        }
+        if key in aliases:
+            return aliases[key]
+        try:
+            return CalendarType(raw)
+        except ValueError:
+            return CalendarType.GREGORIAN

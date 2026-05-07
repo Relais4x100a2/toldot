@@ -39,6 +39,9 @@ class EventType(Enum):
     GRADUATION = "grad"
     MILITARY_SERVICE = "mser"
 
+    # Autre / type inconnu (import inter-formats, extensions)
+    OTHER = "oth"
+
     # Événements familiaux
     MARRIAGE = "marr"
     DIVORCE = "div"
@@ -154,7 +157,7 @@ class Event:
 class FamilyEvent(Event):
     """Événement familial spécifique (format gwplus)"""
 
-    family_event_type: FamilyEventType = None
+    family_event_type: Optional[FamilyEventType] = None
 
     def __post_init__(self) -> None:
         """Initialisation post-création"""

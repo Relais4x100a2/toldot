@@ -206,3 +206,10 @@ class TestXMLConverterIntegration:
         assert original_persons[0].last_name == imported_persons[0].last_name
         assert original_persons[0].first_name == imported_persons[0].first_name
         assert original_persons[0].gender == imported_persons[0].gender
+
+        orig_fam = list(sample_genealogy.families.values())[0]
+        imp_fam = list(imported_genealogy.families.values())[0]
+        assert imp_fam.family_id == orig_fam.family_id
+        assert imp_fam.husband_id == orig_fam.husband_id
+        assert imp_fam.wife_id == orig_fam.wife_id
+        assert imp_fam.marriage_place == orig_fam.marriage_place
