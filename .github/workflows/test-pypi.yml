@@ -10,8 +10,19 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
+  lint:
+    name: Lint (workflow réutilisable)
+    uses: ./.github/workflows/lint.yml
+
+  tests-suite:
+    name: Tests et couverture (workflow réutilisable)
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
+
   test-packaging:
     name: Test packaging et métadonnées
     runs-on: ubuntu-latest
@@ -51,7 +62,9 @@ jobs:
       - name: Run packaging tests
         run: |
           pip install pytest pytest-cov
-          pytest tests/packaging/ -v --tb=short --no-cov
+          pytest tests/packaging/ -v --tb=short \
+            --cov=geneweb_py \
+            --cov-report=term
 
   test-compatibility:
     name: Test Python ${{ matrix.python-version }} sur ${{ matrix.os }}
@@ -59,7 +72,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # Linux : suite complète déjà couverte par tests-suite (workflow réutilisable)
+        os: [windows-latest, macos-latest]
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     
     steps:
@@ -74,14 +88,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev,api]"
+          pip install pytest-cov
       
       - name: Run unit tests
         run: |
-          pytest tests/unit/ tests/compatibility/ -v --tb=short -m "not slow" --no-cov
+          pytest tests/unit/ tests/compatibility/ -v --tb=short -m "not slow" \
+            --cov=src/geneweb_py \
+            --cov-report=term
       
       - name: Run integration tests (fast only)
         run: |
-          pytest tests/integration/test_complete_person_parsing.py -v --tb=short --no-cov
+          pytest tests/integration/test_complete_person_parsing.py -v --tb=short \
+            --cov=src/geneweb_py \
+            --cov-report=term \
+            --cov-append
 
   test-security:
     name: Audit de sécurité
@@ -132,12 +152,19 @@ jobs:
       
       - name: Run security tests
         run: |
-          pip install pytest
-          pytest tests/security/ -v --tb=short
+          pip install pytest pytest-cov
+          pytest tests/security/ -v --tb=short \
+            --cov=src/geneweb_py \
+            --cov-report=term
 
   publish-test-pypi:
     name: Publier sur TestPyPI
-    needs: [test-packaging, test-compatibility, test-security]
+    needs:
+      - lint
+      - tests-suite
+      - test-packaging
+      - test-compatibility
+      - test-security
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     
@@ -167,7 +194,12 @@ jobs:
 
   publish-pypi:
     name: Publier sur PyPI
-    needs: [test-packaging, test-compatibility, test-security]
+    needs:
+      - lint
+      - tests-suite
+      - test-packaging
+      - test-compatibility
+      - test-security
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
     

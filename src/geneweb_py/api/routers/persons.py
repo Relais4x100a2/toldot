@@ -2,9 +2,11 @@
 Router FastAPI pour la gestion des personnes dans l'API geneweb-py.
 """
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 
 from ..dependencies import get_genealogy_service
 from ..family_payload import family_to_family_schema
@@ -191,21 +193,25 @@ async def list_persons(
     Returns:
         PaginatedResponse: Réponse paginée avec les personnes
     """
-    # Construction des paramètres de recherche
-    search_params = PersonSearchSchema(
-        page=page,
-        size=size,
-        query=query,
-        first_name=first_name,
-        surname=surname,
-        sex=sex,  # TODO: Conversion depuis string
-        access_level=access_level,  # TODO: Conversion depuis string
-        birth_year_from=birth_year_from,
-        birth_year_to=birth_year_to,
-        death_year_from=death_year_from,
-        death_year_to=death_year_to,
-        place=place,
-    )
+    # Construction des paramètres de recherche (query → schéma Pydantic)
+    raw_params: Dict[str, Any] = {
+        "page": page,
+        "size": size,
+        "query": query,
+        "first_name": first_name,
+        "surname": surname,
+        "sex": sex,
+        "access_level": access_level,
+        "birth_year_from": birth_year_from,
+        "birth_year_to": birth_year_to,
+        "death_year_from": death_year_from,
+        "death_year_to": death_year_to,
+        "place": place,
+    }
+    try:
+        search_params = PersonSearchSchema.model_validate(raw_params)
+    except ValidationError as exc:
+        raise RequestValidationError(list(exc.errors())) from exc
 
     persons, total = service.search_persons(search_params)
 
