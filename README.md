@@ -1,10 +1,10 @@
 # geneweb-py
 
-[![Python](https://img.shields.io/python/required-version-toml?filename=https%3A%2F%2Fraw.githubusercontent.com%2FRelais4x100a2%2Fgeneweb-py%2Fmain%2Fpyproject.toml&logo=python&label=Python&color=blue)](https://github.com/Relais4x100a2/geneweb-py/blob/main/pyproject.toml)
+[![Python](https://img.shields.io/pypi/pyversions/geneweb-py?logo=python&label=Python&color=blue)](https://github.com/Relais4x100a2/geneweb-py/blob/main/pyproject.toml)
 [![PyPI version](https://img.shields.io/badge/pypi-v0.1.0-blue.svg)](https://pypi.org/project/geneweb-py/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests et couverture](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions?query=workflow%3A%22Tests+et+Couverture%22)
-[![TestPyPI / publication](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20PyPI%20et%20Publication/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions?query=workflow%3A%22Tests+PyPI+et+Publication%22)
+[![Tests et couverture](https://github.com/Relais4x100a2/geneweb-py/actions/workflows/tests.yml/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions/workflows/tests.yml)
+[![TestPyPI / publication](https://github.com/Relais4x100a2/geneweb-py/actions/workflows/test-pypi.yml/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions/workflows/test-pypi.yml)
 [![Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py/branch/main/graph/badge.svg)](https://codecov.io/gh/Relais4x100a2/geneweb-py)
 
 Librairie Python complète pour parser, manipuler et convertir les fichiers généalogiques au format GeneWeb (.gw).
