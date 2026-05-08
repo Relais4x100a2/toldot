@@ -369,12 +369,20 @@ class LexicalParser:
         start_col = self.column
 
         # Commentaires bloc (* ... *) — ignorés par le parser syntaxique
+        # Pré-vérification rapide : *) doit exister sur la même ligne.
+        # Sans cela, un (* dans un bloc notes (ex : "(* 1934; ...)")
+        # provoquerait un scan de 256 Ko inutile avant de lever une erreur.
         if (
             char == "("
             and self.position + 1 < len(self.text)
             and self.text[self.position + 1] == "*"
         ):
-            return self._parse_block_comment(start_line, start_col, start_pos)
+            eol = self.text.find("\n", self.position + 2)
+            if eol == -1:
+                eol = len(self.text)
+            if self.text.find("*)", self.position + 2, eol) != -1:
+                return self._parse_block_comment(start_line, start_col, start_pos)
+            # Pas de *) sur la même ligne → traité comme texte littéral
 
         # Modificateurs avec # (y compris les événements)
         # Vérifier d'abord si c'est un modificateur connu
@@ -697,7 +705,26 @@ class LexicalParser:
         )
 
     def _parse_string(self, line: int, col: int, pos: int) -> Token:
-        """Parse une chaîne de caractères entre guillemets"""
+        """Parse une chaîne de caractères entre guillemets (mono-ligne uniquement).
+
+        Si le guillemet fermant n'est pas trouvé sur la même ligne, le guillemet
+        ouvrant est restitué comme UNKNOWN pour éviter de consommer les blocs
+        suivants (end notes, pevt, etc.) comme contenu de la chaîne.
+        """
+        # Vérifier qu'un " fermant existe sur la même ligne avant d'avancer
+        close = self.text.find('"', pos + 1)
+        eol = self.text.find("\n", pos + 1)
+        if close == -1 or (eol != -1 and close > eol):
+            # Pas de fermeture sur la ligne : guillemet traité comme UNKNOWN
+            self._advance_position()
+            return Token(
+                type=TokenType.UNKNOWN,
+                value='"',
+                line_number=line,
+                column=col,
+                position=pos,
+            )
+
         self._advance_position()  # Passer le guillemet ouvrant
         value = ""
 
