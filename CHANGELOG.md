@@ -26,6 +26,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Email** : Mise à jour vers `guillaume.cayeux@relais4x100a2.fr`
 
 ### Documentation
+- **README / pyproject** : Badge Python dérivé de `requires-python` sur `main`, section « Standards » explicite (Ruff remplace Black/Flake8), URL `Changelog` dans les métadonnées PyPA, extra `parsing` / Lark clarifié comme optionnel.
 - 🧹 **Nettoyage documentation** : Suppression de 24 fichiers Markdown non conformes à la racine
 - 📊 **Métriques de tests / couverture** : source unique **[doc/status.md](doc/status.md)** ; tendance CI sur [Codecov](https://codecov.io/gh/Relais4x100a2/geneweb-py) ; README et index sans pourcentages dupliqués divergents
 - 📝 **Conformité structure** : Seuls README.md, CHANGELOG.md, DOCUMENTATION.md à la racine
