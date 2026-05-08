@@ -1,6 +1,6 @@
 # geneweb-py
 
-[![Python Version](https://img.shields.io/badge/python-%3E%3D3.8-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/python/required-version-toml?filename=https%3A%2F%2Fraw.githubusercontent.com%2FRelais4x100a2%2Fgeneweb-py%2Fmain%2Fpyproject.toml&logo=python&label=Python&color=blue)](https://github.com/Relais4x100a2/geneweb-py/blob/main/pyproject.toml)
 [![PyPI version](https://img.shields.io/badge/pypi-v0.1.0-blue.svg)](https://pypi.org/project/geneweb-py/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests et couverture](https://github.com/Relais4x100a2/geneweb-py/workflows/Tests%20et%20Couverture/badge.svg)](https://github.com/Relais4x100a2/geneweb-py/actions?query=workflow%3A%22Tests+et+Couverture%22)
@@ -66,7 +66,7 @@ Pour le développement :
 pip install geneweb-py[dev]
 ```
 
-Extras disponibles (voir `pyproject.toml`) : `dev`, `docs`, `cli`, `validation`, `api`. L’extra optionnel **`parsing`** installe [Lark](https://github.com/lark-parser/lark) pour d’éventuels travaux sur une grammaire déclarative ; **le parser GeneWeb actuel n’en dépend pas** — réservé à un usage expérimental ou futur.
+Extras disponibles (voir `[project.optional-dependencies]` dans `pyproject.toml`) : `dev`, `docs`, `cli`, `validation`, `api`. L’extra optionnel **`parsing`** installe [Lark](https://github.com/lark-parser/lark) pour d’éventuels travaux sur une grammaire déclarative ; **le parser GeneWeb actuel n’en dépend pas** — réservé à un usage expérimental ou futur (non requis pour parser des fichiers `.gw`).
 
 ## 🎯 Utilisation rapide
 
@@ -464,10 +464,12 @@ Les contributions sont les bienvenues ! Consultez le [Statut du projet](doc/stat
 
 ### Standards de qualité
 
+Le projet n’utilise **ni Black ni Flake8** : le formatage, le lint et le tri des imports sont assurés par **Ruff** (`ruff format`, `ruff check`, configuration dans `[tool.ruff]` de `pyproject.toml`), en remplacement de l’écosystème Black + Flake8 + isort.
+
 - Tests unitaires obligatoires (couverture ≥ 90% sur les modules critiques)
 - Annotations de type sur toutes les fonctions publiques
 - Docstrings en français (style Google)
-- **Ruff** pour le formatage et le lint (`ruff format`, `ruff check`) — aligné sur `pyproject.toml`
+- **Ruff** pour le formatage et le lint — aligné sur `pyproject.toml` ; commandes locales : `ruff format .` puis `ruff check .`
 - Vérification des types avec **mypy** (mode strict)
 - **Sécurité des dépendances** : le workflow [.github/workflows/security.yml](.github/workflows/security.yml) exécute **pip-audit** sur les extras `api`, `validation` et `parsing` (cœur + optionnels « runtime » documentés) à chaque PR et chaque semaine ; pour un contrôle local, installer l’extra `dev` puis lancer `pip-audit` selon vos besoins
 

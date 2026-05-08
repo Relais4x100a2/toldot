@@ -183,7 +183,20 @@ def test_pyproject_aligns_with_documented_stack():
     gh = "https://github.com/Relais4x100a2/geneweb-py"
     assert f'Homepage = "{gh}"' in text
     assert f'Repository = "{gh}"' in text
+    assert f'Changelog = "{gh}/blob/main/CHANGELOG.md"' in text
     assert f'"Bug Tracker" = "{gh}/issues"' in text
 
     assert "\nparsing = [" in text
     assert any("lark" in line.lower() for line in text.splitlines())
+
+
+def test_readme_documents_stack_and_repo_urls() -> None:
+    """README : URLs dépôt GitHub, mention Ruff, pas de plancher Python 3.7 affiché."""
+    root = Path(__file__).resolve().parents[2]
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    gh = "Relais4x100a2/geneweb-py"
+    assert readme.count(gh) >= 4
+    assert "### Standards de qualité" in readme
+    assert "Ruff" in readme
+    assert "Black" in readme and "Flake8" in readme
+    assert "3.7+" not in readme
