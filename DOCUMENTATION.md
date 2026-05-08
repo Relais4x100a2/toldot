@@ -47,7 +47,7 @@ geneweb-py/
 → Consultez **[doc/status.md](doc/status.md)** - Fonctionnalités, métriques, couverture
 
 ### Je veux contribuer
-→ Lisez **[doc/status.md](doc/status.md)** puis **[doc/roadmap.md](doc/roadmap.md)**
+→ Lisez **[doc/status.md](doc/status.md)** puis **[doc/roadmap.md](doc/roadmap.md)** — outillage : **Ruff** (format + lint, pas Black/Flake8), **mypy** strict ; détails dans **[README.md](README.md)** (section *Standards de qualité*).
 
 ### Je veux optimiser les performances
 → Consultez **[doc/PERFORMANCE.md](doc/PERFORMANCE.md)** - Benchmarks et optimisations
