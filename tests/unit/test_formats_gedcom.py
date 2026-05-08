@@ -109,7 +109,6 @@ class TestGEDCOMExporter:
         genealogy = Genealogy()
 
         person = Person(last_name="DUPONT", first_name="Jean")
-        from geneweb_py.core.event import PersonalEvent
 
         event = PersonalEvent(
             event_type=EventType.GRADUATION,
@@ -421,11 +420,10 @@ class TestGEDCOMImporterCoverage:
     def test_decode_file_bytes_iso88591(self) -> None:
         """Lignes 371-386 : fallback ISO-8859-1 quand UTF-8 échoue."""
         importer = GEDCOMImporter()
-        raw = "0 HEAD\n0 TRLR\n".encode("iso-8859-1")
         # Le BOM UTF-8 est absent, mais la chaîne est ASCII-compatible,
         # donc UTF-8 réussira ; on force avec des octets latin1 non-ASCII.
         raw_latin = bytes([0x30, 0x20, 0x48, 0x45, 0x41, 0x44, 0x0A, 0xE9, 0x0A])
-        text, enc = importer._decode_file_bytes(raw_latin)
+        text, _enc = importer._decode_file_bytes(raw_latin)
         assert isinstance(text, str)
 
     # ---- import_from_file OSError ----
