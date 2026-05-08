@@ -64,10 +64,18 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
-        response.headers.setdefault(
-            "Content-Security-Policy",
-            "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
-        )
+        _docs_paths = {"/docs", "/redoc", "/openapi.json"}
+        if request.url.path in _docs_paths:
+            csp = (
+                "default-src 'self'; "
+                "script-src 'unsafe-inline' cdn.jsdelivr.net; "
+                "style-src 'unsafe-inline' cdn.jsdelivr.net; "
+                "img-src data: fastapi.tiangolo.com; "
+                "connect-src 'self' cdn.jsdelivr.net"
+            )
+        else:
+            csp = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+        response.headers.setdefault("Content-Security-Policy", csp)
         response.headers.setdefault("Referrer-Policy", "no-referrer")
         response.headers.setdefault(
             "Permissions-Policy",

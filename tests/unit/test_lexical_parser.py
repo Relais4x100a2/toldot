@@ -261,11 +261,12 @@ end"""
         assert len(bc) == 1
         assert bc[0].value == "(* note *)"
 
-    def test_block_comment_unclosed_raises(self):
-        """Un (* sans *) avant EOF lève une erreur lexicale (évite DoS mémoire)."""
+    def test_block_comment_unclosed_treated_as_literal(self):
+        """Un (* sans *) sur la même ligne est traité comme texte littéral (pas d'erreur)."""
         content = "fam A B (* pas de fin"
-        with pytest.raises(GeneWebParseError):
-            LexicalParser(content).tokenize()
+        tokens = LexicalParser(content).tokenize()
+        bc = [t for t in tokens if t.type == TokenType.BLOCK_COMMENT]
+        assert len(bc) == 0
 
     def test_block_comment_too_long_raises(self):
         """Un corps trop long lève après le seuil défini (protection DoS)."""
