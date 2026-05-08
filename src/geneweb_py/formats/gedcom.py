@@ -296,6 +296,7 @@ class GEDCOMExporter(BaseExporter):
     def _map_event_type(self, event_type: str) -> Optional[str]:
         """Mappe un type d'événement GeneWeb vers GEDCOM."""
         mapping = {
+            # Noms complets
             "birth": "BIRT",
             "death": "DEAT",
             "marriage": "MARR",
@@ -304,12 +305,25 @@ class GEDCOMExporter(BaseExporter):
             "burial": "BURI",
             "confirmation": "CONF",
             "graduation": "GRAD",
-            "grad": "GRAD",  # Alias pour EventType.GRADUATION.value
             "immigration": "IMMI",
             "emigration": "EMIG",
             "naturalization": "NATU",
             "occupation": "OCCU",
             "residence": "RESI",
+            # Valeurs courtes de EventType (ex. EventType.MARRIAGE.value == 'marr')
+            "birt": "BIRT",
+            "bapt": "BAPM",
+            "deat": "DEAT",
+            "buri": "BURI",
+            "crem": "CREM",
+            "conf": "CONF",
+            "natu": "NATU",
+            "occu": "OCCU",
+            "resi": "RESI",
+            "educ": "EDUC",
+            "grad": "GRAD",
+            "marr": "MARR",
+            "div": "DIV",
         }
         return mapping.get(event_type.lower())
 
