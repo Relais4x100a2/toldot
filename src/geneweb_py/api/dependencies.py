@@ -37,6 +37,26 @@ def require_write_mode() -> None:
         )
 
 
+def get_genealogy_service(request: Request) -> GenealogyService:
+    """Compatibilité temporaire — sera supprimé lors de la migration des routers.
+
+    Lève 401 si un X-Session-Token est présent (session expirée ou inconnue)
+    pour permettre aux tests de session de vérifier l'invalidation du token.
+    """
+    token = request.headers.get("X-Session-Token")
+    if token is not None:
+        store: SessionStore = request.app.state.session_store
+        if store.get(token) is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session inconnue ou expirée",
+            )
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Utilisez get_session_service avec un token de session",
+    )
+
+
 def get_pagination_params(
     page: int = 1, size: int = 20, max_size: int = 100
 ) -> Tuple[int, int]:
