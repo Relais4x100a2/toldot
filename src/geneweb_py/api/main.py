@@ -14,7 +14,7 @@ from slowapi.extension import _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.responses import Response
 from starlette.routing import Mount
-from starlette.types import Receive, Scope, Send
+from starlette.types import Scope
 
 from .limits import get_cors_allow_origins
 from .middleware.error_handler import setup_error_handlers
