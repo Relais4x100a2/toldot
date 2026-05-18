@@ -1,4 +1,5 @@
 """Test d'intégration du flux complet de session éphémère."""
+
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -11,6 +12,7 @@ FIXTURE_GW = Path(__file__).parent.parent / "fixtures" / "simple_test.gw"
 @pytest.fixture
 def client():
     from geneweb_py.api.main import create_app
+
     app = create_app()
     with TestClient(app) as c:
         yield c
@@ -46,7 +48,9 @@ class TestFullSessionFlow:
     def test_expired_token_returns_401(self, client):
         token = _create_session(client)
         store = client.app.state.session_store
-        store._store[token].expires_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        store._store[token].expires_at = datetime.now(timezone.utc) - timedelta(
+            seconds=1
+        )
         resp = client.get("/api/v1/persons/", headers={"X-Session-Token": token})
         assert resp.status_code == 401
 
@@ -77,8 +81,12 @@ class TestFullSessionFlow:
         assert resp2.status_code == 200
 
         client.delete(f"/api/v1/sessions/{token1}")
-        resp1_after = client.get("/api/v1/persons/", headers={"X-Session-Token": token1})
-        resp2_after = client.get("/api/v1/persons/", headers={"X-Session-Token": token2})
+        resp1_after = client.get(
+            "/api/v1/persons/", headers={"X-Session-Token": token1}
+        )
+        resp2_after = client.get(
+            "/api/v1/persons/", headers={"X-Session-Token": token2}
+        )
         assert resp1_after.status_code == 401
         assert resp2_after.status_code == 200
 
@@ -88,10 +96,16 @@ class TestFullSessionFlow:
         genealogy = store._store[token].genealogy
         assert genealogy.metadata.source_file is None
 
+    def test_data_endpoints_have_cache_control_no_store(self, client):
+        token = _create_session(client)
+        resp = client.get("/api/v1/persons/", headers={"X-Session-Token": token})
+        assert resp.headers.get("cache-control") == "no-store"
+
 
 class TestReadOnlyMode:
     def test_write_blocked_in_read_only_mode(self, client, monkeypatch):
         import geneweb_py.api.limits as limits_module
+
         monkeypatch.setattr(limits_module, "READ_ONLY", True)
 
         token = _create_session(client)
@@ -104,6 +118,7 @@ class TestReadOnlyMode:
 
     def test_reads_allowed_in_read_only_mode(self, client, monkeypatch):
         import geneweb_py.api.limits as limits_module
+
         monkeypatch.setattr(limits_module, "READ_ONLY", True)
 
         token = _create_session(client)

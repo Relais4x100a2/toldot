@@ -34,7 +34,9 @@ def _validate_meta(content_type: Optional[str], name: str) -> None:
     if content_type is not None:
         main_type = content_type.split(";")[0].strip().lower()
         if main_type not in {t.lower() for t in _ALLOWED_CONTENT_TYPES}:
-            raise HTTPException(415, "Type de contenu non accepté pour un fichier GeneWeb")
+            raise HTTPException(
+                415, "Type de contenu non accepté pour un fichier GeneWeb"
+            )
 
 
 @router.post("/", status_code=201)
@@ -79,7 +81,7 @@ async def create_session(
         genealogy = parser.parse_file(tmp_path)
         genealogy.metadata.source_file = None
     except Exception as exc:
-        raise HTTPException(422, f"Erreur de parsing : {exc}") from exc
+        raise HTTPException(422, "Fichier GeneWeb invalide ou corrompu") from exc
     finally:
         try:
             os.unlink(tmp_path)
@@ -88,8 +90,8 @@ async def create_session(
 
     try:
         token, expires_at = store.create(genealogy)
-    except SessionFullError:
-        raise HTTPException(503, "Serveur saturé, réessayez plus tard")
+    except SessionFullError as exc:
+        raise HTTPException(503, "Serveur saturé, réessayez plus tard") from exc
 
     return JSONResponse(
         status_code=201,
