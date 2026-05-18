@@ -81,6 +81,8 @@ def create_app() -> FastAPI:
                 "magnetometer=(), microphone=(), payment=(), usb=()"
             ),
         )
+        if request.url.path.startswith("/api/v1/"):
+            response.headers.setdefault("Cache-Control", "no-store")
         return response
 
     application.add_middleware(
