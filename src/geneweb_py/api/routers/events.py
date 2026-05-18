@@ -7,7 +7,7 @@ from typing import Generator, Optional, Tuple
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ...core.person import Person
-from ..dependencies import get_genealogy_service
+from ..dependencies import get_session_service, require_write_mode
 from ..models.event import (
     EventUpdateSchema,
     FamilyEventCreateSchema,
@@ -70,10 +70,15 @@ def _iterate_search_events(
             yield ev, pid, fid, ev_idx
 
 
-@router.post("/personal", response_model=SuccessResponse, status_code=201)
+@router.post(
+    "/personal",
+    response_model=SuccessResponse,
+    status_code=201,
+    dependencies=[Depends(require_write_mode)],
+)
 async def create_personal_event(
     event_data: PersonalEventCreateSchema,
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Crée un nouvel événement personnel.
@@ -119,10 +124,15 @@ async def create_personal_event(
         )
 
 
-@router.post("/family", response_model=SuccessResponse, status_code=201)
+@router.post(
+    "/family",
+    response_model=SuccessResponse,
+    status_code=201,
+    dependencies=[Depends(require_write_mode)],
+)
 async def create_family_event(
     event_data: FamilyEventCreateSchema,
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Crée un nouvel événement familial.
@@ -170,7 +180,7 @@ async def create_family_event(
 
 @router.get("/{event_id}", response_model=SuccessResponse)
 async def get_event(
-    event_id: str, service: GenealogyService = Depends(get_genealogy_service)
+    event_id: str, service: GenealogyService = Depends(get_session_service)
 ) -> SuccessResponse:
     """
     Récupère un événement par son ID.
@@ -219,11 +229,15 @@ async def get_event(
         )
 
 
-@router.put("/{event_id}", response_model=SuccessResponse)
+@router.put(
+    "/{event_id}",
+    response_model=SuccessResponse,
+    dependencies=[Depends(require_write_mode)],
+)
 async def update_event(
     event_id: str,
     event_data: EventUpdateSchema,
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Met à jour un événement.
@@ -271,9 +285,13 @@ async def update_event(
         raise_internal_server_error("Erreur lors de la mise à jour d'un événement", exc)
 
 
-@router.delete("/{event_id}", response_model=SuccessResponse)
+@router.delete(
+    "/{event_id}",
+    response_model=SuccessResponse,
+    dependencies=[Depends(require_write_mode)],
+)
 async def delete_event(
-    event_id: str, service: GenealogyService = Depends(get_genealogy_service)
+    event_id: str, service: GenealogyService = Depends(get_session_service)
 ) -> SuccessResponse:
     """
     Supprime un événement.
@@ -322,7 +340,7 @@ async def list_events(
     has_sources: Optional[bool] = Query(
         None, description="Filtrer par présence de sources"
     ),
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> PaginatedResponse:
     """
     Liste les événements avec pagination et filtres.
@@ -418,7 +436,7 @@ async def list_events(
 
 @router.get("/stats/overview", response_model=SuccessResponse)
 async def get_event_stats(
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Récupère les statistiques des événements.
