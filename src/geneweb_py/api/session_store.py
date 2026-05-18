@@ -53,16 +53,15 @@ class SessionStore:
 
     def get(self, token: str) -> Optional[Genealogy]:
         """Retourne la Genealogy si la session est active, None sinon. Prolonge le TTL."""
-        entry = self._store.get(token)
-        if entry is None:
-            return None
-        if entry.expires_at <= self._now():
-            with self._lock:
-                self._store.pop(token, None)
-            return None
         with self._lock:
+            entry = self._store.get(token)
+            if entry is None:
+                return None
+            if entry.expires_at <= self._now():
+                self._store.pop(token, None)
+                return None
             entry.expires_at = self._new_expiry()
-        return entry.genealogy
+            return entry.genealogy
 
     def delete(self, token: str) -> bool:
         """Supprime une session. Retourne True si trouvée, False sinon."""
