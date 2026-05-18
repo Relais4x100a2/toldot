@@ -17,15 +17,12 @@ class TestMainApp:
         assert app.version == "0.1.0"
 
     def test_root_endpoint(self):
-        """Test endpoint racine."""
+        """Test endpoint racine — sert désormais l'interface HTML."""
         client = TestClient(app)
         response = client.get("/")
 
         assert response.status_code == 200
-        data = response.json()
-        assert data["message"] == "Bienvenue sur l'API GeneWeb-py"
-        assert data["version"] == "0.1.0"
-        assert data["documentation"] == "/docs"
+        assert "text/html" in response.headers["content-type"]
 
     def test_security_headers_on_root(self):
         """Les en-têtes de sécurité de base sont présents sur les réponses."""
@@ -71,3 +68,10 @@ class TestMainApp:
         response = client.get("/redoc")
 
         assert response.status_code == 200
+
+    def test_root_serves_html(self):
+        """GET / doit servir index.html (text/html), pas du JSON."""
+        client = TestClient(app)
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
