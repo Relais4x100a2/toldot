@@ -23,6 +23,7 @@ class TestMainApp:
 
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
+        assert b"Toldot" in response.content
 
     def test_security_headers_on_root(self):
         """Les en-têtes de sécurité de base sont présents sur les réponses."""
@@ -69,9 +70,10 @@ class TestMainApp:
 
         assert response.status_code == 200
 
-    def test_root_serves_html(self):
-        """GET / doit servir index.html (text/html), pas du JSON."""
+    def test_static_csp_for_non_api_paths(self):
+        """Les chemins non-API doivent recevoir le CSP front-end (default-src 'self')."""
         client = TestClient(app)
         response = client.get("/")
-        assert response.status_code == 200
-        assert "text/html" in response.headers["content-type"]
+        csp = response.headers.get("Content-Security-Policy", "")
+        assert "default-src 'self'" in csp
+        assert "frame-ancestors 'none'" in csp

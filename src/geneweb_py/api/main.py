@@ -3,7 +3,7 @@
 import asyncio
 import pathlib
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Awaitable, Callable
+from typing import Any, AsyncGenerator, Awaitable, Callable, Tuple
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.extension import _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.responses import Response
-from starlette.routing import Mount
+from starlette.routing import Match, Mount
 from starlette.types import Scope
 
 from .limits import get_cors_allow_origins
@@ -37,13 +37,11 @@ class _StaticMount(Mount):
     mutation requests that are missing a trailing slash.
     """
 
-    def matches(self, scope: Scope) -> tuple[Any, Any]:
+    def matches(self, scope: Scope) -> Tuple[Any, Any]:
         if scope.get("type") == "http" and scope.get("method", "GET") not in (
             "GET",
             "HEAD",
         ):
-            from starlette.routing import Match
-
             return Match.NONE, {}
         return super().matches(scope)
 
