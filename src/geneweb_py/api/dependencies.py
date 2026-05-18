@@ -4,7 +4,7 @@ from typing import Tuple
 
 from fastapi import Depends, Header, HTTPException, Request, status
 
-from .limits import READ_ONLY
+import geneweb_py.api.limits as _limits_mod
 from .services.genealogy_service import GenealogyService
 from .session_store import SessionStore
 
@@ -30,7 +30,7 @@ def get_session_service(
 
 def require_write_mode() -> None:
     """Lève 405 si l'API est en mode lecture seule (READ_ONLY=true)."""
-    if READ_ONLY:
+    if _limits_mod.READ_ONLY:
         raise HTTPException(
             status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
             detail="API en mode lecture seule",
