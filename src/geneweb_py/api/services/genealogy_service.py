@@ -53,12 +53,14 @@ class EventSearchHit:
 class GenealogyService:
     """Service principal pour la gestion de la généalogie."""
 
-    def __init__(self):
+    def __init__(self, genealogy: Optional[Genealogy] = None) -> None:
         """Initialise le service de généalogie."""
         self._genealogy: Optional[Genealogy] = None
         self._parser = GeneWebParser(use_multipass=False)
-        # Créer une généalogie vide par défaut
-        self._initialize_empty_genealogy()
+        if genealogy is not None:
+            self._genealogy = genealogy
+        else:
+            self._initialize_empty_genealogy()
 
     def _initialize_empty_genealogy(self) -> None:
         """Initialise une généalogie avec des données de test."""
