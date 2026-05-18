@@ -851,3 +851,10 @@ class TestStatistics:
         ]
         for key in required_keys:
             assert key in stats, f"Missing key: {key}"
+
+
+def test_genealogy_service_accepts_existing_genealogy(sample_genealogy):
+    from geneweb_py.api.services.genealogy_service import GenealogyService
+    service = GenealogyService(genealogy=sample_genealogy)
+    assert service.genealogy is sample_genealogy
+    assert len(service.genealogy.persons) == len(sample_genealogy.persons)

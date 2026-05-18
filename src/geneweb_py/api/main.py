@@ -1,11 +1,8 @@
-"""
-Application FastAPI principale pour l'API geneweb-py.
+"""Application FastAPI principale pour l'API geneweb-py."""
 
-Cette application fournit une API REST moderne pour manipuler les données
-généalogiques au format GeneWeb (.gw).
-"""
-
-from typing import Awaitable, Callable
+import asyncio
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Awaitable, Callable
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,27 +16,27 @@ from .limits import get_cors_allow_origins
 from .middleware.error_handler import setup_error_handlers
 from .middleware.logging import setup_logging_middleware
 from .rate_limit import limiter
-from .routers import events, families, genealogy, persons
-from .services.genealogy_service import GenealogyService
-
-_genealogy_service = GenealogyService()
+from .routers import events, families, genealogy, persons, sessions
+from .session_store import SessionStore
 
 
-def get_global_genealogy_service() -> GenealogyService:
-    """Retourne le service global de généalogie."""
-    return _genealogy_service
+async def _cleanup_loop(store: SessionStore) -> None:
+    while True:
+        await asyncio.sleep(300)
+        store.cleanup_expired()
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
+    store = SessionStore()
+    application.state.session_store = store
+    task = asyncio.create_task(_cleanup_loop(store))
+    yield
+    task.cancel()
 
 
 def create_app() -> FastAPI:
-    """
-    Construit l'application FastAPI (middlewares, routeurs).
-
-    Permet d'instancier une app avec la configuration courante des variables
-    d'environnement, notamment pour les tests CORS.
-
-    Returns:
-        Instance FastAPI prête à être servie.
-    """
+    """Construit l'application FastAPI (middlewares, routeurs)."""
     application = FastAPI(
         title="GeneWeb-py API",
         description=(
@@ -50,6 +47,7 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
+        lifespan=lifespan,
     )
 
     application.state.limiter = limiter
@@ -60,7 +58,6 @@ def create_app() -> FastAPI:
     async def add_security_headers(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        """Ajoute des en-têtes HTTP de sécurité de base."""
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
@@ -84,6 +81,8 @@ def create_app() -> FastAPI:
                 "magnetometer=(), microphone=(), payment=(), usb=()"
             ),
         )
+        if request.url.path.startswith("/api/v1/"):
+            response.headers.setdefault("Cache-Control", "no-store")
         return response
 
     application.add_middleware(
@@ -91,30 +90,32 @@ def create_app() -> FastAPI:
         allow_origins=get_cors_allow_origins(),
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization", "Accept"],
+        allow_headers=["Content-Type", "Authorization", "Accept", "X-Session-Token"],
     )
 
     setup_logging_middleware(application)
     setup_error_handlers(application)
 
     application.include_router(
+        sessions.router,
+        prefix="/api/v1/sessions",
+        tags=["Sessions"],
+    )
+    application.include_router(
         persons.router,
         prefix="/api/v1/persons",
         tags=["Personnes"],
     )
-
     application.include_router(
         families.router,
         prefix="/api/v1/families",
         tags=["Familles"],
     )
-
     application.include_router(
         events.router,
         prefix="/api/v1/events",
         tags=["Événements"],
     )
-
     application.include_router(
         genealogy.router,
         prefix="/api/v1/genealogy",
@@ -123,12 +124,6 @@ def create_app() -> FastAPI:
 
     @application.get("/health")
     async def health_check() -> JSONResponse:
-        """
-        Vérification de l'état de santé de l'API.
-
-        Returns:
-            JSONResponse: Statut de l'API
-        """
         return JSONResponse(
             content={
                 "status": "healthy",
@@ -139,12 +134,6 @@ def create_app() -> FastAPI:
 
     @application.get("/")
     async def root() -> JSONResponse:
-        """
-        Route racine de l'API.
-
-        Returns:
-            JSONResponse: Informations sur l'API
-        """
         return JSONResponse(
             content={
                 "message": "Bienvenue sur l'API GeneWeb-py",
@@ -158,7 +147,6 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
 
 if __name__ == "__main__":
     import uvicorn

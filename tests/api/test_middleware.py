@@ -96,3 +96,27 @@ class TestLoggingMiddleware:
         assert response.status_code == 500
         assert "error" in response.json()
         assert response.json()["error"] is True
+
+
+def test_session_token_not_logged(caplog):
+    import logging
+    from pathlib import Path
+    from fastapi.testclient import TestClient
+    from geneweb_py.api.main import create_app
+
+    FIXTURE_GW = Path(__file__).parent.parent / "fixtures" / "simple_test.gw"
+    app = create_app()
+    secret_token = "SUPERSECRET_SESSION_TOKEN_12345"
+
+    with TestClient(app) as client, caplog.at_level(logging.INFO, logger="geneweb_py"):
+        with open(FIXTURE_GW, "rb") as f:
+            client.post(
+                "/api/v1/sessions",
+                files={"file": ("simple_test.gw", f, "application/octet-stream")},
+            )
+        client.get("/api/v1/persons/", headers={"X-Session-Token": secret_token})
+
+    for record in caplog.records:
+        assert secret_token not in record.getMessage(), (
+            f"Token found in log record: {record.getMessage()}"
+        )

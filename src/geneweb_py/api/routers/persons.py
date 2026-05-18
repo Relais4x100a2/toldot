@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 
-from ..dependencies import get_genealogy_service
+from ..dependencies import get_session_service, require_write_mode
 from ..family_payload import family_to_family_schema
 from ..models.person import (
     PersonCreateSchema,
@@ -29,10 +29,15 @@ from ..services.genealogy_service import GenealogyService
 router = APIRouter()
 
 
-@router.post("/", response_model=SuccessResponse, status_code=201)
+@router.post(
+    "/",
+    response_model=SuccessResponse,
+    status_code=201,
+    dependencies=[Depends(require_write_mode)],
+)
 async def create_person(
     person_data: PersonCreateSchema,
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Crée une nouvelle personne.
@@ -61,7 +66,7 @@ async def create_person(
 
 @router.get("/{person_id}", response_model=SuccessResponse)
 async def get_person(
-    person_id: str, service: GenealogyService = Depends(get_genealogy_service)
+    person_id: str, service: GenealogyService = Depends(get_session_service)
 ) -> SuccessResponse:
     """
     Récupère une personne par son ID.
@@ -87,11 +92,15 @@ async def get_person(
     )
 
 
-@router.put("/{person_id}", response_model=SuccessResponse)
+@router.put(
+    "/{person_id}",
+    response_model=SuccessResponse,
+    dependencies=[Depends(require_write_mode)],
+)
 async def update_person(
     person_id: str,
     person_data: PersonUpdateSchema,
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Met à jour une personne.
@@ -118,9 +127,13 @@ async def update_person(
     )
 
 
-@router.delete("/{person_id}", response_model=SuccessResponse)
+@router.delete(
+    "/{person_id}",
+    response_model=SuccessResponse,
+    dependencies=[Depends(require_write_mode)],
+)
 async def delete_person(
-    person_id: str, service: GenealogyService = Depends(get_genealogy_service)
+    person_id: str, service: GenealogyService = Depends(get_session_service)
 ) -> SuccessResponse:
     """
     Supprime une personne.
@@ -170,7 +183,7 @@ async def list_persons(
             "sous-chaîne après NFKC et sans tenir compte de la casse"
         ),
     ),
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> PaginatedResponse:
     """
     Liste les personnes avec pagination et filtres.
@@ -239,7 +252,7 @@ async def list_persons(
 
 @router.get("/{person_id}/families", response_model=SuccessResponse)
 async def get_person_families(
-    person_id: str, service: GenealogyService = Depends(get_genealogy_service)
+    person_id: str, service: GenealogyService = Depends(get_session_service)
 ) -> SuccessResponse:
     """
     Récupère les familles d'une personne.
@@ -270,7 +283,7 @@ async def get_person_families(
 
 @router.get("/{person_id}/events", response_model=SuccessResponse)
 async def get_person_events(
-    person_id: str, service: GenealogyService = Depends(get_genealogy_service)
+    person_id: str, service: GenealogyService = Depends(get_session_service)
 ) -> SuccessResponse:
     """
     Récupère les événements d'une personne.
@@ -310,7 +323,7 @@ async def get_person_events(
 
 @router.get("/stats/overview", response_model=SuccessResponse)
 async def get_person_stats(
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Récupère les statistiques des personnes.
