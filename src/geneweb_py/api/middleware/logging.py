@@ -38,6 +38,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             or "unknown"
         )
 
+        # X-Session-Token intentionnellement absent des logs (privacy by design)
         # Log de la requête entrante
         logger.info(
             "Requête entrante: %s %s depuis %s - User-Agent: %s",
