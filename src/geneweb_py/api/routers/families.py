@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ...core.person import Person
-from ..dependencies import get_genealogy_service
+from ..dependencies import get_session_service, require_write_mode
 from ..family_payload import family_to_family_schema, family_to_list_schema
 from ..models.family import (
     FamilyCreateSchema,
@@ -28,10 +28,15 @@ from ..services.genealogy_service import GenealogyService
 router = APIRouter()
 
 
-@router.post("/", response_model=SuccessResponse, status_code=201)
+@router.post(
+    "/",
+    response_model=SuccessResponse,
+    status_code=201,
+    dependencies=[Depends(require_write_mode)],
+)
 async def create_family(
     family_data: FamilyCreateSchema,
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Crée une nouvelle famille.
@@ -60,7 +65,7 @@ async def create_family(
 
 @router.get("/{family_id}", response_model=SuccessResponse)
 async def get_family(
-    family_id: str, service: GenealogyService = Depends(get_genealogy_service)
+    family_id: str, service: GenealogyService = Depends(get_session_service)
 ) -> SuccessResponse:
     """
     Récupère une famille par son ID.
@@ -86,11 +91,15 @@ async def get_family(
     )
 
 
-@router.put("/{family_id}", response_model=SuccessResponse)
+@router.put(
+    "/{family_id}",
+    response_model=SuccessResponse,
+    dependencies=[Depends(require_write_mode)],
+)
 async def update_family(
     family_id: str,
     family_data: FamilyUpdateSchema,
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Met à jour une famille.
@@ -117,9 +126,13 @@ async def update_family(
     )
 
 
-@router.delete("/{family_id}", response_model=SuccessResponse)
+@router.delete(
+    "/{family_id}",
+    response_model=SuccessResponse,
+    dependencies=[Depends(require_write_mode)],
+)
 async def delete_family(
-    family_id: str, service: GenealogyService = Depends(get_genealogy_service)
+    family_id: str, service: GenealogyService = Depends(get_session_service)
 ) -> SuccessResponse:
     """
     Supprime une famille.
@@ -160,7 +173,7 @@ async def list_families(
     max_children: Optional[int] = Query(
         None, ge=0, description="Nombre maximum d'enfants"
     ),
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> PaginatedResponse:
     """
     Liste les familles avec pagination et filtres.
@@ -224,7 +237,7 @@ async def list_families(
 
 @router.get("/{family_id}/children", response_model=SuccessResponse)
 async def get_family_children(
-    family_id: str, service: GenealogyService = Depends(get_genealogy_service)
+    family_id: str, service: GenealogyService = Depends(get_session_service)
 ) -> SuccessResponse:
     """
     Récupère les enfants d'une famille.
@@ -280,7 +293,7 @@ async def get_family_children(
 
 @router.get("/{family_id}/events", response_model=SuccessResponse)
 async def get_family_events(
-    family_id: str, service: GenealogyService = Depends(get_genealogy_service)
+    family_id: str, service: GenealogyService = Depends(get_session_service)
 ) -> SuccessResponse:
     """
     Récupère les événements d'une famille.
@@ -328,7 +341,7 @@ async def get_family_events(
 
 @router.get("/stats/overview", response_model=SuccessResponse)
 async def get_family_stats(
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Récupère les statistiques des familles.

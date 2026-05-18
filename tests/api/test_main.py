@@ -4,7 +4,7 @@ Tests pour l'application principale FastAPI.
 
 from fastapi.testclient import TestClient
 
-from geneweb_py.api.main import app, get_global_genealogy_service
+from geneweb_py.api.main import app
 
 
 class TestMainApp:
@@ -15,11 +15,6 @@ class TestMainApp:
         assert app is not None
         assert app.title == "GeneWeb-py API"
         assert app.version == "0.1.0"
-
-    def test_get_global_service(self):
-        """Test récupération du service global."""
-        service = get_global_genealogy_service()
-        assert service is not None
 
     def test_root_endpoint(self):
         """Test endpoint racine."""

@@ -1,125 +1,64 @@
-"""
-Dépendances FastAPI pour l'API geneweb-py.
+"""Dépendances FastAPI pour l'API geneweb-py."""
 
-Ce module fournit les dépendances communes utilisées dans les routers
-pour l'injection de dépendances et la gestion des services.
-"""
+from typing import Tuple
 
-from contextlib import asynccontextmanager
-from typing import Generator, Tuple
+from fastapi import Depends, Header, HTTPException, Request, status
 
-from fastapi import Depends, HTTPException, status
-
+import geneweb_py.api.limits as _limits_mod
 from .services.genealogy_service import GenealogyService
+from .session_store import SessionStore
 
 
-def get_genealogy_service() -> GenealogyService:
-    """
-    Dépendance pour obtenir le service de généalogie.
-
-    Returns:
-        GenealogyService: Service de généalogie
-    """
-    # Import ici pour éviter les imports circulaires
-    from .main import get_global_genealogy_service
-
-    return get_global_genealogy_service()
+def get_store(request: Request) -> SessionStore:
+    """Retourne le SessionStore stocké dans app.state."""
+    return request.app.state.session_store
 
 
-@asynccontextmanager
-async def get_genealogy_service_context() -> Generator[GenealogyService, None, None]:
-    """
-    Contexte asynchrone pour le service de généalogie.
-
-    Yields:
-        GenealogyService: Service de généalogie
-    """
-    try:
-        service = get_genealogy_service()
-        yield service
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur du service de généalogie: {exc}",
-        ) from exc
-
-
-def validate_genealogy_loaded(
-    service: GenealogyService = Depends(get_genealogy_service),
+def get_session_service(
+    x_session_token: str = Header(..., alias="X-Session-Token"),
+    store: SessionStore = Depends(get_store),
 ) -> GenealogyService:
-    """
-    Valide qu'une généalogie est chargée dans le service.
-
-    Args:
-        service: Service de généalogie
-
-    Returns:
-        GenealogyService: Service de généalogie validé
-
-    Raises:
-        HTTPException: Si aucune généalogie n'est chargée
-    """
-    try:
-        # Tentative d'accès à la généalogie pour vérifier qu'elle est chargée
-        _ = service.genealogy
-        return service
-    except ValueError as exc:
+    """Résout le token de session et retourne un GenealogyService."""
+    genealogy = store.get(x_session_token)
+    if genealogy is None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Aucune généalogie n'est chargée. Utilisez l'endpoint /api/v1/genealogy/import pour charger un fichier.",  # noqa: E501
-        ) from exc
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session inconnue ou expirée",
+        )
+    return GenealogyService(genealogy=genealogy)
+
+
+def require_write_mode() -> None:
+    """Lève 405 si l'API est en mode lecture seule (READ_ONLY=true)."""
+    if _limits_mod.READ_ONLY:
+        raise HTTPException(
+            status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+            detail="API en mode lecture seule",
+        )
 
 
 def get_pagination_params(
     page: int = 1, size: int = 20, max_size: int = 100
 ) -> Tuple[int, int]:
-    """
-    Valide et retourne les paramètres de pagination.
-
-    Args:
-        page: Numéro de page
-        size: Taille de la page
-        max_size: Taille maximum autorisée
-
-    Returns:
-        tuple[int, int]: (page, size) validés
-
-    Raises:
-        HTTPException: Si les paramètres sont invalides
-    """
+    """Valide et retourne les paramètres de pagination."""
     if page < 1:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Le numéro de page doit être supérieur à 0",
         )
-
     if size < 1 or size > max_size:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"La taille de la page doit être entre 1 et {max_size}",
         )
-
     return page, size
 
 
 def get_search_limit(limit: int = 50, max_limit: int = 100) -> int:
-    """
-    Valide et retourne la limite de recherche.
-
-    Args:
-        limit: Limite demandée
-        max_limit: Limite maximum autorisée
-
-    Returns:
-        int: Limite validée
-
-    Raises:
-        HTTPException: Si la limite est invalide
-    """
+    """Valide et retourne la limite de recherche."""
     if limit < 1 or limit > max_limit:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"La limite doit être entre 1 et {max_limit}",
         )
-
     return limit

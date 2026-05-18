@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from geneweb_py.api.dependencies import get_genealogy_service
+from geneweb_py.api.dependencies import get_session_service
 from geneweb_py.api.main import app
 from geneweb_py.api.services.genealogy_service import GenealogyService
 from geneweb_py.core.models import Gender, Genealogy, Person
@@ -24,7 +24,7 @@ def mock_service():
 @pytest.fixture
 def client(mock_service):
     """Client de test FastAPI avec service mocké."""
-    app.dependency_overrides[get_genealogy_service] = lambda: mock_service
+    app.dependency_overrides[get_session_service] = lambda: mock_service
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
@@ -232,28 +232,6 @@ class TestValidateGenealogy:
         body = response.json()
         assert body["data"]["is_valid"] is False
         assert "erreurs" in body["message"].lower()
-
-
-class TestClearGenealogy:
-    """Tests pour la suppression de généalogie."""
-
-    def test_clear_success(self, client, mock_service):
-        """Test suppression réussie."""
-        mock_service.create_empty.return_value = Genealogy()
-
-        response = client.delete("/api/v1/genealogy/")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "supprimée" in data["message"] or "vidée" in data["message"]
-
-    def test_clear_error(self, client, mock_service):
-        """Test erreur lors de la suppression."""
-        mock_service.create_empty.side_effect = Exception("Clear failed")
-
-        response = client.delete("/api/v1/genealogy/")
-
-        assert response.status_code == 500
 
 
 class TestHealthCheck:

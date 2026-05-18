@@ -82,3 +82,7 @@ def get_cors_allow_origins() -> List[str]:
 
 
 MAX_UPLOAD_BYTES: int = _parse_int_env("GENEWEB_MAX_UPLOAD_BYTES", 50 * 1024 * 1024)
+
+SESSION_MAX_SESSIONS: int = _parse_int_env("SESSION_MAX_SESSIONS", 10)
+SESSION_TTL_SECONDS: int = _parse_int_env("SESSION_TTL_SECONDS", 3600)
+READ_ONLY: bool = os.getenv("READ_ONLY", "false").strip().lower() == "true"

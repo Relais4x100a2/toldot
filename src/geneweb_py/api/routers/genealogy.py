@@ -4,36 +4,26 @@ Router FastAPI pour la gestion de la généalogie dans l'API geneweb-py.
 
 import os
 import tempfile
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List
 
 from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
-    File,
     HTTPException,
     Query,
     Request,
-    UploadFile,
 )
 from fastapi.responses import FileResponse
 
 from ...formats import GEDCOMExporter, JSONExporter, XMLExporter
-from ..dependencies import get_genealogy_service
-from ..limits import MAX_UPLOAD_BYTES
+from ..dependencies import get_session_service
 from ..models.responses import StatsResponse, SuccessResponse
 from ..rate_limit import limiter
 from ..router_helpers import raise_internal_server_error
 from ..services.genealogy_service import GenealogyService
 
 router = APIRouter()
-
-_ALLOWED_UPLOAD_CONTENT_TYPES: Set[str] = {
-    "application/octet-stream",
-    "text/plain",
-    "application/genealogy",
-}
 
 _READ_CHUNK_SIZE = 1024 * 1024
 
@@ -44,96 +34,6 @@ def _unlink_temp(path: str) -> None:
         os.unlink(path)
     except OSError:
         pass
-
-
-def _sanitize_client_filename(raw: str) -> str:
-    """Retourne un nom de fichier sans composants de chemin (basename)."""
-    if not raw:
-        return ""
-    return Path(raw).name
-
-
-def _validate_upload_meta(content_type: Optional[str], safe_name: str) -> None:
-    """Vérifie type MIME et extension pour l'import .gw."""
-    if not safe_name.lower().endswith((".gw", ".gwplus")):
-        raise HTTPException(
-            status_code=400,
-            detail="Le fichier doit avoir l'extension .gw ou .gwplus",
-        )
-    if content_type is not None:
-        main_type = content_type.split(";")[0].strip().lower()
-        allowed = {t.lower() for t in _ALLOWED_UPLOAD_CONTENT_TYPES if t}
-        if main_type not in allowed:
-            raise HTTPException(
-                status_code=415,
-                detail="Type de contenu non accepté pour un fichier GeneWeb",
-            )
-
-
-@router.post("/import", response_model=SuccessResponse)
-@limiter.limit("20/minute")
-async def import_genealogy_file(
-    request: Request,
-    file: UploadFile = File(...),
-    service: GenealogyService = Depends(get_genealogy_service),
-) -> SuccessResponse:
-    """
-    Importe un fichier généalogique (.gw).
-
-    Args:
-        request: Requête HTTP (limitation de débit).
-        file: Fichier à importer
-        service: Service de généalogie
-
-    Returns:
-        SuccessResponse: Réponse de succès avec les statistiques d'import
-    """
-    safe_name = _sanitize_client_filename(file.filename or "")
-    try:
-        _validate_upload_meta(file.content_type, safe_name)
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".gw") as temp_file:
-            temp_file_path = temp_file.name
-            total = 0
-            while True:
-                chunk = await file.read(_READ_CHUNK_SIZE)
-                if not chunk:
-                    break
-                total += len(chunk)
-                if total > MAX_UPLOAD_BYTES:
-                    temp_file.flush()
-                    os.unlink(temp_file_path)
-                    raise HTTPException(
-                        status_code=413,
-                        detail=(
-                            "Fichier trop volumineux (limite "
-                            f"{MAX_UPLOAD_BYTES // (1024 * 1024)} Mo)"
-                        ),
-                    )
-                temp_file.write(chunk)
-
-        try:
-            service.load_from_file(temp_file_path)
-            stats = service.get_stats()
-
-            return SuccessResponse(
-                message=f"Fichier '{safe_name}' importé avec succès",
-                data={
-                    "filename": safe_name,
-                    "size_bytes": total,
-                    "statistics": stats,
-                },
-            )
-
-        finally:
-            _unlink_temp(temp_file_path)
-
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise_internal_server_error(
-            "Erreur lors de l'import du fichier généalogique", exc
-        )
 
 
 def _export_with_cleanup(
@@ -168,7 +68,7 @@ async def export_genealogy(
     request: Request,
     format: str,
     background_tasks: BackgroundTasks,
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> FileResponse:
     """
     Exporte la généalogie dans différents formats.
@@ -249,7 +149,7 @@ async def export_genealogy(
 
 @router.get("/stats", response_model=SuccessResponse)
 async def get_genealogy_stats(
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Récupère les statistiques générales de la généalogie.
@@ -312,7 +212,7 @@ async def search_genealogy(
         "all", description="Type de recherche: all, persons, families, events"
     ),
     limit: int = Query(50, ge=1, le=100, description="Nombre maximum de résultats"),
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Effectue une recherche globale dans la généalogie.
@@ -476,7 +376,7 @@ async def validate_genealogy(
             "de cette passe (pas de cumul avec les appels précédents)."
         ),
     ),
-    service: GenealogyService = Depends(get_genealogy_service),
+    service: GenealogyService = Depends(get_session_service),
 ) -> SuccessResponse:
     """
     Valide la cohérence de la généalogie.
@@ -505,28 +405,6 @@ async def validate_genealogy(
         raise_internal_server_error(
             "Erreur lors de la validation de la généalogie", exc
         )
-
-
-@router.delete("/", response_model=SuccessResponse)
-async def clear_genealogy(
-    service: GenealogyService = Depends(get_genealogy_service),
-) -> SuccessResponse:
-    """
-    Vide la généalogie actuelle.
-
-    Args:
-        service: Service de généalogie
-
-    Returns:
-        SuccessResponse: Réponse de succès
-    """
-    try:
-        service.create_empty()
-
-        return SuccessResponse(message="Généalogie vidée avec succès")
-
-    except Exception as exc:
-        raise_internal_server_error("Erreur lors du vidage de la généalogie", exc)
 
 
 @router.get("/health")
