@@ -48,11 +48,12 @@ class SessionStore:
                 raise SessionFullError("Session cap reached")
             token = secrets.token_urlsafe(32)
             expires_at = self._new_expiry()
-            self._store[token] = SessionEntry(genealogy=genealogy, expires_at=expires_at)
+            entry = SessionEntry(genealogy=genealogy, expires_at=expires_at)
+            self._store[token] = entry
             return token, expires_at
 
     def get(self, token: str) -> Optional[Genealogy]:
-        """Retourne la Genealogy si la session est active, None sinon. Prolonge le TTL."""
+        """Retourne la Genealogy si active, None sinon. Prolonge le TTL."""
         with self._lock:
             entry = self._store.get(token)
             if entry is None:
@@ -83,7 +84,8 @@ class SessionStore:
     def count_active(self) -> int:
         """Nombre de sessions non expirées."""
         now = self._now()
-        return sum(1 for e in self._store.values() if e.expires_at > now)
+        with self._lock:
+            return sum(1 for e in self._store.values() if e.expires_at > now)
 
     def is_full(self) -> bool:
         """Vrai si le cap de sessions est atteint."""
