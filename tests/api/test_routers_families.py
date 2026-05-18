@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 
-from geneweb_py.api.dependencies import get_genealogy_service
+from geneweb_py.api.dependencies import get_session_service
 from geneweb_py.api.main import app
 from geneweb_py.api.services.genealogy_service import GenealogyService
 from geneweb_py.core.models import Family, MarriageStatus
@@ -23,7 +23,7 @@ def mock_service():
 @pytest.fixture
 def client(mock_service):
     """Client de test FastAPI avec service mocké."""
-    app.dependency_overrides[get_genealogy_service] = lambda: mock_service
+    app.dependency_overrides[get_session_service] = lambda: mock_service
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
