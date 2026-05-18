@@ -5,8 +5,8 @@ from typing import Tuple
 from fastapi import Depends, Header, HTTPException, Request, status
 
 from .limits import READ_ONLY
-from .session_store import SessionStore
 from .services.genealogy_service import GenealogyService
+from .session_store import SessionStore
 
 
 def get_store(request: Request) -> SessionStore:
@@ -18,7 +18,7 @@ def get_session_service(
     x_session_token: str = Header(..., alias="X-Session-Token"),
     store: SessionStore = Depends(get_store),
 ) -> GenealogyService:
-    """Résout le token de session et retourne un GenealogyService wrappant la Genealogy."""
+    """Résout le token de session et retourne un GenealogyService."""
     genealogy = store.get(x_session_token)
     if genealogy is None:
         raise HTTPException(
@@ -35,26 +35,6 @@ def require_write_mode() -> None:
             status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
             detail="API en mode lecture seule",
         )
-
-
-def get_genealogy_service(request: Request) -> GenealogyService:
-    """Compatibilité temporaire — sera supprimé lors de la migration des routers.
-
-    Lève 401 si un X-Session-Token est présent (session expirée ou inconnue)
-    pour permettre aux tests de session de vérifier l'invalidation du token.
-    """
-    token = request.headers.get("X-Session-Token")
-    if token is not None:
-        store: SessionStore = request.app.state.session_store
-        if store.get(token) is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Session inconnue ou expirée",
-            )
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Utilisez get_session_service avec un token de session",
-    )
 
 
 def get_pagination_params(

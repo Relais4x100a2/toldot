@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from geneweb_py.api.dependencies import get_genealogy_service
+from geneweb_py.api.dependencies import get_session_service
 from geneweb_py.api.main import app
 from geneweb_py.api.models.event import PersonalEventCreateSchema
 from geneweb_py.api.services.genealogy_service import GenealogyService
@@ -20,7 +20,7 @@ def integration_client():
     """Client avec service isolé et fichier .gw chargé."""
     service = GeneWebServiceForTest()
     service.load_from_file(str(FIXTURES / "simple_family.gw"))
-    app.dependency_overrides[get_genealogy_service] = lambda: service
+    app.dependency_overrides[get_session_service] = lambda: service
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
@@ -83,7 +83,7 @@ class TestPersonSubresources:
     def test_person_events_after_create(self, integration_client):
         service = GeneWebServiceForTest()
         service.load_from_file(str(FIXTURES / "simple_family.gw"))
-        app.dependency_overrides[get_genealogy_service] = lambda: service
+        app.dependency_overrides[get_session_service] = lambda: service
         client = TestClient(app)
         try:
             service.create_personal_event(
