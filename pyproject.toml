@@ -84,6 +84,9 @@ Changelog = "https://github.com/Relais4x100a2/geneweb-py/blob/main/CHANGELOG.md"
 where = ["src"]
 include = ["geneweb_py*"]
 
+[tool.setuptools.package-data]
+"geneweb_py" = ["api/static/**/*"]
+
 # ===================================================================
 # Configuration Ruff (remplace Black + Flake8 + isort)
 # ===================================================================
