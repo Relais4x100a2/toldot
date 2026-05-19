@@ -315,11 +315,139 @@ function updatePersonPagination(pagination) {
     `Page ${pagination.page} / ${pagination.pages} (${pagination.total} personnes)`;
 }
 
+// ==================== FICHE PERSONNE ====================
+async function showPersonDetail(personId, btnEl) {
+  const existing = document.getElementById('person-detail-panel');
+  if (existing) {
+    const wasForSamePerson = existing.dataset.personId === personId;
+    existing.remove();
+    if (wasForSamePerson) return;
+  }
+
+  state.currentPersonId = personId;
+
+  let personResp, familiesResp;
+  try {
+    [personResp, familiesResp] = await Promise.all([
+      apiJson('/api/v1/persons/' + encodeURIComponent(personId)),
+      apiJson('/api/v1/persons/' + encodeURIComponent(personId) + '/families'),
+    ]);
+  } catch (err) {
+    if (err.message === 'session-expired') return; // handled by apiFetch
+    const row = btnEl ? btnEl.closest('.item-row') : null;
+    const errPanel = document.createElement('div');
+    errPanel.className = 'alert-toldot error';
+    errPanel.textContent = 'Impossible de charger la fiche.';
+    if (row) row.insertAdjacentElement('afterend', errPanel);
+    else document.getElementById('persons-list').prepend(errPanel);
+    return;
+  }
+
+  const person = personResp.data;
+  const families = familiesResp.data || [];
+
+  const parentIds = [];
+  const childIds = [];
+
+  for (const fam of families) {
+    if (fam.husband_id === personId || fam.wife_id === personId) {
+      // person is a parent in this family → collect children
+      for (const cid of (fam.children || [])) {
+        if (cid && cid !== personId) childIds.push(cid);
+      }
+    } else {
+      // person is a child in this family → collect parents
+      if (fam.husband_id && fam.husband_id !== personId) parentIds.push(fam.husband_id);
+      if (fam.wife_id && fam.wife_id !== personId) parentIds.push(fam.wife_id);
+    }
+  }
+
+  const uniqueParentIds = [...new Set(parentIds)];
+  const uniqueChildIds = [...new Set(childIds)];
+  const allIds = [...new Set([...uniqueParentIds, ...uniqueChildIds])];
+
+  const nameMap = await resolvePersonNames(allIds);
+
+  const parents = uniqueParentIds.map(id => ({ id, label: nameMap[id] || id }));
+  const children = uniqueChildIds.map(id => ({ id, label: nameMap[id] || id }));
+
+  const panel = buildPersonDetailPanel(person, parents, children);
+  panel.dataset.personId = personId;
+
+  const row = btnEl ? btnEl.closest('.item-row') : null;
+  if (row) {
+    row.insertAdjacentElement('afterend', panel);
+  } else {
+    document.getElementById('persons-list').prepend(panel);
+  }
+
+  panel.querySelectorAll('.mini-tree-person[data-id]').forEach(el => {
+    el.addEventListener('click', () => showPersonDetail(el.dataset.id, null));
+  });
+}
+
+async function resolvePersonNames(ids) {
+  const map = {};
+  // No batch endpoint available; one request per related person
+  await Promise.all(ids.map(async id => {
+    try {
+      const r = await apiJson('/api/v1/persons/' + encodeURIComponent(id));
+      const p = r.data;
+      map[id] = (p.surname || '—') + ', ' + (p.first_name || '—');
+    } catch { map[id] = id; }
+  }));
+  return map;
+}
+
+function buildPersonDetailPanel(person, parents, children) {
+  const panel = document.createElement('div');
+  panel.id = 'person-detail-panel';
+  panel.className = 'person-detail';
+  const fullName = escHtml((person.surname || '—') + ', ' + (person.first_name || '—'));
+
+  const dateParts = [];
+  if (person.birth_date) dateParts.push('°' + escHtml(shortDate(person.birth_date)));
+  if (person.death_date) dateParts.push('†' + escHtml(shortDate(person.death_date)));
+  const datesHtml = dateParts.length
+    ? `<span style="color:var(--text-muted);font-size:0.85rem"> — ${dateParts.join(' · ')}</span>`
+    : '';
+
+  function renderPersonNodes(list) {
+    if (!list.length) return '<span class="mini-tree-person placeholder">—</span>';
+    return list.map(({ id, label }) =>
+      `<a class="mini-tree-person" data-id="${escHtml(id)}">${escHtml(label)}</a>`
+    ).join('');
+  }
+
+  panel.innerHTML = `
+    <div>
+      <strong>${fullName}</strong>${datesHtml}
+    </div>
+    <div class="mini-tree">
+      <div class="mini-tree-col">
+        <div class="mini-tree-label">Parents</div>
+        ${renderPersonNodes(parents)}
+      </div>
+      <div class="mini-tree-arrow">→</div>
+      <div class="mini-tree-col">
+        <div class="mini-tree-label">Lui/Elle</div>
+        <span class="mini-tree-person self">${escHtml(person.surname || '—')}</span>
+      </div>
+      <div class="mini-tree-arrow">→</div>
+      <div class="mini-tree-col">
+        <div class="mini-tree-label">Enfants</div>
+        ${renderPersonNodes(children)}
+      </div>
+    </div>
+  `;
+
+  return panel;
+}
+
 // ==================== STUBS (implemented in later tasks) ====================
-function showPersonDetail(_id, _btn) {}
-function loadFamilies(_page) {}
-function renderStats() {}
 function wireFamiliesTab() {}
 function wireEventsTab() {}
 function wireExportTab() {}
 function buildEventTypeCheckboxes() {}
+async function loadFamilies(_page) {}
+function renderStats() {}
