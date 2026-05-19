@@ -99,9 +99,10 @@ def create_app() -> FastAPI:
         elif request.url.path.startswith("/api/v1/"):
             csp = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
         else:
-            # Front-end statique
+            # Front-end statique — 'unsafe-inline' requis pour les style="" dans le HTML et JS
             csp = (
                 "default-src 'self'; "
+                "style-src 'self' 'unsafe-inline'; "
                 "img-src 'self' data:; "
                 "frame-ancestors 'none'; "
                 "base-uri 'self'"

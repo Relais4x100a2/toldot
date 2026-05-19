@@ -84,6 +84,7 @@ function clearSession() {
   state.expiresAt = null;
   sessionStorage.removeItem('gwToken');
   sessionStorage.removeItem('gwExpiresAt');
+  if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
   showLanding();
 }
 
