@@ -241,7 +241,7 @@ class FamilyBlockParser(BlockParser):
 
             # Modificateurs de lieu de mariage
             # Le lieu GW Plus contient des virgules: Ville,_Code,_Région,_Pays
-            # Il faut consommer tous les segments IDENTIFIER séparés par UNKNOWN ","
+            # On ne consomme que les UNKNOWN "," (virgules), pas "#" ni les autres.
             if token.type in [TokenType.MP, TokenType.P]:
                 node.add_token(token)
                 i += 1
@@ -251,6 +251,7 @@ class FamilyBlockParser(BlockParser):
                     while (
                         i < len(tokens)
                         and tokens[i].type == TokenType.UNKNOWN
+                        and tokens[i].value == ","
                         and i + 1 < len(tokens)
                         and tokens[i + 1].type == TokenType.IDENTIFIER
                     ):
@@ -278,7 +279,7 @@ class FamilyBlockParser(BlockParser):
                         i += 1
                 continue
 
-            # Autres modificateurs
+            # Autres modificateurs reconnus
             if token.type in [TokenType.SRC, TokenType.S]:
                 node.add_token(token)
                 i += 1
@@ -289,6 +290,63 @@ class FamilyBlockParser(BlockParser):
                     node.add_token(tokens[i])
                     i += 1
                 continue
+
+            # Modificateurs GW Plus inconnus (ex: #ms url, #ps url, #rs url…)
+            # Ils tokenisent en UNKNOWN("#") + IDENTIFIER("ms") car non enregistrés.
+            # On les consomme avec leur argument URL jusqu'à trouver le nom de l'épouse
+            # (dernier couple IDENTIFIER IDENTIFIER avant NEWLINE/fin de ligne).
+            if token.type == TokenType.UNKNOWN and token.value == "#":
+                if i + 1 < len(tokens) and tokens[i + 1].type == TokenType.IDENTIFIER:
+                    i += 2  # sauter "#" et le nom du modificateur (ex: "ms")
+                    while i < len(tokens):
+                        t = tokens[i]
+                        if t.type == TokenType.NEWLINE:
+                            break
+                        if t.type == TokenType.UNKNOWN and t.value == "#":
+                            break  # prochain modificateur inconnu
+                        if t.type in [
+                            TokenType.MP,
+                            TokenType.P,
+                            TokenType.NM,
+                            TokenType.ENG,
+                            TokenType.SEP,
+                            TokenType.DIV,
+                            TokenType.SRC,
+                            TokenType.S,
+                        ]:
+                            break
+                        # Deux IDENTIFIER consécutifs = nom de l'épouse si suivis
+                        # de NEWLINE/EOF ou d'un modificateur connu
+                        if (
+                            t.type == TokenType.IDENTIFIER
+                            and i + 1 < len(tokens)
+                            and tokens[i + 1].type == TokenType.IDENTIFIER
+                        ):
+                            j = i + 2
+                            if j < len(tokens) and tokens[j].type == TokenType.NUMBER:
+                                j += 1
+                            after_type = (
+                                tokens[j].type if j < len(tokens) else TokenType.EOF
+                            )
+                            if after_type in [
+                                TokenType.NEWLINE,
+                                TokenType.EOF,
+                                TokenType.BP,
+                                TokenType.DP,
+                                TokenType.OCCU,
+                                TokenType.NOTE,
+                                TokenType.APUBL,
+                                TokenType.APRIV,
+                                TokenType.OD,
+                                TokenType.MJ,
+                                TokenType.BURI,
+                                TokenType.CREM,
+                                TokenType.SRC,
+                            ]:
+                                break
+                        i += 1
+                    continue
+                break
 
             break
 
@@ -509,6 +567,14 @@ class FamilyBlockParser(BlockParser):
 
                 # Informations personnelles de l'enfant (occupation, etc.)
                 i = self._parse_personal_info(tokens, i, child_node)
+
+                # Sauter les tokens restants sur cette ligne (modificateurs inconnus
+                # comme #bs/#ds et leurs URL — arrêt uniquement à NEWLINE ou END)
+                while i < len(tokens) and tokens[i].type not in [
+                    TokenType.NEWLINE,
+                    TokenType.END,
+                ]:
+                    i += 1
 
                 node.add_child(child_node)
 
@@ -1240,10 +1306,11 @@ class ChildrenBlockParser(BlockParser):
                 child_node.add_token(tokens[i])
                 i += 1
 
-            # Consommer tous les tokens jusqu'à la prochaine ligne ou fin
+            # Consommer tous les tokens jusqu'à la fin de la ligne ou fin de bloc.
+            # On ne s'arrête PAS sur DASH pour éviter que les tirets dans les URL
+            # (ex: UUID comme a689-706f127711c9) ne créent des enfants fantômes.
             while i < len(tokens) and tokens[i].type not in [
                 TokenType.NEWLINE,
-                TokenType.DASH,
                 TokenType.END,
             ]:
                 child_node.add_token(tokens[i])
