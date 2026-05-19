@@ -578,8 +578,122 @@ async function showFamilyDetail(familyId, btnEl) {
   }
 }
 
+// ==================== ÉVÉNEMENTS ====================
+const EVENT_TYPES = [
+  { value: 'birt', label: 'Naissance' },
+  { value: 'deat', label: 'Décès' },
+  { value: 'marr', label: 'Mariage' },
+  { value: 'div',  label: 'Divorce' },
+  { value: 'sep',  label: 'Séparation' },
+  { value: 'bapt', label: 'Baptême' },
+  { value: 'buri', label: 'Inhumation' },
+  { value: 'enga', label: 'Fiançailles' },
+  { value: 'pacs', label: 'PACS' },
+  { value: 'oth',  label: 'Autre' },
+];
+
+function buildEventTypeCheckboxes() {
+  const container = document.getElementById('evt-types');
+  if (!container) return;
+  container.innerHTML = EVENT_TYPES.map(t =>
+    `<label><input type="checkbox" value="${escHtml(t.value)}" class="evt-type-cb"> ${escHtml(t.label)}</label>`
+  ).join('');
+}
+
+function wireEventsTab() {
+  const btn = document.getElementById('evt-search-btn');
+  if (btn) btn.addEventListener('click', searchEvents);
+}
+
+async function searchEvents() {
+  const day   = parseInt(document.getElementById('evt-day').value)   || null;
+  const month = parseInt(document.getElementById('evt-month').value) || null;
+  const year  = parseInt(document.getElementById('evt-year').value)  || null;
+  const selectedTypes = [...document.querySelectorAll('.evt-type-cb:checked')].map(cb => cb.value);
+
+  const list = document.getElementById('events-list');
+  list.innerHTML = '<p style="color:var(--text-muted);font-style:italic">Recherche en cours…</p>';
+
+  try {
+    let items = await fetchAllEventItems(year, selectedTypes);
+    if (month !== null) items = items.filter(e => extractMonth(e.date) === month);
+    if (day   !== null) items = items.filter(e => extractDay(e.date)   === day);
+    renderEvents(items);
+  } catch (err) {
+    if (err.message === 'session-expired') return;
+    list.innerHTML = '<p class="alert-toldot error">Erreur lors de la recherche.</p>';
+  }
+}
+
+async function fetchAllEventItems(year, selectedTypes) {
+  const typesToFetch = selectedTypes.length > 0 ? selectedTypes : [null];
+  const allItems = [];
+
+  for (const type of typesToFetch) {
+    let page = 1;
+    while (true) {
+      const params = new URLSearchParams({ page, size: 100 });
+      if (year) { params.set('year_from', year); params.set('year_to', year); }
+      if (type) params.set('event_type', type);
+      const data = await apiJson('/api/v1/events?' + params);
+      allItems.push(...data.items);
+      if (!data.pagination.has_next) break;
+      page++;
+      if (page > 100) break; // safeguard against runaway loop
+    }
+  }
+
+  // Deduplicate by id when multiple types were fetched
+  if (selectedTypes.length > 1) {
+    const seen = new Set();
+    return allItems.filter(e => {
+      if (seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    });
+  }
+  return allItems;
+}
+
+function renderEvents(items) {
+  const list = document.getElementById('events-list');
+  if (!items.length) {
+    list.innerHTML = '<p class="text-muted" style="font-style:italic;padding:0.5rem">Aucun événement trouvé.</p>';
+    return;
+  }
+  list.innerHTML = items.map(e => {
+    const typeLabel = EVENT_TYPES.find(t => t.value === e.event_type)?.label || escHtml(e.event_type) || '?';
+    const dateStr   = e.date ? escHtml(shortDate(e.date)) : '—';
+    const placeHtml = e.place ? ` · ${escHtml(e.place)}` : '';
+    const personBtn = e.person_id
+      ? ` <button class="btn-see" data-id="${escHtml(e.person_id)}">Personne ›</button>`
+      : '';
+    return `<div class="item-row">
+      <span><span class="item-name"><strong>${typeLabel}</strong></span> <span class="item-meta">${dateStr}${placeHtml}</span></span>
+      ${personBtn}
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.btn-see[data-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      showTab('persons');
+      showPersonDetail(btn.dataset.id, null);
+    });
+  });
+}
+
+function extractMonth(dateStr) {
+  if (!dateStr) return null;
+  const m = String(dateStr).match(/[-\/](\d{1,2})[-\/]/);
+  return m ? parseInt(m[1]) : null;
+}
+
+function extractDay(dateStr) {
+  if (!dateStr) return null;
+  const m = String(dateStr).match(/[-\/]\d{1,2}[-\/](\d{1,2})/);
+  return m ? parseInt(m[1]) : null;
+}
+
 // ==================== STUBS (implemented in later tasks) ====================
-function wireEventsTab() {}
 function wireExportTab() {}
-function buildEventTypeCheckboxes() {}
 function renderStats() {}
