@@ -1,4 +1,139 @@
 <!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8"><title>Toldot · GeneWeb-py</title></head>
-<body><h1>Toldot</h1></body>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Toldot · GeneWeb-py</title>
+  <link rel="stylesheet" href="/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ==================== LANDING ==================== -->
+<div id="view-landing">
+  <h1>Toldot · GeneWeb-py</h1>
+  <p class="lead">Explorez votre fichier généalogique — aucune donnée conservée sur le serveur</p>
+
+  <div class="upload-zone" id="drop-zone">
+    <div class="icon">📂</div>
+    <p class="mb-1">Glissez un fichier <strong>.gw</strong> ici</p>
+    <p class="text-muted" style="font-size:0.85rem">ou cliquez pour parcourir</p>
+    <input type="file" id="file-input" accept=".gw,.gwplus" style="display:none">
+  </div>
+
+  <button class="btn-primary-toldot" id="btn-upload">Charger et analyser</button>
+
+  <div id="upload-error" class="alert-toldot error" style="display:none"></div>
+
+  <ul class="assurance-list mt-4">
+    <li>Parsing en mémoire — fichier supprimé immédiatement après chargement</li>
+    <li>Session d'1 heure · Export GEDCOM · JSON · XML</li>
+    <li>Code source libre — <a href="https://github.com/Relais4x100a2/geneweb-py" target="_blank" rel="noopener" style="color:var(--accent)">GitHub</a></li>
+  </ul>
+
+  <footer class="toldot-footer">
+    Site non professionnel au sens de l'article 6 III 2° de la loi 2004-575. Aucune donnée personnelle collectée.
+  </footer>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="view-app" style="display:none">
+
+  <!-- Navbar -->
+  <nav class="toldot-nav">
+    <span class="brand">Toldot · GeneWeb-py</span>
+    <span class="nav-stats" id="nav-stats"></span>
+    <span style="flex:1"></span>
+    <span class="timer" id="nav-timer"></span>
+    <button class="btn-quit" id="btn-quit">Quitter la session</button>
+  </nav>
+
+  <!-- Tabs -->
+  <div class="toldot-tabs">
+    <div class="toldot-tab active" data-tab="persons">Personnes</div>
+    <div class="toldot-tab" data-tab="families">Familles</div>
+    <div class="toldot-tab" data-tab="events">Événements</div>
+    <div class="toldot-tab" data-tab="stats">Stats</div>
+    <div class="toldot-tab" data-tab="export">Export</div>
+  </div>
+
+  <div class="container-fluid py-3">
+
+    <!-- === PERSONNES === -->
+    <div id="panel-persons" class="tab-panel active">
+      <div class="search-bar">
+        <input type="text" id="persons-search" placeholder="Rechercher un nom…">
+        <button id="persons-search-btn">Chercher</button>
+        <button id="persons-clear-btn" style="background:none;border:1px solid var(--accent-light);border-radius:4px;padding:0.35rem 0.6rem;cursor:pointer;color:var(--text-muted)">✕</button>
+      </div>
+      <div id="persons-list"></div>
+      <div class="pagination-bar">
+        <button id="persons-prev" disabled>← Précédent</button>
+        <span id="persons-page-info"></span>
+        <button id="persons-next" disabled>Suivant →</button>
+      </div>
+    </div>
+
+    <!-- === FAMILLES === -->
+    <div id="panel-families" class="tab-panel">
+      <div id="families-list"></div>
+      <div class="pagination-bar">
+        <button id="families-prev" disabled>← Précédent</button>
+        <span id="families-page-info"></span>
+        <button id="families-next" disabled>Suivant →</button>
+      </div>
+    </div>
+
+    <!-- === ÉVÉNEMENTS === -->
+    <div id="panel-events" class="tab-panel">
+      <div class="event-filters">
+        <div class="row g-2 mb-2">
+          <div class="col-auto">
+            <label>Jour</label>
+            <input type="number" id="evt-day" min="1" max="31" placeholder="1-31">
+          </div>
+          <div class="col-auto">
+            <label>Mois</label>
+            <input type="number" id="evt-month" min="1" max="12" placeholder="1-12">
+          </div>
+          <div class="col-auto">
+            <label>Année</label>
+            <input type="number" id="evt-year" min="1000" max="3000" placeholder="ex. 1914">
+          </div>
+        </div>
+        <div>
+          <label>Types (cumulatifs)</label>
+          <div class="event-type-checkboxes" id="evt-types"></div>
+        </div>
+        <div class="mt-2">
+          <button class="btn-primary-toldot" style="font-size:0.9rem;padding:0.4rem 1.2rem" id="evt-search-btn">Rechercher</button>
+        </div>
+      </div>
+      <div id="events-list"></div>
+    </div>
+
+    <!-- === STATS === -->
+    <div id="panel-stats" class="tab-panel">
+      <div id="stats-content"></div>
+    </div>
+
+    <!-- === EXPORT === -->
+    <div id="panel-export" class="tab-panel">
+      <p style="color:var(--text-muted);font-style:italic;margin-bottom:1.5rem">
+        Les fichiers sont générés à la volée depuis vos données de session — aucune copie conservée.
+      </p>
+      <div class="export-btns">
+        <button class="btn-export" id="btn-export-gedcom">📄 Télécharger en GEDCOM</button>
+        <button class="btn-export" id="btn-export-json">{ } Télécharger en JSON</button>
+        <button class="btn-export" id="btn-export-xml">🗂 Télécharger en XML</button>
+      </div>
+      <div id="export-error" class="alert-toldot error mt-2" style="display:none"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/vendor/bootstrap.bundle.min.js"></script>
+<script src="/app.js"></script>
+</body>
 </html>
