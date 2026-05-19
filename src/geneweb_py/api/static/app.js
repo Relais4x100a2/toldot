@@ -694,6 +694,87 @@ function extractDay(dateStr) {
   return m ? parseInt(m[1]) : null;
 }
 
-// ==================== STUBS (implemented in later tasks) ====================
-function wireExportTab() {}
-function renderStats() {}
+// ==================== STATS ====================
+function renderStats() {
+  const container = document.getElementById('stats-content');
+  if (!container) return;
+
+  if (!state.stats) {
+    container.innerHTML = '<p>Chargement…</p>';
+    return;
+  }
+
+  const s = state.stats;
+
+  const cards = [
+    { value: s.total_persons,                                          label: 'Personnes' },
+    { value: s.total_families,                                         label: 'Familles' },
+    { value: s.total_events,                                           label: 'Événements' },
+    { value: s.persons_with_birth_date || 0,                           label: 'Avec date de naissance' },
+    { value: s.families_with_children || 0,                            label: 'Familles avec enfants' },
+    { value: (s.average_children_per_family || 0).toFixed(1),          label: 'Enfants / famille (moy.)' },
+  ];
+
+  const gridHtml = `<div class="stats-grid">${
+    cards.map(c =>
+      `<div class="stat-card">
+        <div class="stat-value">${escHtml(String(c.value))}</div>
+        <div class="stat-label">${escHtml(c.label)}</div>
+      </div>`
+    ).join('')
+  }</div>`;
+
+  let tableHtml = '';
+  const eventsByType = s.events_by_type;
+  if (eventsByType && Object.keys(eventsByType).length > 0) {
+    const rows = Object.entries(eventsByType).map(([key, count]) => {
+      const typeEntry = EVENT_TYPES.find(t => t.value === key);
+      const label = typeEntry ? typeEntry.label : escHtml(key);
+      return `<tr><td>${label}</td><td>${escHtml(String(count))}</td></tr>`;
+    }).join('');
+    tableHtml = `
+      <h3 style="color:var(--accent);margin-top:1.5rem">Événements par type</h3>
+      <div style="max-width:400px">
+        <table class="table table-sm">
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  container.innerHTML = gridHtml + tableHtml;
+}
+
+// ==================== EXPORT ====================
+const EXPORT_EXT = { gedcom: 'ged', json: 'json', xml: 'xml' };
+
+async function downloadExport(format) {
+  const errorEl = document.getElementById('export-error');
+  errorEl.style.display = 'none';
+  try {
+    const res = await apiFetch('/api/v1/genealogy/export/' + format);
+    if (!res.ok) {
+      errorEl.textContent = "Erreur lors de la génération de l'export.";
+      errorEl.style.display = '';
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'genealogie.' + EXPORT_EXT[format];
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    if (err.message === 'session-expired') return;
+    errorEl.textContent = 'Erreur lors du téléchargement.';
+    errorEl.style.display = '';
+  }
+}
+
+function wireExportTab() {
+  document.getElementById('btn-export-gedcom').addEventListener('click', () => downloadExport('gedcom'));
+  document.getElementById('btn-export-json').addEventListener('click', () => downloadExport('json'));
+  document.getElementById('btn-export-xml').addEventListener('click', () => downloadExport('xml'));
+}
