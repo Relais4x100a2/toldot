@@ -230,9 +230,95 @@ function showTab(name) {
   if (name === 'stats') renderStats();
 }
 
+// ==================== PERSONNES ====================
+let _personsSeq = 0;
+
+function wirePersonsTab() {
+  const searchInput = document.getElementById('persons-search');
+  const searchBtn = document.getElementById('persons-search-btn');
+  const clearBtn = document.getElementById('persons-clear-btn');
+  const prevBtn = document.getElementById('persons-prev');
+  const nextBtn = document.getElementById('persons-next');
+
+  searchBtn.addEventListener('click', () => {
+    loadPersons(1, searchInput.value.trim());
+  });
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loadPersons(1, searchInput.value.trim());
+  });
+
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    loadPersons(1, '');
+  });
+
+  prevBtn.addEventListener('click', () => {
+    const query = searchInput.value.trim();
+    loadPersons(state.persons.page - 1, query);
+  });
+
+  nextBtn.addEventListener('click', () => {
+    const query = searchInput.value.trim();
+    loadPersons(state.persons.page + 1, query);
+  });
+}
+
+async function loadPersons(page, query) {
+  const seq = ++_personsSeq;
+  let url = `/api/v1/persons?page=${page}&size=50`;
+  if (query) url += `&query=${encodeURIComponent(query)}`;
+  let data;
+  try {
+    data = await apiJson(url);
+  } catch (err) {
+    if (seq === _personsSeq) {
+      document.getElementById('persons-list').innerHTML =
+        '<p class="alert-toldot error">Impossible de charger les personnes.</p>';
+    }
+    throw err;
+  }
+  if (seq !== _personsSeq) return;
+  state.persons.items = data.items;
+  state.persons.page = data.pagination.page;
+  state.persons.pages = data.pagination.pages;
+  state.currentPersonId = null;
+  renderPersons();
+  updatePersonPagination(data.pagination);
+}
+
+function renderPersons() {
+  const list = document.getElementById('persons-list');
+  if (!state.persons.items.length) {
+    list.innerHTML = '<p class="text-muted" style="font-style:italic;padding:0.5rem">Aucune personne trouvée.</p>';
+    return;
+  }
+  list.innerHTML = state.persons.items.map(p => {
+    const metaParts = [];
+    if (p.birth_date) metaParts.push(`°${shortDate(p.birth_date)}`);
+    if (p.death_date) metaParts.push(`†${shortDate(p.death_date)}`);
+    const meta = metaParts.join(' · ');
+    return `<div class="item-row">
+      <span><span class="item-name"><strong>${escHtml(p.surname)}</strong>, ${escHtml(p.first_name)}</span> <span class="item-meta">${escHtml(meta)}</span></span>
+      <button class="btn-see" data-id="${escHtml(p.id)}">Voir ›</button>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.btn-see').forEach(btn => {
+    btn.addEventListener('click', () => showPersonDetail(btn.dataset.id, btn));
+  });
+}
+
+function updatePersonPagination(pagination) {
+  document.getElementById('persons-prev').disabled = !pagination.has_prev;
+  document.getElementById('persons-next').disabled = !pagination.has_next;
+  document.getElementById('persons-page-info').textContent =
+    `Page ${pagination.page} / ${pagination.pages} (${pagination.total} personnes)`;
+}
+
 // ==================== STUBS (implemented in later tasks) ====================
-async function loadPersons(_page, _query) {}
-function wirePersonsTab() {}
+function showPersonDetail(_id, _btn) {}
+function loadFamilies(_page) {}
+function renderStats() {}
 function wireFamiliesTab() {}
 function wireEventsTab() {}
 function wireExportTab() {}
