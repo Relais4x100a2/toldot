@@ -946,6 +946,14 @@ class GeneWebParser:
             elif token.type == TokenType.PLUS:
                 current_person = "wife"
                 i += 1
+                # La date de mariage suit immédiatement le + (ex: +25/11/1728)
+                if (
+                    i < len(tokens)
+                    and tokens[i].type == TokenType.DATE
+                    and not result["marriage_date"]
+                ):
+                    result["marriage_date"] = Date.parse_with_fallback(tokens[i].value)
+                    i += 1
                 i = consume_sep_div(i)
                 continue
 
@@ -1081,21 +1089,25 @@ class GeneWebParser:
                 continue
 
             # Lieu de mariage (#mp)
+            # GW Plus: le lieu est de la forme Ville,_CodePostal,_Région,_Pays
             elif token.type == TokenType.MP:
                 i += 1
+                place_parts: List[str] = []
                 if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-                    result["marriage_place"] = tokens[i].value
+                    place_parts.append(tokens[i].value)
                     i += 1
-                continue
-
-            # Date de mariage (après le séparateur +)
-            elif (
-                token.type == TokenType.DATE
-                and current_person == "wife"
-                and not result["marriage_date"]
-            ):
-                result["marriage_date"] = Date.parse_with_fallback(token.value)
-                i += 1
+                    while (
+                        i < len(tokens)
+                        and tokens[i].type == TokenType.UNKNOWN
+                        and i + 1 < len(tokens)
+                        and tokens[i + 1].type == TokenType.IDENTIFIER
+                    ):
+                        place_parts.append(tokens[i].value)  # ","
+                        i += 1
+                        place_parts.append(tokens[i].value)  # segment suivant
+                        i += 1
+                if place_parts:
+                    result["marriage_place"] = "".join(place_parts)
                 continue
 
             # Autres tokens

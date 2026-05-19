@@ -240,12 +240,24 @@ class FamilyBlockParser(BlockParser):
             token = tokens[i]
 
             # Modificateurs de lieu de mariage
+            # Le lieu GW Plus contient des virgules: Ville,_Code,_Région,_Pays
+            # Il faut consommer tous les segments IDENTIFIER séparés par UNKNOWN ","
             if token.type in [TokenType.MP, TokenType.P]:
                 node.add_token(token)
                 i += 1
                 if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
                     node.add_token(tokens[i])
                     i += 1
+                    while (
+                        i < len(tokens)
+                        and tokens[i].type == TokenType.UNKNOWN
+                        and i + 1 < len(tokens)
+                        and tokens[i + 1].type == TokenType.IDENTIFIER
+                    ):
+                        node.add_token(tokens[i])  # ","
+                        i += 1
+                        node.add_token(tokens[i])  # segment suivant
+                        i += 1
                 continue
 
             # Modificateurs de statut (#sep / #div + date optionnelle ou '-')
