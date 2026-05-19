@@ -1090,6 +1090,7 @@ class GeneWebParser:
 
             # Lieu de mariage (#mp)
             # GW Plus: le lieu est de la forme Ville,_CodePostal,_Région,_Pays
+            # On ne consomme que les UNKNOWN "," (virgules), pas "#" ni les autres.
             elif token.type == TokenType.MP:
                 i += 1
                 place_parts: List[str] = []
@@ -1099,6 +1100,7 @@ class GeneWebParser:
                     while (
                         i < len(tokens)
                         and tokens[i].type == TokenType.UNKNOWN
+                        and tokens[i].value == ","
                         and i + 1 < len(tokens)
                         and tokens[i + 1].type == TokenType.IDENTIFIER
                     ):
@@ -1108,6 +1110,63 @@ class GeneWebParser:
                         i += 1
                 if place_parts:
                     result["marriage_place"] = "".join(place_parts)
+                continue
+
+            # Modificateur GW Plus inconnu (ex: #ms url, #ps url) :
+            # tokenise en UNKNOWN("#") + IDENTIFIER — on consomme jusqu'au nom de l'épouse
+            elif token.type == TokenType.UNKNOWN and token.value == "#":
+                if i + 1 < len(tokens) and tokens[i + 1].type == TokenType.IDENTIFIER:
+                    i += 2  # sauter "#" et le nom du modificateur (ex: "ms")
+                    while i < len(tokens):
+                        t = tokens[i]
+                        if t.type in (TokenType.NEWLINE, TokenType.EOF):
+                            break
+                        if t.type == TokenType.UNKNOWN and t.value == "#":
+                            break  # prochain modificateur inconnu
+                        if t.type in (
+                            TokenType.MP,
+                            TokenType.NM,
+                            TokenType.ENG,
+                            TokenType.SEP,
+                            TokenType.DIV,
+                            TokenType.SRC,
+                            TokenType.S,
+                            TokenType.BP,
+                            TokenType.DP,
+                            TokenType.OCCU,
+                        ):
+                            break
+                        # Deux IDENTIFIER consécutifs = nom de l'épouse si suivis
+                        # de NEWLINE/EOF ou d'un modificateur connu
+                        if (
+                            t.type == TokenType.IDENTIFIER
+                            and i + 1 < len(tokens)
+                            and tokens[i + 1].type == TokenType.IDENTIFIER
+                        ):
+                            j = i + 2
+                            if j < len(tokens) and tokens[j].type == TokenType.NUMBER:
+                                j += 1
+                            after_type = (
+                                tokens[j].type if j < len(tokens) else TokenType.EOF
+                            )
+                            if after_type in (
+                                TokenType.NEWLINE,
+                                TokenType.EOF,
+                                TokenType.BP,
+                                TokenType.DP,
+                                TokenType.OCCU,
+                                TokenType.APUBL,
+                                TokenType.APRIV,
+                                TokenType.OD,
+                                TokenType.MJ,
+                                TokenType.BURI,
+                                TokenType.CREM,
+                                TokenType.SRC,
+                            ):
+                                break
+                        i += 1
+                else:
+                    i += 1
                 continue
 
             # Autres tokens
