@@ -350,13 +350,17 @@ async function showPersonDetail(personId, btnEl) {
 
   const parentIds = [];
   const childIds = [];
+  const partnerIds = [];
 
   for (const fam of families) {
     if (fam.husband_id === personId || fam.wife_id === personId) {
-      // person is a parent in this family → collect children
-      for (const cid of (fam.children || [])) {
+      // person is a parent/spouse in this family → collect children + partner
+      for (const child of (fam.children || [])) {
+        const cid = child.person_id || child; // ChildSchema object or plain id
         if (cid && cid !== personId) childIds.push(cid);
       }
+      const partnerId = fam.husband_id === personId ? fam.wife_id : fam.husband_id;
+      if (partnerId && partnerId !== personId) partnerIds.push(partnerId);
     } else {
       // person is a child in this family → collect parents
       if (fam.husband_id && fam.husband_id !== personId) parentIds.push(fam.husband_id);
@@ -366,14 +370,16 @@ async function showPersonDetail(personId, btnEl) {
 
   const uniqueParentIds = [...new Set(parentIds)];
   const uniqueChildIds = [...new Set(childIds)];
-  const allIds = [...new Set([...uniqueParentIds, ...uniqueChildIds])];
+  const uniquePartnerIds = [...new Set(partnerIds)];
+  const allIds = [...new Set([...uniqueParentIds, ...uniqueChildIds, ...uniquePartnerIds])];
 
   const nameMap = await resolvePersonNames(allIds);
 
   const parents = uniqueParentIds.map(id => ({ id, label: nameMap[id] || id }));
   const children = uniqueChildIds.map(id => ({ id, label: nameMap[id] || id }));
+  const partners = uniquePartnerIds.map(id => ({ id, label: nameMap[id] || id }));
 
-  const panel = buildPersonDetailPanel(person, parents, children);
+  const panel = buildPersonDetailPanel(person, parents, partners, children);
   panel.dataset.personId = personId;
 
   const row = btnEl ? btnEl.closest('.item-row') : null;
@@ -401,7 +407,7 @@ async function resolvePersonNames(ids) {
   return map;
 }
 
-function buildPersonDetailPanel(person, parents, children) {
+function buildPersonDetailPanel(person, parents, partners, children) {
   const panel = document.createElement('div');
   panel.id = 'person-detail-panel';
   panel.className = 'person-detail';
@@ -421,6 +427,10 @@ function buildPersonDetailPanel(person, parents, children) {
     ).join('');
   }
 
+  const partnersHtml = partners.length
+    ? `<div class="mini-tree-label" style="margin-top:0.4rem">⚭ Partenaire(s)</div>${renderPersonNodes(partners)}`
+    : '';
+
   panel.innerHTML = `
     <div>
       <strong>${fullName}</strong>${datesHtml}
@@ -433,7 +443,8 @@ function buildPersonDetailPanel(person, parents, children) {
       <div class="mini-tree-arrow">→</div>
       <div class="mini-tree-col">
         <div class="mini-tree-label">Lui/Elle</div>
-        <span class="mini-tree-person self">${escHtml(person.surname || '—')}</span>
+        <span class="mini-tree-person self">${fullName}</span>
+        ${partnersHtml}
       </div>
       <div class="mini-tree-arrow">→</div>
       <div class="mini-tree-col">
