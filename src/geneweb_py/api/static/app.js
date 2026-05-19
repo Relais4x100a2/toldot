@@ -191,10 +191,46 @@ function wireQuit() {
   });
 }
 
+// ==================== NAVBAR ====================
+async function loadStats() {
+  const data = await apiJson('/api/v1/genealogy/stats');
+  state.stats = data.data;
+  document.getElementById('nav-stats').textContent =
+    `${state.stats.total_persons} personnes · ${state.stats.total_families} familles`;
+}
+
+let _timerInterval = null;
+
+function startTimer() {
+  if (_timerInterval) clearInterval(_timerInterval);
+  updateTimer();
+  _timerInterval = setInterval(updateTimer, 30000);
+}
+
+function updateTimer() {
+  if (!state.expiresAt) return;
+  const remaining = Math.max(0, new Date(state.expiresAt) - Date.now());
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  document.getElementById('nav-timer').textContent =
+    remaining > 0 ? `⏱ ${h > 0 ? h + 'h ' : ''}${m} min` : '⌛ Expiré';
+}
+
+// ==================== TABS ====================
+function wireTabs() {
+  document.querySelectorAll('.toldot-tab').forEach(tab => {
+    tab.addEventListener('click', () => showTab(tab.dataset.tab));
+  });
+}
+
+function showTab(name) {
+  document.querySelectorAll('.toldot-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
+  if (name === 'families' && state.families.items.length === 0) loadFamilies(1);
+  if (name === 'stats') renderStats();
+}
+
 // ==================== STUBS (implemented in later tasks) ====================
-async function loadStats() {}
-function startTimer() {}
-function wireTabs() {}
 async function loadPersons(_page, _query) {}
 function wirePersonsTab() {}
 function wireFamiliesTab() {}
