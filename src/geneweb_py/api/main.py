@@ -25,24 +25,24 @@ from .session_store import SessionStore
 
 
 class _StaticMount(Mount):
-    """A Starlette Mount that only matches GET/HEAD requests.
+    """A Starlette Mount that only matches GET/HEAD requests for non-API paths.
 
-    Mounting StaticFiles at "/" makes ``Mount.matches()`` return FULL for every
-    path and every HTTP method, which bypasses FastAPI's redirect_slashes logic
-    for mutation endpoints (e.g. POST /api/v1/sessions → 405 instead of the
-    expected 307 redirect to POST /api/v1/sessions/).
-
-    This subclass returns NONE for non-GET/HEAD requests so that Starlette's
-    Router can fall through to its redirect_slashes path and properly redirect
-    mutation requests that are missing a trailing slash.
+    Without this subclass two problems arise:
+    1. Non-GET/HEAD to /api/v1/* (e.g. POST /api/v1/sessions without trailing
+       slash) would be swallowed by StaticFiles instead of being redirect_slashes
+       'd to the canonical URL.
+    2. GET /api/v1/* paths that have no exact Route match (e.g. /api/v1/persons
+       vs the registered /api/v1/persons/) would be caught by the PARTIAL match
+       of the "/" Mount and StaticFiles would return 404 instead of letting
+       FastAPI redirect to the trailing-slash form.
     """
 
     def matches(self, scope: Scope) -> Tuple[Any, Any]:
-        if scope.get("type") == "http" and scope.get("method", "GET") not in (
-            "GET",
-            "HEAD",
-        ):
-            return Match.NONE, {}
+        if scope.get("type") == "http":
+            method = scope.get("method", "GET")
+            path = scope.get("path", "")
+            if method not in ("GET", "HEAD") or path.startswith("/api/"):
+                return Match.NONE, {}
         return super().matches(scope)
 
 
