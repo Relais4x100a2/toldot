@@ -348,23 +348,33 @@ async function showPersonDetail(personId, btnEl) {
   const person = personResp.data;
   const families = familiesResp.data || [];
 
+  const spouseFamilyIds = new Set(person.related_families || []);
+
   const parentIds = [];
   const childIds = [];
   const partnerIds = [];
 
+  // myId = authoritative ID from server (avoids any HTML-attribute encoding drift)
+  const myId = person.id || personId;
+
   for (const fam of families) {
-    if (fam.husband_id === personId || fam.wife_id === personId) {
+    const isSpouseFamily = spouseFamilyIds.size > 0
+      ? spouseFamilyIds.has(fam.id)
+      : (fam.husband_id === myId || fam.wife_id === myId);
+    if (isSpouseFamily) {
       // person is a parent/spouse in this family → collect children + partner
       for (const child of (fam.children || [])) {
         const cid = child.person_id || child; // ChildSchema object or plain id
-        if (cid && cid !== personId) childIds.push(cid);
+        if (cid && cid !== myId) childIds.push(cid);
       }
-      const partnerId = fam.husband_id === personId ? fam.wife_id : fam.husband_id;
-      if (partnerId && partnerId !== personId) partnerIds.push(partnerId);
+      // collect both spouse IDs, then exclude ourselves
+      for (const sid of [fam.husband_id, fam.wife_id]) {
+        if (sid && sid !== myId) partnerIds.push(sid);
+      }
     } else {
       // person is a child in this family → collect parents
-      if (fam.husband_id && fam.husband_id !== personId) parentIds.push(fam.husband_id);
-      if (fam.wife_id && fam.wife_id !== personId) parentIds.push(fam.wife_id);
+      if (fam.husband_id) parentIds.push(fam.husband_id);
+      if (fam.wife_id) parentIds.push(fam.wife_id);
     }
   }
 
