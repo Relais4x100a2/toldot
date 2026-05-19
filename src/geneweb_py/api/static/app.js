@@ -6,7 +6,7 @@ const state = {
   expiresAt: sessionStorage.getItem('gwExpiresAt') || null,
   stats: null,
   persons: { items: [], page: 1, pages: 1 },
-  families: { items: [], page: 1, pages: 1 },
+  families: { items: [], page: 1, pages: 1, nameMap: {} },
   currentPersonId: null,
 };
 
@@ -232,6 +232,7 @@ function showTab(name) {
 
 // ==================== PERSONNES ====================
 let _personsSeq = 0;
+let _familiesSeq = 0;
 
 function wirePersonsTab() {
   const searchInput = document.getElementById('persons-search');
@@ -444,10 +445,141 @@ function buildPersonDetailPanel(person, parents, children) {
   return panel;
 }
 
+// ==================== FAMILLES ====================
+function wireFamiliesTab() {
+  document.getElementById('families-prev').addEventListener('click', () => {
+    loadFamilies(state.families.page - 1);
+  });
+  document.getElementById('families-next').addEventListener('click', () => {
+    loadFamilies(state.families.page + 1);
+  });
+}
+
+async function loadFamilies(page) {
+  const seq = ++_familiesSeq;
+  const url = `/api/v1/families?page=${page}&size=50`;
+  let data;
+  try {
+    data = await apiJson(url);
+  } catch (err) {
+    if (seq === _familiesSeq) {
+      document.getElementById('families-list').innerHTML =
+        '<p class="alert-toldot error">Impossible de charger les familles.</p>';
+    }
+    throw err;
+  }
+  if (seq !== _familiesSeq) return;
+
+  // Resolve spouse names
+  const spouseIds = [...new Set(
+    data.items.flatMap(f => [f.husband_id, f.wife_id].filter(Boolean))
+  )];
+  const nameMap = await resolvePersonNames(spouseIds);
+  if (seq !== _familiesSeq) return; // check again after async name resolution
+
+  state.families.items = data.items;
+  state.families.nameMap = nameMap; // store for renderFamilies
+  state.families.page = data.pagination.page;
+  state.families.pages = data.pagination.pages;
+  renderFamilies();
+  updateFamiliesPagination(data.pagination);
+}
+
+function renderFamilies() {
+  const list = document.getElementById('families-list');
+  if (!state.families.items.length) {
+    list.innerHTML = '<p class="text-muted" style="font-style:italic;padding:0.5rem">Aucune famille trouvée.</p>';
+    return;
+  }
+  list.innerHTML = state.families.items.map(f => {
+    const husband = f.husband_id
+      ? escHtml(state.families.nameMap[f.husband_id] || f.husband_id)
+      : '—';
+    const wife = f.wife_id
+      ? escHtml(state.families.nameMap[f.wife_id] || f.wife_id)
+      : '—';
+    const childCount = Array.isArray(f.children) ? f.children.length : 0;
+    const metaParts = [`${childCount} enfant(s)`];
+    if (f.marriage_date) metaParts.push(`⚭ ${escHtml(shortDate(f.marriage_date))}`);
+    const meta = metaParts.join(' · ');
+    return `<div class="item-row">
+      <span><span class="item-name"><strong>${husband}</strong> &amp; <strong>${wife}</strong></span> <span class="item-meta">${meta}</span></span>
+      <button class="btn-see" data-id="${escHtml(f.id)}">Voir ›</button>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.btn-see').forEach(btn => {
+    btn.addEventListener('click', () => showFamilyDetail(btn.dataset.id, btn));
+  });
+}
+
+function updateFamiliesPagination(pagination) {
+  document.getElementById('families-prev').disabled = !pagination.has_prev;
+  document.getElementById('families-next').disabled = !pagination.has_next;
+  document.getElementById('families-page-info').textContent =
+    `Page ${pagination.page} / ${pagination.pages} (${pagination.total} familles)`;
+}
+
+async function showFamilyDetail(familyId, btnEl) {
+  const existing = document.getElementById('family-detail-panel');
+  if (existing) {
+    const wasForSameFamily = existing.dataset.familyId === familyId;
+    existing.remove();
+    if (wasForSameFamily) return;
+  }
+
+  const row = btnEl ? btnEl.closest('.item-row') : null;
+
+  let childrenResp;
+  try {
+    childrenResp = await apiJson('/api/v1/families/' + encodeURIComponent(familyId) + '/children');
+  } catch (err) {
+    if (err.message === 'session-expired') return;
+    const errPanel = document.createElement('div');
+    errPanel.className = 'alert-toldot error';
+    errPanel.textContent = 'Impossible de charger les enfants.';
+    if (row) row.insertAdjacentElement('afterend', errPanel);
+    else document.getElementById('families-list').prepend(errPanel);
+    return;
+  }
+
+  const children = childrenResp.data || [];
+
+  const panel = document.createElement('div');
+  panel.id = 'family-detail-panel';
+  panel.className = 'person-detail';
+  panel.dataset.familyId = familyId;
+
+  let childrenHtml;
+  if (children.length) {
+    childrenHtml = children.map(child => {
+      const label = escHtml((child.surname || '—') + ', ' + (child.first_name || '—'));
+      return `<a class="mini-tree-person" data-id="${escHtml(child.id)}">${label}</a>`;
+    }).join('');
+  } else {
+    childrenHtml = '<em style="color:var(--text-muted);font-size:0.85rem">Aucun enfant enregistré.</em>';
+  }
+
+  panel.innerHTML = `
+    <div><strong>Enfants :</strong></div>
+    <div>${childrenHtml}</div>
+  `;
+
+  panel.querySelectorAll('a.mini-tree-person[data-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      showTab('persons');
+      showPersonDetail(el.dataset.id, null);
+    });
+  });
+
+  if (row) {
+    row.insertAdjacentElement('afterend', panel);
+  } else {
+    document.getElementById('families-list').prepend(panel);
+  }
+}
+
 // ==================== STUBS (implemented in later tasks) ====================
-function wireFamiliesTab() {}
 function wireEventsTab() {}
 function wireExportTab() {}
 function buildEventTypeCheckboxes() {}
-async function loadFamilies(_page) {}
 function renderStats() {}
