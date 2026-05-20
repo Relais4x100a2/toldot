@@ -1330,6 +1330,91 @@ class GeneWebParser:
             if notes_content:
                 persons[person_id].add_note(" ".join(notes_content))
 
+    def _parse_place_value(
+        self, tokens: List[Token], start_index: int
+    ) -> Tuple[Optional[str], int]:
+        """Parse une valeur de lieu (peut contenir plusieurs tokens séparés par virgules, etc.)
+
+        Args:
+            tokens: Liste des tokens
+            start_index: Index de départ pour le parsing
+
+        Returns:
+            Tuple (valeur_du_lieu, nouvel_index)
+        """
+        place_parts = []
+        i = start_index
+
+        # Continuer à parser jusqu'à trouver un token spécial
+        while i < len(tokens):
+            token = tokens[i]
+
+            # Tokens qui indiquent la fin du lieu
+            if token.type in [
+                TokenType.S,  # Source
+                TokenType.WIT,  # Témoin
+                TokenType.NOTE,  # Note
+                TokenType.BIRT,  # Nouveau type d'événement
+                TokenType.DEAT,
+                TokenType.BAPT,
+                TokenType.END_PEVT,  # Fin du bloc
+                TokenType.NEWLINE,  # Nouvelle ligne
+            ]:
+                break
+
+            # Tous les tokens font partie du lieu (identifiants, strings, virgules, etc.)
+            place_parts.append(token.value)
+            i += 1
+
+        if place_parts:
+            # Joindre les parties en préservant les espaces et caractères spéciaux
+            place_value = "".join(place_parts)
+            return place_value, i
+
+        return None, start_index
+
+    def _parse_source_value(
+        self, tokens: List[Token], start_index: int
+    ) -> Tuple[Optional[str], int]:
+        """Parse une valeur de source (peut contenir plusieurs tokens)
+
+        Args:
+            tokens: Liste des tokens
+            start_index: Index de départ pour le parsing (après #s)
+
+        Returns:
+            Tuple (valeur_de_la_source, nouvel_index)
+        """
+        source_parts = []
+        i = start_index
+
+        # Continuer à parser jusqu'à trouver un token spécial
+        while i < len(tokens):
+            token = tokens[i]
+
+            # Tokens qui indiquent la fin de la source
+            if token.type in [
+                TokenType.WIT,  # Témoin
+                TokenType.NOTE,  # Note
+                TokenType.BIRT,  # Nouveau type d'événement
+                TokenType.DEAT,
+                TokenType.BAPT,
+                TokenType.END_PEVT,  # Fin du bloc
+                TokenType.NEWLINE,  # Nouvelle ligne
+            ]:
+                break
+
+            # Tous les autres tokens font partie de la source
+            source_parts.append(token.value)
+            i += 1
+
+        if source_parts:
+            # Joindre sans espaces pour préserver les URLs et autres chaînes
+            source_value = "".join(source_parts)
+            return source_value, i
+
+        return None, start_index
+
     def _parse_person_events_block(
         self, node: SyntaxNode, persons: dict, genealogy: Genealogy
     ) -> None:
@@ -1369,7 +1454,10 @@ class GeneWebParser:
                 # Événements avec dates
                 if token.type == TokenType.BIRT:
                     i += 1
+                    from ..event import EventType, PersonalEvent
+
                     # Date de naissance (optionnelle)
+                    birth_date = None
                     if i < len(tokens) and tokens[i].type == TokenType.DATE:
                         birth_date = Date.parse_with_fallback(tokens[i].value)
                         person.birth_date = birth_date
@@ -1377,16 +1465,39 @@ class GeneWebParser:
                     else:
                         # Pas de date -> date inconnue
                         person.birth_date = Date(is_unknown=True)
+                        birth_date = Date(is_unknown=True)
+
                     # Lieu de naissance (optionnel)
+                    birth_place = None
                     if i < len(tokens) and tokens[i].type == TokenType.P:
                         i += 1
-                        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-                            person.birth_place = tokens[i].value
-                            i += 1
+                        birth_place, i = self._parse_place_value(tokens, i)
+                        if birth_place:
+                            person.birth_place = birth_place
+
+                    # Source (optionnelle, après le lieu ou la date)
+                    birth_source = None
+                    if i < len(tokens) and tokens[i].type == TokenType.S:
+                        i += 1
+                        birth_source, i = self._parse_source_value(tokens, i)
+
+                    # Créer l'événement de naissance et l'ajouter
+                    birth_event = PersonalEvent(
+                        event_type=EventType.BIRTH,
+                        date=birth_date,
+                        place=birth_place,
+                        source=birth_source,
+                        person_id=person.unique_id,
+                    )
+                    person.add_event(birth_event)
+                    last_event = birth_event
 
                 elif token.type == TokenType.DEAT:
                     i += 1
+                    from ..event import EventType, PersonalEvent
+
                     # Date de décès (optionnelle)
+                    death_date = None
                     if i < len(tokens) and tokens[i].type == TokenType.DATE:
                         death_date = Date.parse_with_fallback(tokens[i].value)
                         person.death_date = death_date
@@ -1394,38 +1505,70 @@ class GeneWebParser:
                     else:
                         # Pas de date -> date inconnue
                         person.death_date = Date(is_unknown=True)
+                        death_date = Date(is_unknown=True)
+
                     # Lieu de décès (optionnel)
+                    death_place = None
                     if i < len(tokens) and tokens[i].type == TokenType.P:
                         i += 1
-                        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-                            person.death_place = tokens[i].value
-                            i += 1
+                        death_place, i = self._parse_place_value(tokens, i)
+                        if death_place:
+                            person.death_place = death_place
+
+                    # Source (optionnelle, après le lieu ou la date)
+                    death_source = None
+                    if i < len(tokens) and tokens[i].type == TokenType.S:
+                        i += 1
+                        death_source, i = self._parse_source_value(tokens, i)
+
+                    # Créer l'événement de décès et l'ajouter
+                    death_event = PersonalEvent(
+                        event_type=EventType.DEATH,
+                        date=death_date,
+                        place=death_place,
+                        source=death_source,
+                        person_id=person.unique_id,
+                    )
+                    person.add_event(death_event)
+                    last_event = death_event
 
                 elif token.type == TokenType.BAPT:
                     i += 1
-                    # Date de baptême (optionnelle)
-                    if i < len(tokens) and tokens[i].type == TokenType.DATE:
-                        baptism_date = Date.parse_with_fallback(tokens[i].value)
-                        # Ajouter l'événement de baptême
-                        from ..event import Event, EventType
+                    from ..event import EventType, PersonalEvent
 
-                        baptism_event = Event(
-                            event_type=EventType.BAPTISM, date=baptism_date
+                    # Date de baptême (optionnelle)
+                    baptism_date = None
+                    if i < len(tokens) and tokens[i].type == TokenType.DATE:
+                        try:
+                            baptism_date = Date.parse_with_fallback(tokens[i].value)
+                        except Exception:
+                            # En cas d'erreur, ignorer silencieusement
+                            pass
+                        i += 1
+
+                    # Lieu de baptême (optionnel)
+                    baptism_place = None
+                    if i < len(tokens) and tokens[i].type == TokenType.P:
+                        i += 1
+                        baptism_place, i = self._parse_place_value(tokens, i)
+
+                    # Source (optionnelle, après le lieu ou la date)
+                    baptism_source = None
+                    if i < len(tokens) and tokens[i].type == TokenType.S:
+                        i += 1
+                        baptism_source, i = self._parse_source_value(tokens, i)
+
+                    # Créer l'événement de baptême et l'ajouter
+                    if baptism_date is not None or baptism_place is not None:
+                        baptism_event = PersonalEvent(
+                            event_type=EventType.BAPTISM,
+                            date=baptism_date,
+                            place=baptism_place,
+                            source=baptism_source,
+                            person_id=person.unique_id,
                         )
                         person.add_event(baptism_event)
                         last_event = baptism_event
-                        i += 1
-                    # Lieu de baptême (optionnel)
-                    if i < len(tokens) and tokens[i].type == TokenType.P:
-                        i += 1
-                        if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-                            baptism_place = tokens[i].value
-                            # Mettre à jour l'événement de baptême si il existe
-                            for event in person.events:
-                                if event.event_type == EventType.BAPTISM:
-                                    event.place = baptism_place
-                                    break
-                            i += 1
 
                 elif token.type == TokenType.NOTE:
                     i += 1
@@ -1435,6 +1578,11 @@ class GeneWebParser:
                     while i < len(tokens) and tokens[i].type not in [
                         TokenType.NEWLINE,
                         TokenType.END_PEVT,
+                        TokenType.BIRT,
+                        TokenType.DEAT,
+                        TokenType.BAPT,
+                        TokenType.NOTE,
+                        TokenType.WIT,
                     ]:
                         note_agg, stop = _bounded_append_text_fragment(
                             note_content,
@@ -1449,7 +1597,12 @@ class GeneWebParser:
                         if stop:
                             break
                     if note_content:
-                        person.add_note(" ".join(note_content))
+                        note_text = " ".join(note_content)
+                        # Associer la note à l'événement courant si disponible, sinon à la personne
+                        if last_event is not None:
+                            last_event.add_note(note_text)
+                        else:
+                            person.add_note(note_text)
 
                 elif token.type == TokenType.WIT:
                     # Parser les témoins avec informations complètes et les rattacher à l'événement courant  # noqa: E501
@@ -1535,8 +1688,6 @@ class GeneWebParser:
                         w_fn = tok.value
                     else:
                         break
-                i += 1
-                continue
             i += 1
 
         husband_id: Optional[str] = None

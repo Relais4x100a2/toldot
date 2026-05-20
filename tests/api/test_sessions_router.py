@@ -15,7 +15,7 @@ def client():
         yield c
 
 
-def _upload_gw(client, path: Path = FIXTURE_GW) -> "Response":
+def _upload_gw(client, path: Path = FIXTURE_GW):
     with open(path, "rb") as f:
         resp = client.post(
             "/api/v1/sessions",

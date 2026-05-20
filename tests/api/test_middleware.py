@@ -101,7 +101,9 @@ class TestLoggingMiddleware:
 def test_session_token_not_logged(caplog):
     import logging
     from pathlib import Path
+
     from fastapi.testclient import TestClient
+
     from geneweb_py.api.main import create_app
 
     FIXTURE_GW = Path(__file__).parent.parent / "fixtures" / "simple_test.gw"
