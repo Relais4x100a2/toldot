@@ -55,9 +55,6 @@ async def create_session(
     safe_name = _sanitize_filename(file.filename or "")
     _validate_meta(file.content_type, safe_name)
 
-    if store.is_full():
-        raise HTTPException(503, "Serveur saturé, réessayez plus tard")
-
     with tempfile.NamedTemporaryFile(delete=False, suffix=".gw") as tmp:
         tmp_path = tmp.name
         total = 0

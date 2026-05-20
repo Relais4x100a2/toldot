@@ -20,6 +20,8 @@ geneweb-py/
 │   ├── PERFORMANCE.md            # Guide des optimisations
 │   ├── PYPI_PUBLICATION_GUIDE.md # Guide publication PyPI
 │   ├── PYPI_TESTING_STRATEGY.md  # Stratégie tests PyPI
+│   ├── features/                 # Fonctionnalités en développement
+│   │   └── obsidian.md          # Export Obsidian - Navigation réseau
 │   └── geneweb/
 │       └── gw_format_documentation.md  # Spécification format .gw
 │
@@ -77,6 +79,12 @@ geneweb-py/
 | **[doc/roadmap.md](doc/roadmap.md)** | Vision à long terme | Contributeurs |
 | **[doc/PERFORMANCE.md](doc/PERFORMANCE.md)** | Optimisations et benchmarks | Développeurs avancés |
 | **[doc/geneweb/gw_format_documentation.md](doc/geneweb/gw_format_documentation.md)** | Spécification format | Tous |
+
+### Fonctionnalités en développement
+| Document | Description | Statut |
+|----------|-------------|--------|
+| **[doc/features/obsidian.md](doc/features/obsidian.md)** | Export Obsidian - Navigation réseau généalogique | 📋 Concept |
+| **[doc/features/data_cleaning.md](doc/features/data_cleaning.md)** | Data Cleaning & Normalization - Interface Streamlit avec IA | 📋 Concept |
 
 ### Documentation PyPI
 | Document | Description | Temps lecture |
