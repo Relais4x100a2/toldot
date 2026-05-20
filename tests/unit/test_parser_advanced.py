@@ -9,6 +9,7 @@ import pytest
 
 from geneweb_py.core.exceptions import GeneWebParseError
 from geneweb_py.core.parser.gw_parser import GeneWebParser
+from geneweb_py.core.person import AccessLevel
 
 
 class TestParserFamilyBuilding:
@@ -394,6 +395,7 @@ class TestParserAccessLevelsAdvanced:
             (p for p in genealogy.persons.values() if p.first_name == "Jean"), None
         )
         assert jean is not None
+        assert jean.access_level == AccessLevel.PUBLIC
 
     def test_parse_access_private_explicit(self):
         """Test niveau accès privé explicite"""
@@ -405,6 +407,7 @@ class TestParserAccessLevelsAdvanced:
             (p for p in genealogy.persons.values() if p.first_name == "Jean"), None
         )
         assert jean is not None
+        assert jean.access_level == AccessLevel.PRIVATE
 
 
 class TestParserIntegrationComplete:

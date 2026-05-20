@@ -19,7 +19,7 @@ from ..exceptions import (
 )
 from ..family import ChildSex, MarriageStatus
 from ..models import Date, Family, FamilyEvent, FamilyEventType, Genealogy, Person
-from ..person import Gender
+from ..person import AccessLevel, Gender
 from .lexical import LexicalParser, Token, TokenType
 from .streaming import (
     StreamingGeneWebParser,
@@ -683,6 +683,8 @@ class GeneWebParser:
                 husband.death_place = family_info["husband_death_place"]
             if family_info["husband_occupation"]:
                 husband.occupation = family_info["husband_occupation"]
+            if family_info["husband_access_level"]:
+                husband.access_level = family_info["husband_access_level"]
 
         if family_info["wife_name"] and family_info["wife_firstname"]:
             wife_id = self._get_or_create_person(
@@ -705,6 +707,8 @@ class GeneWebParser:
                 wife.death_place = family_info["wife_death_place"]
             if family_info["wife_occupation"]:
                 wife.occupation = family_info["wife_occupation"]
+            if family_info["wife_access_level"]:
+                wife.access_level = family_info["wife_access_level"]
 
         # Créer la famille seulement si au moins un époux est défini
         if husband_id or wife_id:
@@ -877,6 +881,7 @@ class GeneWebParser:
             "husband_birth_place": None,
             "husband_death_place": None,
             "husband_occupation": None,
+            "husband_access_level": None,
             "wife_name": None,
             "wife_firstname": None,
             "wife_occurrence": None,
@@ -885,6 +890,7 @@ class GeneWebParser:
             "wife_birth_place": None,
             "wife_death_place": None,
             "wife_occupation": None,
+            "wife_access_level": None,
             "marriage_date": None,
             "marriage_place": None,
             "marriage_status": MarriageStatus.MARRIED,
@@ -1086,6 +1092,18 @@ class GeneWebParser:
                         break
                 if occupation_parts:
                     result[f"{current_person}_occupation"] = "".join(occupation_parts)
+                continue
+
+            # Accès privé (#apriv)
+            elif token.type == TokenType.APRIV:
+                result[f"{current_person}_access_level"] = AccessLevel.PRIVATE
+                i += 1
+                continue
+
+            # Accès public (#apubl)
+            elif token.type == TokenType.APUBL:
+                result[f"{current_person}_access_level"] = AccessLevel.PUBLIC
+                i += 1
                 continue
 
             # Lieu de mariage (#mp)
@@ -2263,12 +2281,12 @@ class GeneWebParser:
 
             # Accès privé (#apriv)
             elif token.type == TokenType.APRIV:
-                person.access_private = True
+                person.access_level = AccessLevel.PRIVATE
                 i += 1
 
             # Accès public (#apubl)
             elif token.type == TokenType.APUBL:
-                person.access_public = True
+                person.access_level = AccessLevel.PUBLIC
                 i += 1
 
             # Notes (#note)

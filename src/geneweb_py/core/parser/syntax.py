@@ -226,6 +226,11 @@ class FamilyBlockParser(BlockParser):
                     i += 1
                 continue
 
+            if token.type in (TokenType.APUBL, TokenType.APRIV):
+                node.add_token(token)
+                i += 1
+                continue
+
             break
 
         return i
