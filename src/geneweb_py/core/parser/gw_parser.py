@@ -685,6 +685,14 @@ class GeneWebParser:
                 husband.occupation = family_info["husband_occupation"]
             if family_info["husband_access_level"]:
                 husband.access_level = family_info["husband_access_level"]
+            if family_info["husband_nickname"]:
+                husband.nickname = family_info["husband_nickname"]
+            if family_info["husband_surname_alias"]:
+                husband.surname_alias = family_info["husband_surname_alias"]
+            if family_info["husband_general_alias"]:
+                husband.general_alias = family_info["husband_general_alias"]
+            if family_info["husband_image_path"]:
+                husband.image_path = family_info["husband_image_path"]
 
         if family_info["wife_name"] and family_info["wife_firstname"]:
             wife_id = self._get_or_create_person(
@@ -709,6 +717,14 @@ class GeneWebParser:
                 wife.occupation = family_info["wife_occupation"]
             if family_info["wife_access_level"]:
                 wife.access_level = family_info["wife_access_level"]
+            if family_info["wife_nickname"]:
+                wife.nickname = family_info["wife_nickname"]
+            if family_info["wife_surname_alias"]:
+                wife.surname_alias = family_info["wife_surname_alias"]
+            if family_info["wife_general_alias"]:
+                wife.general_alias = family_info["wife_general_alias"]
+            if family_info["wife_image_path"]:
+                wife.image_path = family_info["wife_image_path"]
 
         # Créer la famille seulement si au moins un époux est défini
         if husband_id or wife_id:
@@ -882,6 +898,10 @@ class GeneWebParser:
             "husband_death_place": None,
             "husband_occupation": None,
             "husband_access_level": None,
+            "husband_nickname": None,
+            "husband_surname_alias": None,
+            "husband_general_alias": None,
+            "husband_image_path": None,
             "wife_name": None,
             "wife_firstname": None,
             "wife_occurrence": None,
@@ -891,6 +911,10 @@ class GeneWebParser:
             "wife_death_place": None,
             "wife_occupation": None,
             "wife_access_level": None,
+            "wife_nickname": None,
+            "wife_surname_alias": None,
+            "wife_general_alias": None,
+            "wife_image_path": None,
             "marriage_date": None,
             "marriage_place": None,
             "marriage_status": MarriageStatus.MARRIED,
@@ -1104,6 +1128,72 @@ class GeneWebParser:
             elif token.type == TokenType.APUBL:
                 result[f"{current_person}_access_level"] = AccessLevel.PUBLIC
                 i += 1
+                continue
+
+            # Surnom (#nick)
+            elif token.type == TokenType.NICK:
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    result[f"{current_person}_nickname"] = tokens[i].value.replace(
+                        "_", " "
+                    )
+                    i += 1
+                continue
+
+            # Alias de nom de famille (#salias)
+            elif token.type == TokenType.SALIAS:
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    result[f"{current_person}_surname_alias"] = tokens[i].value
+                    i += 1
+                continue
+
+            # Alias général (#alias)
+            elif token.type == TokenType.ALIAS:
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    result[f"{current_person}_general_alias"] = tokens[i].value
+                    i += 1
+                continue
+
+            # Chemin image (#image)
+            elif token.type == TokenType.IMAGE:
+                i += 1
+                image_parts = []
+                # Consume tokens until newline/eof/modifier
+                while i < len(tokens) and tokens[i].type not in (
+                    TokenType.NEWLINE,
+                    TokenType.EOF,
+                    TokenType.WIT,
+                    TokenType.SRC,
+                    TokenType.COMM,
+                    TokenType.NOTE,
+                ):
+                    # Stop at known modifiers
+                    if tokens[i].type in (
+                        TokenType.NICK,
+                        TokenType.SALIAS,
+                        TokenType.ALIAS,
+                        TokenType.BP,
+                        TokenType.DP,
+                        TokenType.OCCU,
+                        TokenType.APUBL,
+                        TokenType.APRIV,
+                    ):
+                        break
+                    image_parts.append(tokens[i].value)
+                    i += 1
+                if image_parts:
+                    result[f"{current_person}_image_path"] = "".join(image_parts)
                 continue
 
             # Lieu de mariage (#mp)
@@ -2278,6 +2368,66 @@ class GeneWebParser:
                         break
                 if occupation_parts:
                     person.occupation = "".join(occupation_parts)
+
+            # Surnom (#nick)
+            elif token.type == TokenType.NICK:
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    person.nickname = tokens[i].value.replace("_", " ")
+                    i += 1
+
+            # Alias de nom de famille (#salias)
+            elif token.type == TokenType.SALIAS:
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    person.surname_alias = tokens[i].value
+                    i += 1
+
+            # Alias général (#alias)
+            elif token.type == TokenType.ALIAS:
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    person.general_alias = tokens[i].value
+                    i += 1
+
+            # Chemin image (#image)
+            elif token.type == TokenType.IMAGE:
+                i += 1
+                image_parts = []
+                # Consume tokens until newline/eof/modifier
+                while i < len(tokens) and tokens[i].type not in (
+                    TokenType.NEWLINE,
+                    TokenType.EOF,
+                    TokenType.WIT,
+                    TokenType.SRC,
+                    TokenType.COMM,
+                    TokenType.NOTE,
+                ):
+                    # Stop at known modifiers
+                    if tokens[i].type in (
+                        TokenType.NICK,
+                        TokenType.SALIAS,
+                        TokenType.ALIAS,
+                        TokenType.BP,
+                        TokenType.DP,
+                        TokenType.OCCU,
+                        TokenType.APUBL,
+                        TokenType.APRIV,
+                    ):
+                        break
+                    image_parts.append(tokens[i].value)
+                    i += 1
+                if image_parts:
+                    person.image_path = "".join(image_parts)
 
             # Accès privé (#apriv)
             elif token.type == TokenType.APRIV:

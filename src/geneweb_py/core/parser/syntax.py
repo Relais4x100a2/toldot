@@ -231,6 +231,49 @@ class FamilyBlockParser(BlockParser):
                 i += 1
                 continue
 
+            if token.type in (
+                TokenType.NICK,
+                TokenType.SALIAS,
+                TokenType.ALIAS,
+            ):
+                node.add_token(token)
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+
+            if token.type == TokenType.IMAGE:
+                node.add_token(token)
+                i += 1
+                # Image paths may contain "/" and ".", so consume until newline/eof/modifier
+                while i < len(tokens) and tokens[i].type not in (
+                    TokenType.NEWLINE,
+                    TokenType.EOF,
+                    TokenType.WIT,
+                    TokenType.SRC,
+                    TokenType.COMM,
+                    TokenType.NOTE,
+                ):
+                    # Stop at known modifiers (these indicate end of image path)
+                    if tokens[i].type in (
+                        TokenType.NICK,
+                        TokenType.SALIAS,
+                        TokenType.ALIAS,
+                        TokenType.BP,
+                        TokenType.DP,
+                        TokenType.OCCU,
+                        TokenType.APUBL,
+                        TokenType.APRIV,
+                    ):
+                        break
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+
             break
 
         return i
