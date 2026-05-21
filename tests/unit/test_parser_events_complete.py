@@ -19,7 +19,7 @@ class TestEventTypeRaw:
         assert grad_events[0].place == "Paris"
 
     def test_unknown_type_stored_in_raw(self):
-        """Un type inconnu (#xyz) est stocké dans event_type_raw avec EventType.OTHER."""
+        """Un type inconnu (#xyz) → event_type_raw avec EventType.OTHER."""
         content = "pevt DUPONT Jean\n#xyz 1/1/2000\nend pevt\n"
         from geneweb_py.core.parser.gw_parser import GeneWebParser
 
