@@ -275,6 +275,25 @@ end"""
         with pytest.raises(GeneWebParseError):
             LexicalParser(content).tokenize()
 
+    def test_tokenize_person_field_modifiers(self):
+        """Les 11 nouveaux modificateurs #xxx sont reconnus comme TokenType distincts."""
+        text = "#nick LeGrand #salias DuPont #alias LeComte #image /photo.jpg #bs Acte #ds Reg #pp Paris #ps Source #rp Lyon #rs Acte2 #ms RegistreParoissial"
+        lexer = LexicalParser(text)
+        tokens = lexer.tokenize()
+        types = {t.type for t in tokens if t.type != TokenType.NEWLINE and t.type != TokenType.WHITESPACE}
+
+        assert TokenType.NICK in types
+        assert TokenType.SALIAS in types
+        assert TokenType.ALIAS in types
+        assert TokenType.IMAGE in types
+        assert TokenType.BS in types
+        assert TokenType.DS in types
+        assert TokenType.PP in types
+        assert TokenType.PS in types
+        assert TokenType.RP in types
+        assert TokenType.RS in types
+        assert TokenType.MS in types
+
 
 class TestToken:
     """Tests pour la classe Token"""
