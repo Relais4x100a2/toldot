@@ -249,7 +249,7 @@ class FamilyBlockParser(BlockParser):
             if token.type == TokenType.IMAGE:
                 node.add_token(token)
                 i += 1
-                # Image paths may contain "/" and ".", so consume until newline/eof/modifier
+                # Image paths contain "/" and "." — consume until newline/eof/modifier
                 while i < len(tokens) and tokens[i].type not in (
                     TokenType.NEWLINE,
                     TokenType.EOF,
