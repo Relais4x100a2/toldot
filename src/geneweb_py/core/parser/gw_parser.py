@@ -19,7 +19,7 @@ from ..exceptions import (
 )
 from ..family import ChildSex, MarriageStatus
 from ..models import Date, Family, FamilyEvent, FamilyEventType, Genealogy, Person
-from ..person import AccessLevel, Gender
+from ..person import AccessLevel, Gender, Title
 from .lexical import LexicalParser, Token, TokenType
 from .streaming import (
     StreamingGeneWebParser,
@@ -1715,7 +1715,7 @@ class GeneWebParser:
 
     def _parse_title_bracket(
         self, tokens: List[Token], start_index: int
-    ) -> Tuple[Optional["Title"], int]:
+    ) -> Tuple[Optional[Title], int]:
         """Parse [TitleName:Type:Place:StartDate:EndDate:Nth] from BRACKET_OPEN.
 
         Args:
@@ -1725,8 +1725,6 @@ class GeneWebParser:
         Returns:
             Tuple (Title object ou None, nouvel_index)
         """
-        from ..person import Title
-
         i = start_index
         if i >= len(tokens) or tokens[i].type != TokenType.BRACKET_OPEN:
             return None, i
