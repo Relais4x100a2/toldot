@@ -7,7 +7,7 @@ et syntaxique pour créer une représentation complète des données généalogi
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import chardet
 
@@ -17,7 +17,7 @@ from ..exceptions import (
     GeneWebParseError,
     ParseWarning,
 )
-from ..family import ChildSex, MarriageStatus
+from ..family import ChildSex, FamilyQualifier, MarriageStatus
 from ..models import Date, Family, FamilyEvent, FamilyEventType, Genealogy, Person
 from ..person import AccessLevel, Gender, Title
 from .lexical import LexicalParser, Token, TokenType
@@ -676,9 +676,7 @@ class GeneWebParser:
             if family_info["husband_public_name"]:
                 husband.public_name = family_info["husband_public_name"]
             if family_info["husband_first_name_alias"]:
-                husband.first_name_alias = family_info[
-                    "husband_first_name_alias"
-                ]
+                husband.first_name_alias = family_info["husband_first_name_alias"]
             if family_info["husband_birth_date"]:
                 husband.birth_date = family_info["husband_birth_date"]
             if family_info["husband_death_date"]:
@@ -692,21 +690,13 @@ class GeneWebParser:
             if family_info["husband_death_source"]:
                 husband.death_source = family_info["husband_death_source"]
             if family_info["husband_baptism_place"]:
-                husband.baptism_place = family_info[
-                    "husband_baptism_place"
-                ]
+                husband.baptism_place = family_info["husband_baptism_place"]
             if family_info["husband_baptism_source"]:
-                husband.baptism_source = family_info[
-                    "husband_baptism_source"
-                ]
+                husband.baptism_source = family_info["husband_baptism_source"]
             if family_info["husband_burial_place"]:
-                husband.burial_place = family_info[
-                    "husband_burial_place"
-                ]
+                husband.burial_place = family_info["husband_burial_place"]
             if family_info["husband_burial_source"]:
-                husband.burial_source = family_info[
-                    "husband_burial_source"
-                ]
+                husband.burial_source = family_info["husband_burial_source"]
             if family_info["husband_occupation"]:
                 husband.occupation = family_info["husband_occupation"]
             if family_info["husband_access_level"]:
@@ -737,9 +727,7 @@ class GeneWebParser:
             if family_info["wife_public_name"]:
                 wife.public_name = family_info["wife_public_name"]
             if family_info["wife_first_name_alias"]:
-                wife.first_name_alias = family_info[
-                    "wife_first_name_alias"
-                ]
+                wife.first_name_alias = family_info["wife_first_name_alias"]
             if family_info["wife_birth_date"]:
                 wife.birth_date = family_info["wife_birth_date"]
             if family_info["wife_death_date"]:
@@ -753,21 +741,13 @@ class GeneWebParser:
             if family_info["wife_death_source"]:
                 wife.death_source = family_info["wife_death_source"]
             if family_info["wife_baptism_place"]:
-                wife.baptism_place = family_info[
-                    "wife_baptism_place"
-                ]
+                wife.baptism_place = family_info["wife_baptism_place"]
             if family_info["wife_baptism_source"]:
-                wife.baptism_source = family_info[
-                    "wife_baptism_source"
-                ]
+                wife.baptism_source = family_info["wife_baptism_source"]
             if family_info["wife_burial_place"]:
-                wife.burial_place = family_info[
-                    "wife_burial_place"
-                ]
+                wife.burial_place = family_info["wife_burial_place"]
             if family_info["wife_burial_source"]:
-                wife.burial_source = family_info[
-                    "wife_burial_source"
-                ]
+                wife.burial_source = family_info["wife_burial_source"]
             if family_info["wife_occupation"]:
                 wife.occupation = family_info["wife_occupation"]
             if family_info["wife_access_level"]:
@@ -859,6 +839,34 @@ class GeneWebParser:
                 continue
             if tok.type == TokenType.ENG:
                 family.marriage_status = MarriageStatus.ENGAGED
+                i += 1
+                continue
+            if tok.type == TokenType.MS:
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    family.marriage_source = tokens[i].value
+                    i += 1
+                continue
+            if tok.type in (
+                TokenType.NSCK,
+                TokenType.NSCKM,
+                TokenType.NOMENT,
+                TokenType.BANNS,
+                TokenType.CONTRACT,
+                TokenType.LICENSE,
+            ):
+                qualifier_map = {
+                    TokenType.NSCK: FamilyQualifier.NO_SEX_CHECK,
+                    TokenType.NSCKM: FamilyQualifier.NO_SEX_CHECK_MARRIAGE,
+                    TokenType.NOMENT: FamilyQualifier.NO_MENTION,
+                    TokenType.BANNS: FamilyQualifier.BANNS,
+                    TokenType.CONTRACT: FamilyQualifier.CONTRACT,
+                    TokenType.LICENSE: FamilyQualifier.LICENSE,
+                }
+                family.family_qualifiers.append(qualifier_map[tok.type])
                 i += 1
                 continue
             if tok.type == TokenType.MARR:
@@ -1120,21 +1128,14 @@ class GeneWebParser:
 
             # Nom public (PublicName)
             elif (
-                token.type == TokenType.PAREN_OPEN
-                and result[f"{current_person}_name"]
+                token.type == TokenType.PAREN_OPEN and result[f"{current_person}_name"]
             ):
                 parts: List[str] = []
                 i += 1
-                while (
-                    i < len(tokens)
-                    and tokens[i].type != TokenType.PAREN_CLOSE
-                ):
+                while i < len(tokens) and tokens[i].type != TokenType.PAREN_CLOSE:
                     parts.append(tokens[i].value.replace("_", " "))
                     i += 1
-                if (
-                    i < len(tokens)
-                    and tokens[i].type == TokenType.PAREN_CLOSE
-                ):
+                if i < len(tokens) and tokens[i].type == TokenType.PAREN_CLOSE:
                     i += 1
                 if parts:
                     result[f"{current_person}_public_name"] = " ".join(parts)
@@ -1147,16 +1148,10 @@ class GeneWebParser:
             ):
                 parts = []
                 i += 1
-                while (
-                    i < len(tokens)
-                    and tokens[i].type != TokenType.BRACE_CLOSE
-                ):
+                while i < len(tokens) and tokens[i].type != TokenType.BRACE_CLOSE:
                     parts.append(tokens[i].value.replace("_", " "))
                     i += 1
-                if (
-                    i < len(tokens)
-                    and tokens[i].type == TokenType.BRACE_CLOSE
-                ):
+                if i < len(tokens) and tokens[i].type == TokenType.BRACE_CLOSE:
                     i += 1
                 if parts:
                     result[f"{current_person}_first_name_alias"] = " ".join(parts)
@@ -1331,9 +1326,7 @@ class GeneWebParser:
                 i += 1
                 value, i = self._parse_source_value(tokens, i)
                 if value:
-                    result[f"{current_person}_birth_source"] = value.replace(
-                        "_", " "
-                    )
+                    result[f"{current_person}_birth_source"] = value.replace("_", " ")
                 continue
 
             # Source décès (#ds)
@@ -1341,9 +1334,7 @@ class GeneWebParser:
                 i += 1
                 value, i = self._parse_source_value(tokens, i)
                 if value:
-                    result[f"{current_person}_death_source"] = value.replace(
-                        "_", " "
-                    )
+                    result[f"{current_person}_death_source"] = value.replace("_", " ")
                 continue
 
             # Lieu baptême (#pp)
@@ -1351,9 +1342,7 @@ class GeneWebParser:
                 i += 1
                 value, i = self._parse_place_value(tokens, i)
                 if value:
-                    result[f"{current_person}_baptism_place"] = value.replace(
-                        "_", " "
-                    )
+                    result[f"{current_person}_baptism_place"] = value.replace("_", " ")
                 continue
 
             # Source baptême (#ps)
@@ -1361,9 +1350,7 @@ class GeneWebParser:
                 i += 1
                 value, i = self._parse_source_value(tokens, i)
                 if value:
-                    result[f"{current_person}_baptism_source"] = value.replace(
-                        "_", " "
-                    )
+                    result[f"{current_person}_baptism_source"] = value.replace("_", " ")
                 continue
 
             # Lieu inhumation (#rp)
@@ -1371,9 +1358,7 @@ class GeneWebParser:
                 i += 1
                 value, i = self._parse_place_value(tokens, i)
                 if value:
-                    result[f"{current_person}_burial_place"] = value.replace(
-                        "_", " "
-                    )
+                    result[f"{current_person}_burial_place"] = value.replace("_", " ")
                 continue
 
             # Source inhumation (#rs)
@@ -1381,9 +1366,7 @@ class GeneWebParser:
                 i += 1
                 value, i = self._parse_source_value(tokens, i)
                 if value:
-                    result[f"{current_person}_burial_source"] = value.replace(
-                        "_", " "
-                    )
+                    result[f"{current_person}_burial_source"] = value.replace("_", " ")
                 continue
 
             # Lieu de mariage (#mp)
@@ -1627,6 +1610,66 @@ class GeneWebParser:
 
             if notes_content:
                 persons[person_id].add_note(" ".join(notes_content))
+
+    def _parse_pevt_comment_line(
+        self, comment_value: str, person_id: str
+    ) -> Optional[Any]:
+        """Parse une ligne commentaire de bloc pevt en PersonalEvent.
+
+        Format attendu : #eventtype [date] [#p place] [#s source]
+        Le token COMMENT contient la ligne entière sans le '#' initial.
+
+        Args:
+            comment_value: Valeur du token COMMENT (ex: '#grad 1/6/1985 #p Paris')
+            person_id: Identifiant unique de la personne
+
+        Returns:
+            PersonalEvent ou None si non reconnue
+        """
+        import re as _re
+
+        from ..event import EventType, PersonalEvent
+
+        # Vérifier que la ligne commence par '#' + un nom d'événement
+        if not comment_value.startswith("#"):
+            return None
+
+        # Regex: #eventtype [date] [#p place] [#s source]
+        pattern = _re.compile(
+            r"^#([A-Za-z]+)"  # groupe 1: type
+            r"(?:\s+([^#]+?))?"  # groupe 2: date (optionnelle, avant #p ou #s)
+            r"(?:\s+#p\s+([^#]+?))?"  # groupe 3: lieu (optionnel)
+            r"(?:\s+#s\s+(.+?))?$",  # groupe 4: source (optionnelle)
+            _re.IGNORECASE,
+        )
+        m = pattern.match(comment_value.strip())
+        if not m:
+            return None
+
+        raw_type = m.group(1).lower()
+        date_str = (m.group(2) or "").strip()
+        place_str = (m.group(3) or "").strip()
+        source_str = (m.group(4) or "").strip()
+
+        # Mapper le type vers EventType
+        try:
+            evt_type = EventType(raw_type)
+            type_raw = None
+        except ValueError:
+            evt_type = EventType.OTHER
+            type_raw = raw_type
+
+        # Parser la date
+        evt_date = Date.parse_with_fallback(date_str) if date_str else None
+
+        return PersonalEvent(
+            event_type=evt_type,
+            event_type_raw=type_raw,
+            date=evt_date,
+            place=place_str if place_str else None,
+            source=source_str if source_str else None,
+            person_id=person_id,
+        )
 
     def _parse_place_value(
         self, tokens: List[Token], start_index: int
@@ -1966,6 +2009,15 @@ class GeneWebParser:
                     if witness_id and last_event is not None:
                         last_event.add_witness(witness_id, witness_type)
                     i = next_i
+
+                elif token.type == TokenType.COMMENT:
+                    # Lignes de type "#eventtype [date] [#p place] [#s source]"
+                    # dans un bloc pevt — parser via regex car tokenisées en COMMENT
+                    evt = self._parse_pevt_comment_line(token.value, person.unique_id)
+                    if evt is not None:
+                        person.add_event(evt)
+                        last_event = evt
+                    i += 1
 
                 else:
                     i += 1
@@ -2721,16 +2773,10 @@ class GeneWebParser:
             elif token.type == TokenType.PAREN_OPEN:
                 parts: List[str] = []
                 i += 1
-                while (
-                    i < len(tokens)
-                    and tokens[i].type != TokenType.PAREN_CLOSE
-                ):
+                while i < len(tokens) and tokens[i].type != TokenType.PAREN_CLOSE:
                     parts.append(tokens[i].value.replace("_", " "))
                     i += 1
-                if (
-                    i < len(tokens)
-                    and tokens[i].type == TokenType.PAREN_CLOSE
-                ):
+                if i < len(tokens) and tokens[i].type == TokenType.PAREN_CLOSE:
                     i += 1
                 if parts:
                     person.public_name = " ".join(parts)
@@ -2739,16 +2785,10 @@ class GeneWebParser:
             elif token.type == TokenType.BRACE_OPEN:
                 parts = []
                 i += 1
-                while (
-                    i < len(tokens)
-                    and tokens[i].type != TokenType.BRACE_CLOSE
-                ):
+                while i < len(tokens) and tokens[i].type != TokenType.BRACE_CLOSE:
                     parts.append(tokens[i].value.replace("_", " "))
                     i += 1
-                if (
-                    i < len(tokens)
-                    and tokens[i].type == TokenType.BRACE_CLOSE
-                ):
+                if i < len(tokens) and tokens[i].type == TokenType.BRACE_CLOSE:
                     i += 1
                 if parts:
                     person.first_name_alias = " ".join(parts)

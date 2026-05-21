@@ -323,16 +323,10 @@ class FamilyBlockParser(BlockParser):
             if token.type == TokenType.PAREN_OPEN:
                 node.add_token(token)
                 i += 1
-                while (
-                    i < len(tokens)
-                    and tokens[i].type != TokenType.PAREN_CLOSE
-                ):
+                while i < len(tokens) and tokens[i].type != TokenType.PAREN_CLOSE:
                     node.add_token(tokens[i])
                     i += 1
-                if (
-                    i < len(tokens)
-                    and tokens[i].type == TokenType.PAREN_CLOSE
-                ):
+                if i < len(tokens) and tokens[i].type == TokenType.PAREN_CLOSE:
                     node.add_token(tokens[i])
                     i += 1
                 continue
@@ -341,16 +335,10 @@ class FamilyBlockParser(BlockParser):
             if token.type == TokenType.BRACE_OPEN:
                 node.add_token(token)
                 i += 1
-                while (
-                    i < len(tokens)
-                    and tokens[i].type != TokenType.BRACE_CLOSE
-                ):
+                while i < len(tokens) and tokens[i].type != TokenType.BRACE_CLOSE:
                     node.add_token(tokens[i])
                     i += 1
-                if (
-                    i < len(tokens)
-                    and tokens[i].type == TokenType.BRACE_CLOSE
-                ):
+                if i < len(tokens) and tokens[i].type == TokenType.BRACE_CLOSE:
                     node.add_token(tokens[i])
                     i += 1
                 continue
@@ -359,15 +347,35 @@ class FamilyBlockParser(BlockParser):
             if token.type == TokenType.BRACKET_OPEN:
                 node.add_token(token)
                 i += 1
-                while (
-                    i < len(tokens)
-                    and tokens[i].type != TokenType.BRACKET_CLOSE
-                ):
+                while i < len(tokens) and tokens[i].type != TokenType.BRACKET_CLOSE:
                     node.add_token(tokens[i])
                     i += 1
-                if (
-                    i < len(tokens)
-                    and tokens[i].type == TokenType.BRACKET_CLOSE
+                if i < len(tokens) and tokens[i].type == TokenType.BRACKET_CLOSE:
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+
+            # Qualificateurs de famille inline (#banns, #contract, #nsck, etc.)
+            # Ils peuvent apparaître avant le '+' dans le contexte du mari
+            if token.type in (
+                TokenType.BANNS,
+                TokenType.CONTRACT,
+                TokenType.NSCK,
+                TokenType.NSCKM,
+                TokenType.NOMENT,
+                TokenType.LICENSE,
+            ):
+                node.add_token(token)
+                i += 1
+                continue
+
+            # Source de mariage (#ms) inline avant le '+'
+            if token.type == TokenType.MS:
+                node.add_token(token)
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
                 ):
                     node.add_token(tokens[i])
                     i += 1
@@ -406,6 +414,31 @@ class FamilyBlockParser(BlockParser):
                         i += 1
                         node.add_token(tokens[i])  # segment suivant
                         i += 1
+                continue
+
+            # Qualificateurs de famille (#banns, #contract, #nsck, #nsckm, #noment, #license)
+            if token.type in [
+                TokenType.BANNS,
+                TokenType.CONTRACT,
+                TokenType.NSCK,
+                TokenType.NSCKM,
+                TokenType.NOMENT,
+                TokenType.LICENSE,
+            ]:
+                node.add_token(token)
+                i += 1
+                continue
+
+            # Source de mariage (#ms)
+            if token.type == TokenType.MS:
+                node.add_token(token)
+                i += 1
+                if i < len(tokens) and tokens[i].type in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                ):
+                    node.add_token(tokens[i])
+                    i += 1
                 continue
 
             # Modificateurs de statut (#sep / #div + date optionnelle ou '-')

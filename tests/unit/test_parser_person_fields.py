@@ -159,3 +159,58 @@ class TestPersonTitles:
         content = "fam DUPONT Jean [*:Comte 1700 + MARTIN Marie\n"
         genealogy = GeneWebParser().parse_string(content)
         assert genealogy is not None
+
+
+class TestFamilyQualifiers:
+    """Tests pour les qualificateurs de famille (#ms, #banns, #contract, etc.)"""
+
+    def test_marriage_source_inline(self):
+        """Test parsing de #ms (source mariage) inline sur la ligne fam."""
+        content = "fam DUPONT Jean #ms RegistreMarriage + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        fam = next(iter(genealogy.families.values()))
+        assert fam.marriage_source == "RegistreMarriage"
+
+    def test_banns_qualifier(self):
+        """Test parsing du qualificateur #banns."""
+        content = "fam DUPONT Jean #banns + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        fam = next(iter(genealogy.families.values()))
+        from geneweb_py.core.family import FamilyQualifier
+
+        assert FamilyQualifier.BANNS in fam.family_qualifiers
+
+    def test_contract_qualifier(self):
+        """Test parsing du qualificateur #contract."""
+        content = "fam DUPONT Jean #contract + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        fam = next(iter(genealogy.families.values()))
+        from geneweb_py.core.family import FamilyQualifier
+
+        assert FamilyQualifier.CONTRACT in fam.family_qualifiers
+
+    def test_nsck_qualifier(self):
+        """Test parsing du qualificateur #nsck."""
+        content = "fam DUPONT Jean #nsck + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        fam = next(iter(genealogy.families.values()))
+        from geneweb_py.core.family import FamilyQualifier
+
+        assert FamilyQualifier.NO_SEX_CHECK in fam.family_qualifiers
+
+    def test_multiple_qualifiers(self):
+        """Test parsing de plusieurs qualificateurs combinés."""
+        content = "fam DUPONT Jean #banns #contract + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        fam = next(iter(genealogy.families.values()))
+        from geneweb_py.core.family import FamilyQualifier
+
+        assert FamilyQualifier.BANNS in fam.family_qualifiers
+        assert FamilyQualifier.CONTRACT in fam.family_qualifiers
+
+    def test_family_qualifiers_default_empty(self):
+        """La liste family_qualifiers est vide par défaut."""
+        content = "fam DUPONT Jean + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        fam = next(iter(genealogy.families.values()))
+        assert fam.family_qualifiers == []
