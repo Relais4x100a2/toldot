@@ -719,6 +719,9 @@ class GeneWebParser:
                 husband.general_alias = family_info["husband_general_alias"]
             if family_info["husband_image_path"]:
                 husband.image_path = family_info["husband_image_path"]
+            if family_info["husband_titles"]:
+                for title in family_info["husband_titles"]:
+                    husband.add_title(title)
 
         if family_info["wife_name"] and family_info["wife_firstname"]:
             wife_id = self._get_or_create_person(
@@ -777,6 +780,9 @@ class GeneWebParser:
                 wife.general_alias = family_info["wife_general_alias"]
             if family_info["wife_image_path"]:
                 wife.image_path = family_info["wife_image_path"]
+            if family_info["wife_titles"]:
+                for title in family_info["wife_titles"]:
+                    wife.add_title(title)
 
         # Créer la famille seulement si au moins un époux est défini
         if husband_id or wife_id:
@@ -983,6 +989,8 @@ class GeneWebParser:
             "wife_surname_alias": None,
             "wife_general_alias": None,
             "wife_image_path": None,
+            "husband_titles": [],
+            "wife_titles": [],
             "marriage_date": None,
             "marriage_place": None,
             "marriage_status": MarriageStatus.MARRIED,
@@ -1152,6 +1160,16 @@ class GeneWebParser:
                     i += 1
                 if parts:
                     result[f"{current_person}_first_name_alias"] = " ".join(parts)
+                continue
+
+            # Titres [TitleName:Type:Place:StartDate:EndDate:Nth]
+            elif (
+                token.type == TokenType.BRACKET_OPEN
+                and result[f"{current_person}_firstname"]
+            ):
+                title, i = self._parse_title_bracket(tokens, i)
+                if title is not None:
+                    result[f"{current_person}_titles"].append(title)
                 continue
 
             # Numéro d'occurrence (après le prénom)
@@ -1694,6 +1712,64 @@ class GeneWebParser:
             return source_value, i
 
         return None, start_index
+
+    def _parse_title_bracket(
+        self, tokens: List[Token], start_index: int
+    ) -> Tuple[Optional["Title"], int]:
+        """Parse [TitleName:Type:Place:StartDate:EndDate:Nth] from BRACKET_OPEN.
+
+        Args:
+            tokens: Liste des tokens
+            start_index: Index où commence BRACKET_OPEN
+
+        Returns:
+            Tuple (Title object ou None, nouvel_index)
+        """
+        from ..person import Title
+
+        i = start_index
+        if i >= len(tokens) or tokens[i].type != TokenType.BRACKET_OPEN:
+            return None, i
+        i += 1  # consume BRACKET_OPEN
+
+        fields: List[List[str]] = [[]]
+        while i < len(tokens) and tokens[i].type != TokenType.BRACKET_CLOSE:
+            tok = tokens[i]
+            if tok.type == TokenType.COLON:
+                fields.append([])
+            else:
+                fields[-1].append(tok.value)
+            i += 1
+
+        if i < len(tokens) and tokens[i].type == TokenType.BRACKET_CLOSE:
+            i += 1  # consume BRACKET_CLOSE
+
+        def field_str(idx: int) -> str:
+            if idx < len(fields):
+                return " ".join(fields[idx]).replace("_", " ")
+            return ""
+
+        title_name = field_str(0).strip()
+        title_type = field_str(1).strip()
+        place = field_str(2).strip()
+        start_raw = field_str(3).strip()
+        end_raw = field_str(4).strip()
+        nth_raw = field_str(5).strip()
+
+        start_date = Date.parse_with_fallback(start_raw) if start_raw else None
+        end_date = Date.parse_with_fallback(end_raw) if end_raw else None
+        nth = int(nth_raw) if nth_raw.isdigit() else 1
+
+        title = Title(
+            name=title_name,
+            title_type=title_type,
+            place=place,
+            start_date=start_date,
+            end_date=end_date,
+            number=nth,
+            is_main=(title_name == "*"),
+        )
+        return title, i
 
     def _parse_person_events_block(
         self, node: SyntaxNode, persons: dict, genealogy: Genealogy
@@ -2678,6 +2754,12 @@ class GeneWebParser:
                     i += 1
                 if parts:
                     person.first_name_alias = " ".join(parts)
+
+            # Titres [TitleName:Type:Place:StartDate:EndDate:Nth]
+            elif token.type == TokenType.BRACKET_OPEN:
+                title, i = self._parse_title_bracket(tokens, i)
+                if title is not None:
+                    person.add_title(title)
 
             # Accès privé (#apriv)
             elif token.type == TokenType.APRIV:
