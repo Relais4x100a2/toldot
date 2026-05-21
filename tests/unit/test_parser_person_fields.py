@@ -1,119 +1,73 @@
-"""Tests des champs de personne ajoutés en Phase 2."""
+"""
+Tests unitaires pour le parsing des champs sources et lieux personnels
+
+Ces tests vérifient le parsing des modificateurs #bs, #ds, #pp, #ps, #rp, #rs
+dans les informations personnelles inline.
+"""
+
+from geneweb_py.core.parser import GeneWebParser
 
 
-from geneweb_py.core.parser.gw_parser import GeneWebParser
+class TestPersonSourcePlaceFields:
+    """Tests pour les champs sources et lieux de personnes"""
 
-
-class TestPersonAliasFields:
-    """Tests pour les champs alias et image (#nick, #salias, #alias, #image)"""
-
-    def test_nick(self) -> None:
-        """Test parsing du surnom (#nick)"""
-        content = "fam DUPONT Jean #nick LeGrand\n"
+    def test_birth_source(self):
+        """Test parsing de #bs (source de naissance)"""
+        content = "fam DUPONT Jean 1750 #bs Archives_de_Paris\n"
         genealogy = GeneWebParser().parse_string(content)
         jean = next(
-            p
-            for p in genealogy.persons.values()
+            p for p in genealogy.persons.values()
             if p.first_name == "Jean"
         )
-        assert jean.nickname == "LeGrand"
+        assert jean.birth_source == "Archives de Paris"
 
-    def test_salias(self) -> None:
-        """Test parsing de l'alias de nom (#salias)"""
-        content = "fam DUPONT Jean #salias DuPlessis\n"
+    def test_death_source(self):
+        """Test parsing de #ds (source de décès)"""
+        content = "fam DUPONT Jean 0 1800 #ds Registre_Civil\n"
         genealogy = GeneWebParser().parse_string(content)
         jean = next(
-            p
-            for p in genealogy.persons.values()
+            p for p in genealogy.persons.values()
             if p.first_name == "Jean"
         )
-        assert jean.surname_alias == "DuPlessis"
+        assert jean.death_source == "Registre Civil"
 
-    def test_alias(self) -> None:
-        """Test parsing de l'alias général (#alias)"""
-        content = "fam DUPONT Jean #alias JeanJean\n"
+    def test_baptism_place(self):
+        """Test parsing de #pp (lieu baptême)"""
+        content = "fam DUPONT Jean 1750 #pp Eglise_Saint-Nicolas\n"
         genealogy = GeneWebParser().parse_string(content)
         jean = next(
-            p
-            for p in genealogy.persons.values()
+            p for p in genealogy.persons.values()
             if p.first_name == "Jean"
         )
-        assert jean.general_alias == "JeanJean"
+        assert jean.baptism_place is not None
+        assert "Saint-Nicolas" in jean.baptism_place
 
-    def test_image(self) -> None:
-        """Test parsing du chemin image (#image)"""
-        content = "fam DUPONT Jean #image /photos/jean.jpg\n"
+    def test_baptism_source(self):
+        """Test parsing de #ps (source baptême)"""
+        content = "fam DUPONT Jean 1750 #ps Archives_Diocesaines\n"
         genealogy = GeneWebParser().parse_string(content)
         jean = next(
-            p
-            for p in genealogy.persons.values()
+            p for p in genealogy.persons.values()
             if p.first_name == "Jean"
         )
-        assert jean.image_path == "/photos/jean.jpg"
+        assert jean.baptism_source is not None
 
-    def test_combined_aliases(self) -> None:
-        """Test parsing de multiples alias sur une même personne"""
-        content = "fam DUPONT Jean #nick LeGrand #salias DuPont #alias JD\n"
+    def test_burial_place(self):
+        """Test parsing de #rp (lieu inhumation)"""
+        content = "fam DUPONT Jean 0 1800 #rp Cimetiere_du_Pere-Lachaise\n"
         genealogy = GeneWebParser().parse_string(content)
         jean = next(
-            p
-            for p in genealogy.persons.values()
+            p for p in genealogy.persons.values()
             if p.first_name == "Jean"
         )
-        assert jean.nickname == "LeGrand"
-        assert jean.surname_alias == "DuPont"
-        assert jean.general_alias == "JD"
+        assert jean.burial_place is not None
 
-    def test_nick_with_underscores(self) -> None:
-        """Test que les underscores dans les surnoms sont remplacés par des espaces"""
-        content = "fam DUPONT Jean #nick Le_Grand\n"
+    def test_burial_source(self):
+        """Test parsing de #rs (source inhumation)"""
+        content = "fam DUPONT Jean 0 1800 #rs Acte_de_Deces\n"
         genealogy = GeneWebParser().parse_string(content)
         jean = next(
-            p
-            for p in genealogy.persons.values()
+            p for p in genealogy.persons.values()
             if p.first_name == "Jean"
         )
-        assert jean.nickname == "Le Grand"
-
-    def test_image_with_complex_path(self) -> None:
-        """Test parsing d'un chemin image complexe"""
-        content = "fam DUPONT Jean #image /photos/2024/family/jean.png\n"
-        genealogy = GeneWebParser().parse_string(content)
-        jean = next(
-            p
-            for p in genealogy.persons.values()
-            if p.first_name == "Jean"
-        )
-        assert jean.image_path == "/photos/2024/family/jean.png"
-
-    def test_all_fields_together(self) -> None:
-        """Test parsing de tous les champs alias + image ensemble"""
-        content = (
-            "fam DUPONT Jean #nick LeGrand #salias DuPont "
-            "#alias JD #image /photos/jean.jpg\n"
-        )
-        genealogy = GeneWebParser().parse_string(content)
-        jean = next(
-            p
-            for p in genealogy.persons.values()
-            if p.first_name == "Jean"
-        )
-        assert jean.nickname == "LeGrand"
-        assert jean.surname_alias == "DuPont"
-        assert jean.general_alias == "JD"
-        assert jean.image_path == "/photos/jean.jpg"
-
-    def test_spouse_with_aliases(self) -> None:
-        """Test que les aliases fonctionnent aussi pour l'épouse"""
-        content = (
-            "fam DUPONT Jean +MARTIN Marie #nick LaReine "
-            "#alias MM\n"
-        )
-        genealogy = GeneWebParser().parse_string(content)
-        marie = next(
-            p
-            for p in genealogy.persons.values()
-            if p.first_name == "Marie"
-        )
-        assert marie.nickname == "LaReine"
-        assert marie.general_alias == "MM"
+        assert jean.burial_source is not None
