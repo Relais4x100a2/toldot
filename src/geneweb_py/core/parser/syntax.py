@@ -416,7 +416,7 @@ class FamilyBlockParser(BlockParser):
                         i += 1
                 continue
 
-            # Qualificateurs de famille (#banns, #contract, #nsck, #nsckm, #noment, #license)
+            # Qualificateurs de famille (#banns, #contract, #nsck, etc.)
             if token.type in [
                 TokenType.BANNS,
                 TokenType.CONTRACT,
