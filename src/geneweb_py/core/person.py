@@ -235,6 +235,17 @@ class Person:
         """Ajoute une note personnelle"""
         self.notes.append(note)
 
+    def get_notes_structured(self) -> "List[Any]":
+        """Retourne les notes parsées (wikitext extrait), calculé on-demand.
+
+        Returns:
+            Liste de NoteContent (un par note), dans l'ordre de self.notes
+        """
+        from .parser.wikitext import WikitextParser
+
+        parser = WikitextParser()
+        return [parser.parse(note) for note in self.notes]
+
     def add_relation(self, relation_type: str, person_id: str) -> None:
         """Ajoute une relation spéciale (adoption, parrainage, etc.)"""
         if relation_type not in self.relations:
