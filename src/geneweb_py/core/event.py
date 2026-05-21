@@ -42,6 +42,44 @@ class EventType(Enum):
     # Autre / type inconnu (import inter-formats, extensions)
     OTHER = "oth"
 
+    # Événements personnels gwplus — compléments spec officielle
+    ACCOMPLISHMENT = "acco"
+    ACQUISITION = "acqu"
+    ADHESION = "adhe"
+    BAPTISM_LDS = "bapl"
+    BAR_MITZVAH = "barm"
+    BAT_MITZVAH = "basm"
+    BENEDICTION = "bles"
+    RECENSEMENT = "cens"
+    CHANGE_NAME = "chgn"
+    CIRCUMCISION = "circ"
+    CONFIRMATION_LDS = "conl"
+    DIPLOMA = "degr"
+    DECORATION = "awar"
+    DEMOBILISATION = "demm"
+    DISTINCTION = "dist"
+    DOTATION = "endl"
+    DOTATION_LDS = "dotl"
+    ELECTION = "elec"
+    EMIGRATION = "emig"
+    FAMILY_LINK_LDS = "flkl"
+    FUNERAL = "fune"
+    HOSPITALISATION = "hosp"
+    ILLNESS = "illn"
+    IMMIGRATION = "immi"
+    LAST_PASSAGE = "lpas"
+    MILITARY_DISCHARGE = "mdis"
+    MILITARY_PROMOTION = "mpro"
+    MILITARY_MOBILISATION = "mobm"
+    PROPERTY = "prop"
+    RETIREMENT = "reti"
+    SEALING_CHILD = "slgc"
+    SEALING_PARENT = "slgp"
+    SEALING_SPOUSE = "slgs"
+    VOTE = "vteb"
+    WILL = "will"
+    STRNG = "strng"
+
     # Événements familiaux
     MARRIAGE = "marr"
     DIVORCE = "div"
@@ -105,6 +143,9 @@ class Event:
     # Informations spécifiques selon le type d'événement
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+    # Type brut pour les événements non reconnus (event_type == OTHER dans ce cas)
+    event_type_raw: Optional[str] = None
+
     def add_witness(self, person_id: str, witness_type: Optional[str] = None) -> None:
         """Ajoute un témoin à l'événement
 
@@ -144,6 +185,7 @@ class Event:
         """Convertit l'événement en dictionnaire pour sérialisation"""
         return {
             "type": self.event_type.value,
+            "type_raw": self.event_type_raw,
             "date": self.date.display_text if self.date else None,
             "place": self.place,
             "source": self.source,
