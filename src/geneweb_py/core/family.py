@@ -36,6 +36,17 @@ class ChildSex(Enum):
     UNKNOWN = ""
 
 
+class FamilyQualifier(str, Enum):
+    """Qualificateurs de la ligne fam GeneWeb."""
+
+    NO_SEX_CHECK = "nsck"
+    NO_SEX_CHECK_MARRIAGE = "nsckm"
+    NO_MENTION = "noment"
+    BANNS = "banns"
+    CONTRACT = "contract"
+    LICENSE = "license"
+
+
 @dataclass
 class Child:
     """Représentation d'un enfant dans une famille"""
@@ -84,6 +95,9 @@ class Family:
     marriage_place: Optional[str] = None
     marriage_source: Optional[str] = None
     marriage_status: MarriageStatus = MarriageStatus.MARRIED
+
+    # Qualificateurs de relation/mariage
+    family_qualifiers: List["FamilyQualifier"] = field(default_factory=list)
 
     # Divorce/séparation
     divorce_date: Optional[Date] = None
