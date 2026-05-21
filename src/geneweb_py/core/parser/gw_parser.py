@@ -681,6 +681,26 @@ class GeneWebParser:
                 husband.birth_place = family_info["husband_birth_place"]
             if family_info["husband_death_place"]:
                 husband.death_place = family_info["husband_death_place"]
+            if family_info["husband_birth_source"]:
+                husband.birth_source = family_info["husband_birth_source"]
+            if family_info["husband_death_source"]:
+                husband.death_source = family_info["husband_death_source"]
+            if family_info["husband_baptism_place"]:
+                husband.baptism_place = family_info[
+                    "husband_baptism_place"
+                ]
+            if family_info["husband_baptism_source"]:
+                husband.baptism_source = family_info[
+                    "husband_baptism_source"
+                ]
+            if family_info["husband_burial_place"]:
+                husband.burial_place = family_info[
+                    "husband_burial_place"
+                ]
+            if family_info["husband_burial_source"]:
+                husband.burial_source = family_info[
+                    "husband_burial_source"
+                ]
             if family_info["husband_occupation"]:
                 husband.occupation = family_info["husband_occupation"]
             if family_info["husband_access_level"]:
@@ -713,6 +733,26 @@ class GeneWebParser:
                 wife.birth_place = family_info["wife_birth_place"]
             if family_info["wife_death_place"]:
                 wife.death_place = family_info["wife_death_place"]
+            if family_info["wife_birth_source"]:
+                wife.birth_source = family_info["wife_birth_source"]
+            if family_info["wife_death_source"]:
+                wife.death_source = family_info["wife_death_source"]
+            if family_info["wife_baptism_place"]:
+                wife.baptism_place = family_info[
+                    "wife_baptism_place"
+                ]
+            if family_info["wife_baptism_source"]:
+                wife.baptism_source = family_info[
+                    "wife_baptism_source"
+                ]
+            if family_info["wife_burial_place"]:
+                wife.burial_place = family_info[
+                    "wife_burial_place"
+                ]
+            if family_info["wife_burial_source"]:
+                wife.burial_source = family_info[
+                    "wife_burial_source"
+                ]
             if family_info["wife_occupation"]:
                 wife.occupation = family_info["wife_occupation"]
             if family_info["wife_access_level"]:
@@ -896,6 +936,12 @@ class GeneWebParser:
             "husband_death_date": None,
             "husband_birth_place": None,
             "husband_death_place": None,
+            "husband_birth_source": None,
+            "husband_death_source": None,
+            "husband_baptism_place": None,
+            "husband_baptism_source": None,
+            "husband_burial_place": None,
+            "husband_burial_source": None,
             "husband_occupation": None,
             "husband_access_level": None,
             "husband_nickname": None,
@@ -909,6 +955,12 @@ class GeneWebParser:
             "wife_death_date": None,
             "wife_birth_place": None,
             "wife_death_place": None,
+            "wife_birth_source": None,
+            "wife_death_source": None,
+            "wife_baptism_place": None,
+            "wife_baptism_source": None,
+            "wife_burial_place": None,
+            "wife_burial_source": None,
             "wife_occupation": None,
             "wife_access_level": None,
             "wife_nickname": None,
@@ -1194,6 +1246,66 @@ class GeneWebParser:
                     i += 1
                 if image_parts:
                     result[f"{current_person}_image_path"] = "".join(image_parts)
+                continue
+
+            # Source naissance (#bs)
+            elif token.type == TokenType.BS:
+                i += 1
+                value, i = self._parse_source_value(tokens, i)
+                if value:
+                    result[f"{current_person}_birth_source"] = value.replace(
+                        "_", " "
+                    )
+                continue
+
+            # Source décès (#ds)
+            elif token.type == TokenType.DS:
+                i += 1
+                value, i = self._parse_source_value(tokens, i)
+                if value:
+                    result[f"{current_person}_death_source"] = value.replace(
+                        "_", " "
+                    )
+                continue
+
+            # Lieu baptême (#pp)
+            elif token.type == TokenType.PP:
+                i += 1
+                value, i = self._parse_place_value(tokens, i)
+                if value:
+                    result[f"{current_person}_baptism_place"] = value.replace(
+                        "_", " "
+                    )
+                continue
+
+            # Source baptême (#ps)
+            elif token.type == TokenType.PS:
+                i += 1
+                value, i = self._parse_source_value(tokens, i)
+                if value:
+                    result[f"{current_person}_baptism_source"] = value.replace(
+                        "_", " "
+                    )
+                continue
+
+            # Lieu inhumation (#rp)
+            elif token.type == TokenType.RP:
+                i += 1
+                value, i = self._parse_place_value(tokens, i)
+                if value:
+                    result[f"{current_person}_burial_place"] = value.replace(
+                        "_", " "
+                    )
+                continue
+
+            # Source inhumation (#rs)
+            elif token.type == TokenType.RS:
+                i += 1
+                value, i = self._parse_source_value(tokens, i)
+                if value:
+                    result[f"{current_person}_burial_source"] = value.replace(
+                        "_", " "
+                    )
                 continue
 
             # Lieu de mariage (#mp)
@@ -2428,6 +2540,48 @@ class GeneWebParser:
                     i += 1
                 if image_parts:
                     person.image_path = "".join(image_parts)
+
+            # Source naissance (#bs)
+            elif token.type == TokenType.BS:
+                i += 1
+                value, i = self._parse_source_value(tokens, i)
+                if value:
+                    person.birth_source = value.replace("_", " ")
+
+            # Source décès (#ds)
+            elif token.type == TokenType.DS:
+                i += 1
+                value, i = self._parse_source_value(tokens, i)
+                if value:
+                    person.death_source = value.replace("_", " ")
+
+            # Lieu baptême (#pp)
+            elif token.type == TokenType.PP:
+                i += 1
+                value, i = self._parse_place_value(tokens, i)
+                if value:
+                    person.baptism_place = value.replace("_", " ")
+
+            # Source baptême (#ps)
+            elif token.type == TokenType.PS:
+                i += 1
+                value, i = self._parse_source_value(tokens, i)
+                if value:
+                    person.baptism_source = value.replace("_", " ")
+
+            # Lieu inhumation (#rp)
+            elif token.type == TokenType.RP:
+                i += 1
+                value, i = self._parse_place_value(tokens, i)
+                if value:
+                    person.burial_place = value.replace("_", " ")
+
+            # Source inhumation (#rs)
+            elif token.type == TokenType.RS:
+                i += 1
+                value, i = self._parse_source_value(tokens, i)
+                if value:
+                    person.burial_source = value.replace("_", " ")
 
             # Accès privé (#apriv)
             elif token.type == TokenType.APRIV:

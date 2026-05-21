@@ -274,6 +274,51 @@ class FamilyBlockParser(BlockParser):
                     i += 1
                 continue
 
+            # Source and place modifiers (#bs, #ds, #pp, #ps, #rp, #rs)
+            if token.type in (
+                TokenType.BS,
+                TokenType.DS,
+                TokenType.PP,
+                TokenType.PS,
+                TokenType.RP,
+                TokenType.RS,
+            ):
+                node.add_token(token)
+                i += 1
+                # Consume tokens until a known boundary
+                while i < len(tokens) and tokens[i].type not in (
+                    TokenType.NEWLINE,
+                    TokenType.EOF,
+                    TokenType.WIT,
+                    TokenType.SRC,
+                    TokenType.COMM,
+                    TokenType.NOTE,
+                ):
+                    # Stop at known modifiers
+                    if tokens[i].type in (
+                        TokenType.NICK,
+                        TokenType.SALIAS,
+                        TokenType.ALIAS,
+                        TokenType.BP,
+                        TokenType.DP,
+                        TokenType.OCCU,
+                        TokenType.APUBL,
+                        TokenType.APRIV,
+                        TokenType.BS,
+                        TokenType.DS,
+                        TokenType.PP,
+                        TokenType.PS,
+                        TokenType.RP,
+                        TokenType.RS,
+                        TokenType.IMAGE,
+                        TokenType.PLUS,
+                        TokenType.DATE,
+                    ):
+                        break
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+
             break
 
         return i
