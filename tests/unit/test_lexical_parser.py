@@ -276,11 +276,16 @@ end"""
             LexicalParser(content).tokenize()
 
     def test_tokenize_person_field_modifiers(self):
-        """Les 11 nouveaux modificateurs #xxx sont reconnus comme TokenType distincts."""
-        text = "#nick LeGrand #salias DuPont #alias LeComte #image /photo.jpg #bs Acte #ds Reg #pp Paris #ps Source #rp Lyon #rs Acte2 #ms RegistreParoissial"
+        """Les 11 modificateurs #xxx sont reconnus comme TokenType distincts."""
+        text = (
+            "#nick LeGrand #salias DuPont #alias LeComte #image /photo.jpg"
+            " #bs Acte #ds Reg #pp Paris #ps Source #rp Lyon #rs Acte2"
+            " #ms RegistreParoissial"
+        )
         lexer = LexicalParser(text)
         tokens = lexer.tokenize()
-        types = {t.type for t in tokens if t.type != TokenType.NEWLINE and t.type != TokenType.WHITESPACE}
+        skip = {TokenType.NEWLINE, TokenType.WHITESPACE}
+        types = {t.type for t in tokens if t.type not in skip}
 
         assert TokenType.NICK in types
         assert TokenType.SALIAS in types
