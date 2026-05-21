@@ -108,3 +108,54 @@ class TestPersonNameSyntax:
         content = "fam DUPONT Jean {Alias_incomplet 1750 + MARTIN Marie\n"
         genealogy = GeneWebParser().parse_string(content)
         assert genealogy is not None
+
+
+class TestPersonTitles:
+    """Tests pour le parsing des titres de noblesse"""
+
+    def test_full_title(self):
+        """Test parsing d'un titre complet [*:Comte:Paris:1720:1740:2]"""
+        content = "fam DUPONT Jean [*:Comte:Paris:1720:1740:2] 1700 + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        jean = next(
+            p for p in genealogy.persons.values()
+            if p.first_name == "Jean"
+        )
+        assert len(jean.titles) == 1
+        t = jean.titles[0]
+        assert t.is_main is True
+        assert t.title_type == "Comte"
+        assert t.place == "Paris"
+        assert t.number == 2
+
+    def test_partial_title_defaults(self):
+        """Test parsing d'un titre partiel [:Baron::1800::]"""
+        content = "fam DUPONT Jean [:Baron::1800::] 1780 + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        jean = next(
+            p for p in genealogy.persons.values()
+            if p.first_name == "Jean"
+        )
+        assert len(jean.titles) == 1
+        t = jean.titles[0]
+        assert t.title_type == "Baron"
+        assert t.number == 1  # default
+
+    def test_multiple_titles(self):
+        """Test parsing de plusieurs titres"""
+        content = (
+            "fam DUPONT Jean [*:Roi:France:::] [:Duc:Paris:::] 1750"
+            " + MARTIN Marie\n"
+        )
+        genealogy = GeneWebParser().parse_string(content)
+        jean = next(
+            p for p in genealogy.persons.values()
+            if p.first_name == "Jean"
+        )
+        assert len(jean.titles) == 2
+
+    def test_unclosed_bracket_no_crash(self):
+        """Un crochet non fermé ne doit pas lever d'erreur."""
+        content = "fam DUPONT Jean [*:Comte 1700 + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        assert genealogy is not None

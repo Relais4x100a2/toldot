@@ -355,6 +355,24 @@ class FamilyBlockParser(BlockParser):
                     i += 1
                 continue
 
+            # Title [TitleName:Type:Place:StartDate:EndDate:Nth]
+            if token.type == TokenType.BRACKET_OPEN:
+                node.add_token(token)
+                i += 1
+                while (
+                    i < len(tokens)
+                    and tokens[i].type != TokenType.BRACKET_CLOSE
+                ):
+                    node.add_token(tokens[i])
+                    i += 1
+                if (
+                    i < len(tokens)
+                    and tokens[i].type == TokenType.BRACKET_CLOSE
+                ):
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+
             break
 
         return i
