@@ -71,3 +71,40 @@ class TestPersonSourcePlaceFields:
             if p.first_name == "Jean"
         )
         assert jean.burial_source is not None
+
+
+class TestPersonNameSyntax:
+    """Tests pour les noms publics et alias de prénoms"""
+
+    def test_public_name(self):
+        """Test parsing de (PublicName)"""
+        content = "fam DUPONT Jean (Jean_le_Grand) 1750 + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        jean = next(
+            p for p in genealogy.persons.values()
+            if p.first_name == "Jean" and p.last_name == "DUPONT"
+        )
+        assert jean is not None
+        assert jean.public_name == "Jean le Grand"
+
+    def test_first_name_alias(self):
+        """Test parsing de {FirstNameAlias}"""
+        content = "fam DUPONT Jean {Jeannot} 1750 + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        jean = next(
+            p for p in genealogy.persons.values()
+            if p.first_name == "Jean"
+        )
+        assert jean.first_name_alias == "Jeannot"
+
+    def test_unclosed_paren_no_crash(self):
+        """Une parenthèse non fermée ne doit pas lever IndexError."""
+        content = "fam DUPONT (Jean_incomplet 1750 + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        assert genealogy is not None
+
+    def test_unclosed_brace_no_crash(self):
+        """Une accolade non fermée ne doit pas lever IndexError."""
+        content = "fam DUPONT Jean {Alias_incomplet 1750 + MARTIN Marie\n"
+        genealogy = GeneWebParser().parse_string(content)
+        assert genealogy is not None
