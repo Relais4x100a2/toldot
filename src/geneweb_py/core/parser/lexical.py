@@ -105,6 +105,19 @@ class TokenType(Enum):
     FATH = "fath"  # Père
     MOTH = "moth"  # Mère
 
+    # Modificateurs de champs personne
+    NICK = "nick"  # Surnom / qualificatif
+    SALIAS = "salias"  # Alias de nom de famille
+    ALIAS = "alias"  # Alias général
+    IMAGE = "image"  # Chemin image
+    BS = "bs"  # Source naissance
+    DS = "ds"  # Source décès
+    PP = "pp"  # Lieu baptême
+    PS = "ps"  # Source baptême
+    RP = "rp"  # Lieu inhumation/crémation
+    RS = "rs"  # Source inhumation/crémation
+    MS = "ms"  # Source mariage
+
     # Autres tokens
     IDENTIFIER = "identifier"  # Identifiant (nom, prénom, lieu)
     DATE = "date"  # Date
@@ -269,6 +282,17 @@ class LexicalParser:
             "fost": TokenType.FOST,
             "fath": TokenType.FATH,
             "moth": TokenType.MOTH,
+            "nick": TokenType.NICK,
+            "salias": TokenType.SALIAS,
+            "alias": TokenType.ALIAS,
+            "image": TokenType.IMAGE,
+            "bs": TokenType.BS,
+            "ds": TokenType.DS,
+            "pp": TokenType.PP,
+            "ps": TokenType.PS,
+            "rp": TokenType.RP,
+            "rs": TokenType.RS,
+            "ms": TokenType.MS,
         }
 
         # Types d'événements
