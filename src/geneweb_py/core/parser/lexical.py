@@ -118,6 +118,14 @@ class TokenType(Enum):
     RS = "rs"  # Source inhumation/crémation
     MS = "ms"  # Source mariage
 
+    # Qualificateurs de famille
+    NSCK = "nsck"  # Pas de vérification sexe des époux
+    NSCKM = "nsckm"  # Pas de vérification sexe (mariage)
+    NOMENT = "noment"  # Relation sans mention
+    BANNS = "banns"  # Publication des bans
+    CONTRACT = "contract"  # Contrat de mariage
+    LICENSE = "license"  # Licence de mariage
+
     # Autres tokens
     IDENTIFIER = "identifier"  # Identifiant (nom, prénom, lieu)
     DATE = "date"  # Date
@@ -293,6 +301,12 @@ class LexicalParser:
             "rp": TokenType.RP,
             "rs": TokenType.RS,
             "ms": TokenType.MS,
+            "nsck": TokenType.NSCK,
+            "nsckm": TokenType.NSCKM,
+            "noment": TokenType.NOMENT,
+            "banns": TokenType.BANNS,
+            "contract": TokenType.CONTRACT,
+            "license": TokenType.LICENSE,
         }
 
         # Types d'événements

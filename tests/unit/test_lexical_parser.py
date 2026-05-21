@@ -299,6 +299,23 @@ end"""
         assert TokenType.RS in types
         assert TokenType.MS in types
 
+    def test_tokenize_family_qualifier_modifiers(self):
+        """Les 6 qualificateurs fam sont reconnus."""
+        text = "#nsck #nsckm #noment #banns #contract #license"
+        lexer = LexicalParser(text)
+        tokens = [
+            t for t in lexer.tokenize()
+            if t.type not in (TokenType.NEWLINE, TokenType.WHITESPACE)
+        ]
+        types = {t.type for t in tokens}
+
+        assert TokenType.NSCK in types
+        assert TokenType.NSCKM in types
+        assert TokenType.NOMENT in types
+        assert TokenType.BANNS in types
+        assert TokenType.CONTRACT in types
+        assert TokenType.LICENSE in types
+
 
 class TestToken:
     """Tests pour la classe Token"""
