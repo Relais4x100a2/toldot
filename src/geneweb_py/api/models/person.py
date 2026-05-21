@@ -25,6 +25,50 @@ class TitleSchema(BaseModel):
     is_main: bool = Field(False, description="Titre principal")
 
 
+class PersonLinkModel(BaseModel):
+    """Lien vers une personne dans une note wikitext."""
+
+    first_name: str = Field(..., description="Prénom")
+    last_name: str = Field(..., description="Nom")
+    occurrence: int = Field(0, description="Numéro d'occurrence")
+    display_text: str = Field("", description="Texte d'affichage du lien")
+
+
+class PageLinkModel(BaseModel):
+    """Lien vers une page étendue dans une note wikitext."""
+
+    page_name: str = Field(..., description="Nom de la page")
+    display_text: str = Field("", description="Texte d'affichage")
+
+
+class WizardLinkModel(BaseModel):
+    """Lien vers un magicien dans une note wikitext."""
+
+    wizard_name: str = Field(..., description="Nom du magicien")
+    display_text: str = Field("", description="Texte d'affichage")
+
+
+class FicheTagsModel(BaseModel):
+    """Balises de renvoi sur fiche individu."""
+
+    head: Optional[str] = None
+    occu: Optional[str] = None
+    death: Optional[str] = None
+    biblio: Optional[str] = None
+    bnote: Optional[str] = None
+    note: Optional[str] = None
+
+
+class NoteModel(BaseModel):
+    """Note structurée avec texte brut et métadonnées wikitext extraites."""
+
+    raw: str = Field(..., description="Texte brut original de la note")
+    person_links: List[PersonLinkModel] = Field(default_factory=list)
+    page_links: List[PageLinkModel] = Field(default_factory=list)
+    wizard_links: List[WizardLinkModel] = Field(default_factory=list)
+    fiche_tags: FicheTagsModel = Field(default_factory=FicheTagsModel)
+
+
 class PersonBaseSchema(BaseModel):
     """Schéma de base pour une personne."""
 
