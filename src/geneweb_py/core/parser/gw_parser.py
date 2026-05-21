@@ -673,6 +673,12 @@ class GeneWebParser:
             )
             # Appliquer les informations personnelles du mari
             husband = persons[husband_id]
+            if family_info["husband_public_name"]:
+                husband.public_name = family_info["husband_public_name"]
+            if family_info["husband_first_name_alias"]:
+                husband.first_name_alias = family_info[
+                    "husband_first_name_alias"
+                ]
             if family_info["husband_birth_date"]:
                 husband.birth_date = family_info["husband_birth_date"]
             if family_info["husband_death_date"]:
@@ -725,6 +731,12 @@ class GeneWebParser:
             )
             # Appliquer les informations personnelles de la femme
             wife = persons[wife_id]
+            if family_info["wife_public_name"]:
+                wife.public_name = family_info["wife_public_name"]
+            if family_info["wife_first_name_alias"]:
+                wife.first_name_alias = family_info[
+                    "wife_first_name_alias"
+                ]
             if family_info["wife_birth_date"]:
                 wife.birth_date = family_info["wife_birth_date"]
             if family_info["wife_death_date"]:
@@ -932,6 +944,8 @@ class GeneWebParser:
             "husband_name": None,
             "husband_firstname": None,
             "husband_occurrence": None,
+            "husband_public_name": None,
+            "husband_first_name_alias": None,
             "husband_birth_date": None,
             "husband_death_date": None,
             "husband_birth_place": None,
@@ -951,6 +965,8 @@ class GeneWebParser:
             "wife_name": None,
             "wife_firstname": None,
             "wife_occurrence": None,
+            "wife_public_name": None,
+            "wife_first_name_alias": None,
             "wife_birth_date": None,
             "wife_death_date": None,
             "wife_birth_place": None,
@@ -1092,6 +1108,50 @@ class GeneWebParser:
             ):
                 current_person = "wife"
                 # Ne pas consommer ici; la boucle reprendra et tombera sur le cas 'Nom de famille'  # noqa: E501
+                continue
+
+            # Nom public (PublicName)
+            elif (
+                token.type == TokenType.PAREN_OPEN
+                and result[f"{current_person}_name"]
+            ):
+                parts: List[str] = []
+                i += 1
+                while (
+                    i < len(tokens)
+                    and tokens[i].type != TokenType.PAREN_CLOSE
+                ):
+                    parts.append(tokens[i].value.replace("_", " "))
+                    i += 1
+                if (
+                    i < len(tokens)
+                    and tokens[i].type == TokenType.PAREN_CLOSE
+                ):
+                    i += 1
+                if parts:
+                    result[f"{current_person}_public_name"] = " ".join(parts)
+                continue
+
+            # Alias de prénom {FirstNameAlias}
+            elif (
+                token.type == TokenType.BRACE_OPEN
+                and result[f"{current_person}_firstname"]
+            ):
+                parts = []
+                i += 1
+                while (
+                    i < len(tokens)
+                    and tokens[i].type != TokenType.BRACE_CLOSE
+                ):
+                    parts.append(tokens[i].value.replace("_", " "))
+                    i += 1
+                if (
+                    i < len(tokens)
+                    and tokens[i].type == TokenType.BRACE_CLOSE
+                ):
+                    i += 1
+                if parts:
+                    result[f"{current_person}_first_name_alias"] = " ".join(parts)
                 continue
 
             # Numéro d'occurrence (après le prénom)
@@ -2582,6 +2642,42 @@ class GeneWebParser:
                 value, i = self._parse_source_value(tokens, i)
                 if value:
                     person.burial_source = value.replace("_", " ")
+
+            # Nom public (PublicName)
+            elif token.type == TokenType.PAREN_OPEN:
+                parts: List[str] = []
+                i += 1
+                while (
+                    i < len(tokens)
+                    and tokens[i].type != TokenType.PAREN_CLOSE
+                ):
+                    parts.append(tokens[i].value.replace("_", " "))
+                    i += 1
+                if (
+                    i < len(tokens)
+                    and tokens[i].type == TokenType.PAREN_CLOSE
+                ):
+                    i += 1
+                if parts:
+                    person.public_name = " ".join(parts)
+
+            # Alias de prénom {FirstNameAlias}
+            elif token.type == TokenType.BRACE_OPEN:
+                parts = []
+                i += 1
+                while (
+                    i < len(tokens)
+                    and tokens[i].type != TokenType.BRACE_CLOSE
+                ):
+                    parts.append(tokens[i].value.replace("_", " "))
+                    i += 1
+                if (
+                    i < len(tokens)
+                    and tokens[i].type == TokenType.BRACE_CLOSE
+                ):
+                    i += 1
+                if parts:
+                    person.first_name_alias = " ".join(parts)
 
             # Accès privé (#apriv)
             elif token.type == TokenType.APRIV:

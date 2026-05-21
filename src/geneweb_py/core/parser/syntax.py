@@ -319,6 +319,42 @@ class FamilyBlockParser(BlockParser):
                     i += 1
                 continue
 
+            # Public name (PublicName)
+            if token.type == TokenType.PAREN_OPEN:
+                node.add_token(token)
+                i += 1
+                while (
+                    i < len(tokens)
+                    and tokens[i].type != TokenType.PAREN_CLOSE
+                ):
+                    node.add_token(tokens[i])
+                    i += 1
+                if (
+                    i < len(tokens)
+                    and tokens[i].type == TokenType.PAREN_CLOSE
+                ):
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+
+            # First name alias {FirstNameAlias}
+            if token.type == TokenType.BRACE_OPEN:
+                node.add_token(token)
+                i += 1
+                while (
+                    i < len(tokens)
+                    and tokens[i].type != TokenType.BRACE_CLOSE
+                ):
+                    node.add_token(tokens[i])
+                    i += 1
+                if (
+                    i < len(tokens)
+                    and tokens[i].type == TokenType.BRACE_CLOSE
+                ):
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+
             break
 
         return i
