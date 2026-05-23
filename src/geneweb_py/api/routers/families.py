@@ -325,7 +325,8 @@ async def get_family_events(
             )
             events.append(
                 event_to_schema(
-                    event, event_id=eid, person_id=None, family_id=family_id
+                    event, event_id=eid, person_id=None, family_id=family_id,
+                    genealogy=service.genealogy,
                 ).model_dump()
             )
 
