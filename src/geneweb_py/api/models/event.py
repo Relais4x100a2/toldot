@@ -116,6 +116,10 @@ class EventSchema(EventBaseSchema):
     family_id: Optional[str] = Field(
         None, description="Identifiant de la famille (pour événements familiaux)"
     )
+    person_name: Optional[str] = Field(None, description="Nom résolu de la personne")
+    family_label: Optional[str] = Field(None, description="Libellé résolu de la famille")
+    witness_names: List[str] = Field(default_factory=list, description="Noms des témoins résolus")
+    date_sort_year: Optional[int] = Field(None, description="Année de tri numérique")
 
     class Config:
         """Configuration Pydantic."""

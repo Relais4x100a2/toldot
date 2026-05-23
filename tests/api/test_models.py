@@ -156,6 +156,36 @@ class TestEventModels:
         )
         assert event.id == "evt_001"
 
+    def test_event_schema_new_fields_optional(self):
+        """Test les 4 nouveaux champs sont optionnels avec des défauts."""
+        from geneweb_py.core.models import EventType
+
+        schema = EventSchema(
+            id="evt_1",
+            event_type=EventType.BIRTH,
+        )
+        assert schema.person_name is None
+        assert schema.family_label is None
+        assert schema.witness_names == []
+        assert schema.date_sort_year is None
+
+    def test_event_schema_new_fields_populated(self):
+        """Test les 4 nouveaux champs peuvent être remplis."""
+        from geneweb_py.core.models import EventType
+
+        schema = EventSchema(
+            id="evt_1",
+            event_type=EventType.BIRTH,
+            person_name="Jean Dupont",
+            family_label="Dupont × Martin",
+            witness_names=["Pierre Martin"],
+            date_sort_year=1842,
+        )
+        assert schema.person_name == "Jean Dupont"
+        assert schema.family_label == "Dupont × Martin"
+        assert schema.witness_names == ["Pierre Martin"]
+        assert schema.date_sort_year == 1842
+
 
 class TestResponseModels:
     """Tests pour les modèles de réponse."""
