@@ -129,9 +129,8 @@ async function init() {
   wireTabs();
   wirePersonsTab();
   wireFamiliesTab();
-  wireEventsTab();
+  initEventsTab();
   wireExportTab();
-  buildEventTypeCheckboxes();
 
   if (state.token) {
     try {
@@ -614,40 +613,96 @@ const EVENT_TYPES = [
   { value: 'oth',  label: 'Autre' },
 ];
 
-function buildEventTypeCheckboxes() {
+const EVENT_TYPE_MAP = Object.fromEntries(EVENT_TYPES.map(t => [t.value, t.label]));
+
+let eventsTable = null;
+
+function initEventsTab() {
   const container = document.getElementById('evt-types');
-  if (!container) return;
-  container.innerHTML = EVENT_TYPES.map(t =>
-    `<label><input type="checkbox" value="${escHtml(t.value)}" class="evt-type-cb"> ${escHtml(t.label)}</label>`
-  ).join('');
-}
+  if (container) {
+    container.innerHTML = EVENT_TYPES.map(t =>
+      `<label style="margin-right:0.5rem;font-size:0.82rem"><input type="checkbox" value="${escHtml(t.value)}" class="evt-type-cb"> ${escHtml(t.label)}</label>`
+    ).join('');
+  }
 
-function wireEventsTab() {
+  const filterInputs = document.querySelectorAll('.evt-filter-input');
+  filterInputs.forEach(inp => inp.addEventListener('input', checkEvtGate));
+  document.querySelectorAll('.evt-type-cb').forEach(cb =>
+    cb.addEventListener('change', checkEvtGate)
+  );
+
   const btn = document.getElementById('evt-search-btn');
-  if (btn) btn.addEventListener('click', searchEvents);
+  if (btn) btn.addEventListener('click', runEvtSearch);
+
+  wirePersonAutocomplete();
 }
 
-async function searchEvents() {
-  const day   = parseInt(document.getElementById('evt-day').value)   || null;
-  const month = parseInt(document.getElementById('evt-month').value) || null;
-  const year  = parseInt(document.getElementById('evt-year').value)  || null;
-  const selectedTypes = [...document.querySelectorAll('.evt-type-cb:checked')].map(cb => cb.value);
+function checkEvtGate() {
+  const hasType = [...document.querySelectorAll('.evt-type-cb:checked')].length > 0;
+  const hasLieu = (document.getElementById('evt-lieu').value || '').trim().length > 0;
+  const hasPerson = (document.getElementById('evt-person-id').value || '').trim().length > 0;
+  const hasNom = (document.getElementById('evt-nom-famille').value || '').trim().length > 0;
+  document.getElementById('evt-search-btn').disabled = !(hasType || hasLieu || hasPerson || hasNom);
+}
 
-  const list = document.getElementById('events-list');
-  list.innerHTML = '<p style="color:var(--text-muted);font-style:italic">Recherche en cours…</p>';
+function normalizeEvtText(str) {
+  return (str || '').normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[-_]/g, ' ');
+}
+
+async function runEvtSearch() {
+  const selectedTypes = [...document.querySelectorAll('.evt-type-cb:checked')].map(cb => cb.value);
+  const lieu = (document.getElementById('evt-lieu').value || '').trim();
+  const personId = (document.getElementById('evt-person-id').value || '').trim();
+  const personDegree = parseInt(document.getElementById('evt-degree').value) || 1;
+  const nomFamille = (document.getElementById('evt-nom-famille').value || '').trim();
+
+  const statusEl = document.getElementById('evt-status');
+  statusEl.textContent = 'Chargement…';
+
+  if (eventsTable) { eventsTable.destroy(); eventsTable = null; }
 
   try {
-    let items = await fetchAllEventItems(year, selectedTypes);
-    if (month !== null) items = items.filter(e => extractMonth(e.date) === month);
-    if (day   !== null) items = items.filter(e => extractDay(e.date)   === day);
-    renderEvents(items);
+    let relCtx = null;
+    if (personId) {
+      const rel = await apiJson(
+        `/api/v1/persons/${encodeURIComponent(personId)}/related?degree=${personDegree}`
+      );
+      relCtx = rel.data;
+    }
+
+    const items = await fetchEvtItems(selectedTypes, lieu);
+
+    let filtered = items;
+    if (relCtx) {
+      const pids = new Set(relCtx.person_ids);
+      const fids = new Set(relCtx.family_ids);
+      const wpid = relCtx.witness_person_id;
+      filtered = filtered.filter(e =>
+        pids.has(e.person_id) ||
+        fids.has(e.family_id) ||
+        (wpid && Array.isArray(e.witnesses) && e.witnesses.includes(wpid))
+      );
+    }
+    if (nomFamille) {
+      const norm = normalizeEvtText(nomFamille);
+      filtered = filtered.filter(e =>
+        normalizeEvtText(e.person_name || '').includes(norm) ||
+        normalizeEvtText(e.family_label || '').includes(norm)
+      );
+    }
+
+    statusEl.textContent = `${filtered.length} événement(s) trouvé(s)`;
+    buildEventsTable(filtered);
   } catch (err) {
     if (err.message === 'session-expired') return;
-    list.innerHTML = '<p class="alert-toldot error">Erreur lors de la recherche.</p>';
+    statusEl.textContent = 'Erreur lors de la recherche.';
   }
 }
 
-async function fetchAllEventItems(year, selectedTypes) {
+async function fetchEvtItems(selectedTypes, lieu) {
   const typesToFetch = selectedTypes.length > 0 ? selectedTypes : [null];
   const allItems = [];
 
@@ -655,17 +710,16 @@ async function fetchAllEventItems(year, selectedTypes) {
     let page = 1;
     while (true) {
       const params = new URLSearchParams({ page, size: 100 });
-      if (year) { params.set('year_from', year); params.set('year_to', year); }
       if (type) params.set('event_type', type);
+      if (lieu) params.set('place', lieu);
       const data = await apiJson('/api/v1/events?' + params);
       allItems.push(...data.items);
       if (!data.pagination.has_next) break;
       page++;
-      if (page > 100) break; // safeguard against runaway loop
+      if (page > 200) break;
     }
   }
 
-  // Deduplicate by id when multiple types were fetched
   if (selectedTypes.length > 1) {
     const seen = new Set();
     return allItems.filter(e => {
@@ -677,43 +731,156 @@ async function fetchAllEventItems(year, selectedTypes) {
   return allItems;
 }
 
-function renderEvents(items) {
-  const list = document.getElementById('events-list');
-  if (!items.length) {
-    list.innerHTML = '<p class="text-muted" style="font-style:italic;padding:0.5rem">Aucun événement trouvé.</p>';
-    return;
-  }
-  list.innerHTML = items.map(e => {
-    const typeLabel = EVENT_TYPES.find(t => t.value === e.event_type)?.label || escHtml(e.event_type) || '?';
-    const dateStr   = e.date ? escHtml(shortDate(e.date)) : '—';
-    const placeHtml = e.place ? ` · ${escHtml(e.place)}` : '';
-    const personBtn = e.person_id
-      ? ` <button class="btn-see" data-id="${escHtml(e.person_id)}">Personne ›</button>`
-      : '';
-    return `<div class="item-row">
-      <span><span class="item-name"><strong>${typeLabel}</strong></span> <span class="item-meta">${dateStr}${placeHtml}</span></span>
-      ${personBtn}
-    </div>`;
-  }).join('');
+function buildEventsTable(data) {
+  if (eventsTable) { eventsTable.destroy(); eventsTable = null; }
 
-  list.querySelectorAll('.btn-see[data-id]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      showTab('persons');
-      showPersonDetail(btn.dataset.id, null);
-    });
+  eventsTable = new Tabulator('#events-table', {
+    data,
+    layout: 'fitColumns',
+    height: '520px',
+    virtualDom: true,
+    rowFormatter: function(row) {
+      const el = row.getElement();
+      if (!el.classList.contains('row-expanded')) return;
+      if (el.querySelector('.evt-row-detail')) return;
+      const d = row.getData();
+      const note = d.note || '';
+      const sources = Array.isArray(d.sources) ? d.sources.join(' ; ') : (d.sources || '');
+      const div = document.createElement('div');
+      div.className = 'evt-row-detail';
+      div.style.cssText = 'padding:0.4rem 0.8rem;background:var(--card-bg,#1e1e2e);border-top:1px solid var(--border,#333);font-size:0.82rem;color:var(--text,#ccc)';
+      div.innerHTML =
+        `<strong>Notes&nbsp;:</strong> ${escHtml(note || '—')}<br>` +
+        `<strong>Sources&nbsp;:</strong> ${escHtml(sources || '—')}`;
+      el.appendChild(div);
+    },
+    rowClick: function(e, row) {
+      const el = row.getElement();
+      const existing = el.querySelector('.evt-row-detail');
+      if (existing) {
+        existing.remove();
+        el.classList.remove('row-expanded');
+      } else {
+        el.classList.add('row-expanded');
+        row.reformat();
+      }
+    },
+    columns: [
+      {
+        title: 'Type',
+        field: 'event_type',
+        width: 120,
+        sorter: 'string',
+        headerFilter: 'select',
+        headerFilterParams: {
+          values: Object.assign({ '': 'Tous' }, EVENT_TYPE_MAP),
+        },
+        formatter: cell => escHtml(EVENT_TYPE_MAP[cell.getValue()] || cell.getValue() || '?'),
+      },
+      {
+        title: 'Date',
+        field: 'date',
+        width: 130,
+        sorter: (a, b, aRow, bRow) =>
+          (aRow.getData().date_sort_year || 0) - (bRow.getData().date_sort_year || 0),
+        headerFilter: 'input',
+        formatter: cell => escHtml(cell.getValue() || '—'),
+      },
+      {
+        title: 'Lieu',
+        field: 'place',
+        width: 150,
+        sorter: 'string',
+        headerFilter: 'input',
+        formatter: cell => escHtml(cell.getValue() || '—'),
+      },
+      {
+        title: 'Personne / Famille',
+        field: 'person_name',
+        width: 180,
+        sorter: 'string',
+        headerFilter: 'input',
+        formatter: cell => {
+          const d = cell.getRow().getData();
+          return escHtml(d.person_name || d.family_label || '—');
+        },
+      },
+      {
+        title: 'Témoins',
+        field: 'witness_names',
+        width: 160,
+        sorter: false,
+        headerFilter: false,
+        formatter: cell => escHtml((cell.getValue() || []).join(', ') || '—'),
+      },
+      {
+        title: 'Notes',
+        field: 'note',
+        width: 110,
+        sorter: false,
+        headerFilter: false,
+        formatter: cell => {
+          const v = cell.getValue() || '';
+          return escHtml(v.length > 60 ? v.slice(0, 60) + '…' : v || '—');
+        },
+      },
+      {
+        title: 'Sources',
+        field: 'sources',
+        width: 110,
+        sorter: false,
+        headerFilter: false,
+        formatter: cell => {
+          const v = (cell.getValue() || []).join(' ; ');
+          return escHtml(v.length > 60 ? v.slice(0, 60) + '…' : v || '—');
+        },
+      },
+    ],
   });
 }
 
-function extractMonth(dateStr) {
-  if (!dateStr) return null;
-  const m = String(dateStr).match(/[-\/](\d{1,2})[-\/]/);
-  return m ? parseInt(m[1]) : null;
-}
+function wirePersonAutocomplete() {
+  const nameInput = document.getElementById('evt-person-name');
+  const idInput   = document.getElementById('evt-person-id');
+  const dropdown  = document.getElementById('evt-person-suggestions');
+  if (!nameInput) return;
 
-function extractDay(dateStr) {
-  if (!dateStr) return null;
-  const m = String(dateStr).match(/[-\/]\d{1,2}[-\/](\d{1,2})/);
-  return m ? parseInt(m[1]) : null;
+  let debounceTimer = null;
+
+  nameInput.addEventListener('input', () => {
+    idInput.value = '';
+    checkEvtGate();
+    clearTimeout(debounceTimer);
+    const q = nameInput.value.trim();
+    if (q.length < 2) { dropdown.style.display = 'none'; return; }
+    debounceTimer = setTimeout(async () => {
+      try {
+        const data = await apiJson(`/api/v1/persons/?query=${encodeURIComponent(q)}&size=10`);
+        const items = data.items || [];
+        if (!items.length) { dropdown.style.display = 'none'; return; }
+        dropdown.innerHTML = items.map(p => {
+          const label = `${escHtml(p.first_name || '')} ${escHtml(p.surname || '')}`.trim();
+          return `<div class="autocomplete-item" data-id="${escHtml(p.id)}" data-label="${label}" style="padding:0.3rem 0.6rem;cursor:pointer;font-size:0.82rem">${label}</div>`;
+        }).join('');
+        dropdown.style.display = 'block';
+        dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+          item.addEventListener('mousedown', e => {
+            e.preventDefault();
+            nameInput.value = item.dataset.label;
+            idInput.value   = item.dataset.id;
+            dropdown.style.display = 'none';
+            checkEvtGate();
+          });
+        });
+      } catch (err) {
+        dropdown.style.display = 'none';
+      }
+    }, 250);
+  });
+
+  nameInput.addEventListener('blur', () => {
+    setTimeout(() => { dropdown.style.display = 'none'; }, 200);
+  });
 }
 
 // ==================== STATS ====================
