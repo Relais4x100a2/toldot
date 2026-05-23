@@ -858,3 +858,147 @@ def test_genealogy_service_accepts_existing_genealogy(sample_genealogy):
     service = GenealogyService(genealogy=sample_genealogy)
     assert service.genealogy is sample_genealogy
     assert len(service.genealogy.persons) == len(sample_genealogy.persons)
+
+
+def test_normalize_search_text_accents():
+    from geneweb_py.api.services.genealogy_service import _normalize_search_text
+    assert _normalize_search_text("Évreux") == "evreux"
+    assert _normalize_search_text("île-de-france") == "ile de france"
+    assert _normalize_search_text("Saône-et-Loire") == "saone et loire"
+
+
+def test_search_events_place_accent_insensitive(service):
+    from geneweb_py.core.event import PersonalEvent, EventType
+    from geneweb_py.core.person import Person
+    p = Person(first_name="Test", last_name="User", occurrence_number=0)
+    ev = PersonalEvent(event_type=EventType.BIRTH)
+    ev.place = "Île-de-France"
+    p.events.append(ev)
+    service._genealogy.persons[p.unique_id] = p
+
+    hits, total = service.search_events({"place": "ile de france"})
+    assert total >= 1
+    places = [h.event.place for h in hits]
+    assert "Île-de-France" in places
+
+
+def _build_family_genealogy():
+    """
+    Genealogy with:
+      - Jean Dupont (pid_jean) — child of fam_parents, spouse in fam_couple
+      - Marie Martin (pid_marie) — spouse in fam_couple
+      - Paul Dupont (pid_paul) — sibling in fam_parents
+      - Henri Dupont (pid_henri) — father in fam_parents
+      - Louise Blanc (pid_louise) — mother in fam_parents
+      - Enfant Dupont (pid_enfant) — child in fam_couple
+      - Pierre Temoin (pid_pierre) — witnesses an event of pid_jean
+    """
+    from geneweb_py.core.person import Person
+    from geneweb_py.core.family import Family, Child, ChildSex
+    from geneweb_py.core.event import PersonalEvent, EventType
+    from geneweb_py.core.genealogy import Genealogy, GenealogyMetadata
+    from datetime import datetime
+
+    def mkp(first, last):
+        p = Person(first_name=first, last_name=last, occurrence_number=0)
+        return p
+
+    jean = mkp("Jean", "Dupont")
+    marie = mkp("Marie", "Martin")
+    paul = mkp("Paul", "Dupont")
+    henri = mkp("Henri", "Dupont")
+    louise = mkp("Louise", "Blanc")
+    enfant = mkp("Enfant", "Dupont")
+    pierre = mkp("Pierre", "Temoin")
+
+    fam_couple = Family(
+        family_id="fam_couple",
+        husband_id=jean.unique_id,
+        wife_id=marie.unique_id,
+        children=[Child(person_id=enfant.unique_id, sex=ChildSex.UNKNOWN)],
+    )
+
+    fam_parents = Family(
+        family_id="fam_parents",
+        husband_id=henri.unique_id,
+        wife_id=louise.unique_id,
+        children=[
+            Child(person_id=jean.unique_id, sex=ChildSex.UNKNOWN),
+            Child(person_id=paul.unique_id, sex=ChildSex.UNKNOWN),
+        ],
+    )
+
+    jean.families_as_spouse = ["fam_couple"]
+    jean.families_as_child = ["fam_parents"]
+    marie.families_as_spouse = ["fam_couple"]
+    paul.families_as_child = ["fam_parents"]
+    enfant.families_as_child = ["fam_couple"]
+
+    # Pierre witnesses an event of Jean
+    birth_jean = PersonalEvent(event_type=EventType.BIRTH)
+    birth_jean.witnesses = [pierre.unique_id]
+    jean.events.append(birth_jean)
+
+    meta = GenealogyMetadata(
+        source_file=None, encoding="utf-8", is_gwplus=False,
+        created_date=datetime.now(), modified_date=datetime.now(),
+        geneweb_version="1.0",
+    )
+    persons = {p.unique_id: p for p in [jean, marie, paul, henri, louise, enfant, pierre]}
+    families = {fam_couple.family_id: fam_couple, fam_parents.family_id: fam_parents}
+    return Genealogy(persons=persons, families=families, metadata=meta), jean.unique_id
+
+
+def test_get_related_degree1_includes_self_and_spouse():
+    from geneweb_py.api.services.genealogy_service import GenealogyService
+    g, jean_id = _build_family_genealogy()
+    svc = GenealogyService(genealogy=g)
+    result = svc.get_related_person_ids(jean_id, degree=1)
+    pids = set(result["person_ids"])
+    assert jean_id in pids
+    marie = next(p for p in g.persons.values() if p.first_name == "Marie")
+    assert marie.unique_id in pids
+
+
+def test_get_related_degree1_family_ids():
+    from geneweb_py.api.services.genealogy_service import GenealogyService
+    g, jean_id = _build_family_genealogy()
+    svc = GenealogyService(genealogy=g)
+    result = svc.get_related_person_ids(jean_id, degree=1)
+    assert "fam_couple" in result["family_ids"]
+    assert result["witness_person_id"] == jean_id
+
+
+def test_get_related_degree2_includes_parents_children_siblings():
+    from geneweb_py.api.services.genealogy_service import GenealogyService
+    g, jean_id = _build_family_genealogy()
+    svc = GenealogyService(genealogy=g)
+    result = svc.get_related_person_ids(jean_id, degree=2)
+    pids = set(result["person_ids"])
+    henri = next(p for p in g.persons.values() if p.first_name == "Henri")
+    paul = next(p for p in g.persons.values() if p.first_name == "Paul")
+    enfant = next(p for p in g.persons.values() if p.first_name == "Enfant")
+    assert henri.unique_id in pids  # parent
+    assert paul.unique_id in pids   # sibling
+    assert enfant.unique_id in pids # child
+
+
+def test_get_related_degree3_includes_persons_x_witnessed():
+    from geneweb_py.api.services.genealogy_service import GenealogyService
+    g, jean_id = _build_family_genealogy()
+    # Pierre witnessed an event of Jean.
+    # From Pierre's perspective at degree=3, Jean should be included.
+    pierre = next(p for p in g.persons.values() if p.first_name == "Pierre")
+    svc = GenealogyService(genealogy=g)
+    result = svc.get_related_person_ids(pierre.unique_id, degree=3)
+    pids = set(result["person_ids"])
+    assert jean_id in pids
+
+
+def test_get_related_unknown_person_returns_empty():
+    from geneweb_py.api.services.genealogy_service import GenealogyService
+    g, _ = _build_family_genealogy()
+    svc = GenealogyService(genealogy=g)
+    result = svc.get_related_person_ids("nonexistent_id", degree=1)
+    assert result["person_ids"] == []
+    assert result["family_ids"] == []

@@ -33,11 +33,23 @@ from ..serialization import (
     count_by_birth_century,
     count_event_century,
     count_marriage_century,
+    event_witnesses_to_api_strings,
     family_events_breakdown,
     parse_api_date_string,
     stable_event_id,
     titles_from_create_schemas,
 )
+
+
+def _normalize_search_text(text: str) -> str:
+    """Normalize for accent/case/hyphen-insensitive comparison.
+
+    Removes accents using NFD normalization and converts hyphens/underscores
+    to spaces for flexible place matching.
+    """
+    nfd = unicodedata.normalize("NFD", text.lower())
+    no_accents = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
+    return no_accents.replace("-", " ").replace("_", " ")
 
 
 @dataclass(frozen=True)
@@ -57,6 +69,7 @@ class GenealogyService:
         """Initialise le service de généalogie."""
         self._genealogy: Optional[Genealogy] = None
         self._parser = GeneWebParser(use_multipass=False)
+        self._witness_index: Optional[Dict[str, set]] = None  # lazy cache
         if genealogy is not None:
             self._genealogy = genealogy
         else:
@@ -870,10 +883,11 @@ class GenealogyService:
             hits = [h for h in hits if h.family_id == fid]
 
         if search_params.get("place"):
+            needle = _normalize_search_text(search_params["place"])
             hits = [
                 h
                 for h in hits
-                if search_params["place"].lower() in (h.event.place or "").lower()
+                if needle in _normalize_search_text(h.event.place or "")
             ]
 
         if search_params.get("has_witnesses") is not None:
@@ -939,6 +953,88 @@ class GenealogyService:
             "warnings": [],
             "errors": error_payloads,
             "suggestions": suggestions,
+        }
+
+    # === GRAPHE DE PARENTÉ ===
+
+    def _get_witness_index(self) -> Dict[str, set]:
+        """Returns {witness_id: set_of_person_ids_whose_events_they_witnessed}.
+
+        Lazy-computed and cached on first call.
+        """
+        if self._witness_index is not None:
+            return self._witness_index
+        index: Dict[str, set] = {}
+        genealogy = self.genealogy
+        for person in genealogy.persons.values():
+            for event in person.events:
+                for wid in event_witnesses_to_api_strings(event.witnesses):
+                    index.setdefault(wid, set()).add(person.unique_id)
+        for family in genealogy.families.values():
+            for event in family.events:
+                for wid in event_witnesses_to_api_strings(event.witnesses):
+                    for pid in [family.husband_id, family.wife_id]:
+                        if pid:
+                            index.setdefault(wid, set()).add(pid)
+        self._witness_index = index
+        return self._witness_index
+
+    def get_related_person_ids(
+        self, person_id: str, degree: int
+    ) -> Dict[str, Any]:
+        """Returns person_ids and family_ids related to person_id up to the given degree.
+
+        Degree 1: self + spouses + families_as_spouse
+        Degree 2: + parents, children, siblings
+        Degree 3: + persons whose events person_id witnessed
+        """
+        genealogy = self.genealogy
+        person = genealogy.persons.get(person_id)
+        if person is None:
+            return {
+                "person_ids": [],
+                "family_ids": [],
+                "witness_person_id": person_id,
+            }
+
+        person_ids: set = {person_id}
+        family_ids: set = set(person.families_as_spouse)
+
+        # Degree 1: include spouses
+        for fam_id in person.families_as_spouse:
+            fam = genealogy.families.get(fam_id)
+            if fam is not None:
+                if fam.husband_id:
+                    person_ids.add(fam.husband_id)
+                if fam.wife_id:
+                    person_ids.add(fam.wife_id)
+
+        if degree >= 2:
+            # Parents and siblings (via families_as_child)
+            for fam_id in person.families_as_child:
+                fam = genealogy.families.get(fam_id)
+                if fam is not None:
+                    if fam.husband_id:
+                        person_ids.add(fam.husband_id)
+                    if fam.wife_id:
+                        person_ids.add(fam.wife_id)
+                    for child in fam.children:
+                        person_ids.add(child.person_id)
+            # Children (via families_as_spouse)
+            for fam_id in person.families_as_spouse:
+                fam = genealogy.families.get(fam_id)
+                if fam is not None:
+                    for child in fam.children:
+                        person_ids.add(child.person_id)
+
+        if degree >= 3:
+            witness_index = self._get_witness_index()
+            person_ids.update(witness_index.get(person_id, set()))
+
+        return {
+            "person_ids": list(person_ids),
+            "family_ids": list(family_ids),
+            "witness_person_id": person_id,
         }
 
     # === STATISTIQUES ===
