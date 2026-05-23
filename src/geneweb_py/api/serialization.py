@@ -177,6 +177,7 @@ def event_to_schema(
     event_id: str,
     person_id: Optional[str],
     family_id: Optional[str],
+    genealogy: Optional[Genealogy] = None,
 ) -> EventSchema:
     """Construit un ``EventSchema`` à partir d'un événement domaine."""
     if isinstance(event, PersonalEvent):
@@ -191,6 +192,52 @@ def event_to_schema(
         joined = "\n".join(str(n) for n in event.notes if n is not None)
         note_joined = joined if joined else None
 
+    # Name resolution (requires genealogy)
+    resolved_person_name: Optional[str] = None
+    resolved_family_label: Optional[str] = None
+    resolved_witness_names: List[str] = []
+    date_sort_year: Optional[int] = None
+
+    if genealogy is not None:
+        if person_id is not None:
+            p = genealogy.persons.get(person_id)
+            if p is not None:
+                resolved_person_name = (
+                    f"{p.first_name} {p.last_name}".replace("_", " ").strip()
+                )
+
+        if family_id is not None:
+            fam = genealogy.families.get(family_id)
+            if fam is not None:
+                parts: List[str] = []
+                if fam.husband_id:
+                    h = genealogy.persons.get(fam.husband_id)
+                    if h:
+                        parts.append(
+                            f"{h.first_name} {h.last_name}".replace("_", " ").strip()
+                        )
+                if fam.wife_id:
+                    w = genealogy.persons.get(fam.wife_id)
+                    if w:
+                        parts.append(
+                            f"{w.first_name} {w.last_name}".replace("_", " ").strip()
+                        )
+                if parts:
+                    resolved_family_label = " × ".join(parts)
+
+        raw_witness_ids = event_witnesses_to_api_strings(event.witnesses)
+        for wid in raw_witness_ids:
+            wp = genealogy.persons.get(wid)
+            if wp is not None:
+                resolved_witness_names.append(
+                    f"{wp.first_name} {wp.last_name}".replace("_", " ").strip()
+                )
+            else:
+                resolved_witness_names.append(wid)
+
+    if event.date is not None:
+        date_sort_year = event.date.sort_year()
+
     return EventSchema(
         id=event_id,
         event_type=evt_type,
@@ -202,6 +249,10 @@ def event_to_schema(
         sources=event_sources_list(event),
         person_id=person_id,
         family_id=family_id,
+        person_name=resolved_person_name,
+        family_label=resolved_family_label,
+        witness_names=resolved_witness_names,
+        date_sort_year=date_sort_year,
     )
 
 
