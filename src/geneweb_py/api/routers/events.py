@@ -108,7 +108,8 @@ async def create_personal_event(
             else stable_event_id(event, scope="person", scope_key=person_key, index=idx)
         )
         event_schema = event_to_schema(
-            event, event_id=eid, person_id=person_key, family_id=None
+            event, event_id=eid, person_id=person_key, family_id=None,
+            genealogy=service.genealogy
         )
 
         return SuccessResponse(
@@ -163,6 +164,7 @@ async def create_family_event(
             event_id=eid,
             person_id=None,
             family_id=event_data.family_id,
+            genealogy=service.genealogy,
         )
 
         return SuccessResponse(
@@ -215,6 +217,7 @@ async def get_event(
             event_id=eid,
             person_id=pid or getattr(event, "person_id", None),
             family_id=fid or getattr(event, "family_id", None),
+            genealogy=service.genealogy,
         )
 
         return SuccessResponse(
@@ -273,6 +276,7 @@ async def update_event(
             event_id=eid,
             person_id=pid or getattr(event, "person_id", None),
             family_id=fid or getattr(event, "family_id", None),
+            genealogy=service.genealogy,
         )
 
         return SuccessResponse(
@@ -409,6 +413,7 @@ async def list_events(
                     event_id=eid,
                     person_id=hit_pid or getattr(ev, "person_id", None),
                     family_id=hit_fid or getattr(ev, "family_id", None),
+                    genealogy=service.genealogy,
                 ).model_dump()
             )
 
