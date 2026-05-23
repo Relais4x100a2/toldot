@@ -362,3 +362,53 @@ class TestGetPersonStats:
         assert data["message"] == "Statistiques récupérées avec succès"
         assert data["data"]["total"] == 100
         assert data["data"]["by_sex"]["male"] == 60
+
+
+class TestGetRelatedPersons:
+    """Tests pour la récupération des personnes liées."""
+
+    def test_get_related_persons_degree1(self, client, mock_service):
+        """Test récupération des personnes liées au degré 1."""
+        mock_service.get_related_person_ids.return_value = {
+            "person_ids": ["id1", "id2"],
+            "family_ids": ["fam1"],
+            "witness_person_id": "id1",
+        }
+        response = client.get(
+            "/api/v1/persons/id1/related",
+            headers={"X-Session-Token": "test-token"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"]["person_ids"] == ["id1", "id2"]
+        assert data["data"]["family_ids"] == ["fam1"]
+        assert data["data"]["witness_person_id"] == "id1"
+        mock_service.get_related_person_ids.assert_called_once_with("id1", 1)
+
+    def test_get_related_persons_degree3(self, client, mock_service):
+        """Test récupération des personnes liées au degré 3."""
+        mock_service.get_related_person_ids.return_value = {
+            "person_ids": ["id1", "id2", "id3"],
+            "family_ids": [],
+            "witness_person_id": "id1",
+        }
+        response = client.get(
+            "/api/v1/persons/id1/related?degree=3",
+            headers={"X-Session-Token": "test-token"},
+        )
+        assert response.status_code == 200
+        mock_service.get_related_person_ids.assert_called_once_with("id1", 3)
+
+    def test_get_related_persons_unknown_returns_empty(self, client, mock_service):
+        """Test récupération pour une personne inconnue retourne liste vide."""
+        mock_service.get_related_person_ids.return_value = {
+            "person_ids": [],
+            "family_ids": [],
+            "witness_person_id": "unknown",
+        }
+        response = client.get(
+            "/api/v1/persons/unknown/related",
+            headers={"X-Session-Token": "test-token"},
+        )
+        assert response.status_code == 200
+        assert response.json()["data"]["person_ids"] == []

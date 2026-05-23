@@ -322,6 +322,35 @@ async def get_person_events(
     return SuccessResponse(message="Événements récupérés avec succès", data=events_out)
 
 
+@router.get("/{person_id}/related", response_model=SuccessResponse)
+async def get_related_persons(
+    person_id: str,
+    degree: int = Query(1, ge=1, le=3, description="Degré de lien (1, 2 ou 3)"),
+    service: GenealogyService = Depends(get_session_service),
+) -> SuccessResponse:
+    """
+    Retourne les person_ids et family_ids liés à person_id jusqu'au degré donné.
+
+    Args:
+        person_id: Identifiant de la personne
+        degree: Degré de lien (1, 2 ou 3)
+        service: Service de généalogie
+
+    Returns:
+        SuccessResponse: Réponse avec les personnes et familles liées
+    """
+    try:
+        result = service.get_related_person_ids(person_id, degree)
+        return SuccessResponse(
+            message="Personnes liées récupérées avec succès",
+            data=result,
+        )
+    except Exception as exc:
+        raise_internal_server_error(
+            "Erreur lors de la récupération des personnes liées", exc
+        )
+
+
 @router.get("/stats/overview", response_model=SuccessResponse)
 async def get_person_stats(
     service: GenealogyService = Depends(get_session_service),
