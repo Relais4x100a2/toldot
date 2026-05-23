@@ -337,6 +337,79 @@ def genealogy_service_with_events() -> tuple:
     return svc, p, fam, EventUpdateSchema
 
 
+from geneweb_py.core.genealogy import GenealogyMetadata
+
+
+def _make_genealogy():
+    """Helper: genealogy with one person, one family."""
+    from datetime import datetime
+
+    p = Person(first_name="Jean", last_name="Dupont", occurrence_number=0)
+    p2 = Person(first_name="Marie", last_name="Martin", occurrence_number=0)
+    f = Family(family_id="fam_1", husband_id=p.unique_id, wife_id=p2.unique_id)
+    meta = GenealogyMetadata(
+        source_file=None,
+        encoding="utf-8",
+        is_gwplus=False,
+        created_date=datetime.now(),
+        modified_date=datetime.now(),
+        geneweb_version="1.0",
+    )
+    g = Genealogy(
+        persons={p.unique_id: p, p2.unique_id: p2},
+        families={"fam_1": f},
+        metadata=meta,
+    )
+    return g, p, p2, f
+
+
+def test_event_to_schema_resolves_person_name():
+    genealogy, p, _p2, _f = _make_genealogy()
+    pid = "Dupont_Jean_0"
+    ev = PersonalEvent(event_type=EventType.BIRTH)
+    schema = event_to_schema(
+        ev, event_id="e1", person_id=pid, family_id=None, genealogy=genealogy
+    )
+    assert schema.person_name == "Jean Dupont"
+    assert schema.family_label is None
+
+
+def test_event_to_schema_resolves_family_label():
+    genealogy, _p, _p2, _f = _make_genealogy()
+    ev = PersonalEvent(event_type=EventType.BIRTH)
+    schema = event_to_schema(
+        ev, event_id="e1", person_id=None, family_id="fam_1", genealogy=genealogy
+    )
+    assert "Dupont" in schema.family_label
+    assert "Martin" in schema.family_label
+
+
+def test_event_to_schema_resolves_witness_names():
+    genealogy, p, _p2, _f = _make_genealogy()
+    pid = "Dupont_Jean_0"
+    ev = PersonalEvent(event_type=EventType.BIRTH)
+    ev.witnesses = [pid]
+    schema = event_to_schema(
+        ev, event_id="e1", person_id=None, family_id=None, genealogy=genealogy
+    )
+    assert "Jean Dupont" in schema.witness_names
+
+
+def test_event_to_schema_extracts_date_sort_year():
+    ev = PersonalEvent(event_type=EventType.BIRTH)
+    ev.date = Date(year=1842, month=3, day=12)
+    schema = event_to_schema(ev, event_id="e1", person_id=None, family_id=None)
+    assert schema.date_sort_year == 1842
+
+
+def test_event_to_schema_no_genealogy_backward_compat():
+    ev = PersonalEvent(event_type=EventType.BIRTH)
+    schema = event_to_schema(ev, event_id="e1", person_id="x", family_id=None)
+    assert schema.person_name is None
+    assert schema.witness_names == []
+    assert schema.date_sort_year is None
+
+
 class TestGenealogyServiceEventLifecycle:
     """Parcours get_event, update_event, delete_event (couverture service)."""
 
