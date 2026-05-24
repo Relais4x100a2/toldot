@@ -603,6 +603,7 @@ class GenealogyService:
         # Ajout à la personne
         person.events.append(event)
         genealogy.metadata.modified_date = datetime.now()
+        self._witness_index = None
 
         return event
 
@@ -648,6 +649,7 @@ class GenealogyService:
         # Ajout à la famille
         family.events.append(event)
         genealogy.metadata.modified_date = datetime.now()
+        self._witness_index = None
 
         return event
 
@@ -754,6 +756,7 @@ class GenealogyService:
             event.notes = [event_data.note] if event_data.note else []
         if event_data.witnesses is not None:
             event.witnesses = [{"person_id": str(w)} for w in event_data.witnesses]
+            self._witness_index = None
         if event_data.sources is not None:
             first_src: Optional[str] = None
             for s in event_data.sources:
@@ -783,6 +786,7 @@ class GenealogyService:
                 uid = getattr(pev, "unique_id", None)
                 if uid is not None and uid == event_id:
                     del person.events[i]
+                    self._witness_index = None
                     genealogy.metadata.modified_date = datetime.now()
                     return True
                 if (
@@ -792,6 +796,7 @@ class GenealogyService:
                     == event_id
                 ):
                     del person.events[i]
+                    self._witness_index = None
                     genealogy.metadata.modified_date = datetime.now()
                     return True
 
@@ -801,6 +806,7 @@ class GenealogyService:
                 uid = getattr(fev, "unique_id", None)
                 if uid is not None and uid == event_id:
                     del family.events[i]
+                    self._witness_index = None
                     genealogy.metadata.modified_date = datetime.now()
                     return True
                 if (
@@ -810,6 +816,7 @@ class GenealogyService:
                     == event_id
                 ):
                     del family.events[i]
+                    self._witness_index = None
                     genealogy.metadata.modified_date = datetime.now()
                     return True
 
