@@ -198,7 +198,7 @@ if st.session_state.mass_transformation_results:
         names='Type',
         title='Répartition des types d\'événements'
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     # Tableau des résultats
     st.markdown("### 📋 Aperçu des résultats")
@@ -233,7 +233,7 @@ if st.session_state.mass_transformation_results:
     
     st.dataframe(
         df_display,
-        use_container_width=True,
+        width='stretch',
         height=400
     )
     
@@ -261,20 +261,20 @@ if st.session_state.mass_transformation_results:
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("💾 Exporter en JSON", use_container_width=True):
+        if st.button("💾 Exporter en JSON", width='stretch'):
             export_path = f"/opt/geneweb/data/training/{export_filename}.json"
             with open(export_path, 'w', encoding='utf-8') as f:
                 json.dump(results, f, indent=2, ensure_ascii=False)
             st.success(f"✅ Exporté: {export_path}")
     
     with col2:
-        if st.button("💾 Exporter en CSV", use_container_width=True):
+        if st.button("💾 Exporter en CSV", width='stretch'):
             export_path = f"/opt/geneweb/data/training/{export_filename}.csv"
             df_results.to_csv(export_path, index=False, encoding='utf-8')
             st.success(f"✅ Exporté: {export_path}")
     
     with col3:
-        if st.button("💾 Exporter à réviser", use_container_width=True):
+        if st.button("💾 Exporter à réviser", width='stretch'):
             to_review = [r for r in results if r['needs_review']]
             export_path = f"/opt/geneweb/data/training/{export_filename}_to_review.json"
             with open(export_path, 'w', encoding='utf-8') as f:

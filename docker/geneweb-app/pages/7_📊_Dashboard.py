@@ -111,7 +111,7 @@ with tab1:
             color_continuous_scale='Viridis'
         )
         fig.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     
     else:
         st.info("Aucune donnée d'extraction disponible")
@@ -154,7 +154,7 @@ with tab2:
             names='Type',
             title='Répartition des types d\'événements annotés'
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         
         # Score de confiance
         conf_scores = [a.pevt_cleaned.confidence_score for a in annotations]
@@ -165,7 +165,7 @@ with tab2:
             xaxis_title='Score de confiance',
             yaxis_title='Nombre d\'annotations'
         )
-        st.plotly_chart(fig_conf, use_container_width=True)
+        st.plotly_chart(fig_conf, width='stretch')
     
     else:
         st.info("Aucune annotation disponible")
@@ -214,7 +214,7 @@ with tab3:
             yaxis_title='Accuracy',
             yaxis_range=[0, 1]
         )
-        st.plotly_chart(fig_progress, use_container_width=True)
+        st.plotly_chart(fig_progress, width='stretch')
         
         # Types d'erreurs
         all_errors = []
@@ -236,7 +236,7 @@ with tab3:
                 y='Count',
                 title='Types d\'erreurs détectées'
             )
-            st.plotly_chart(fig_errors, use_container_width=True)
+            st.plotly_chart(fig_errors, width='stretch')
     
     else:
         st.info("Aucune validation disponible")
@@ -296,7 +296,7 @@ with tab4:
             color=list(conf_ranges.values()),
             color_continuous_scale='RdYlGn'
         )
-        st.plotly_chart(fig_conf_dist, use_container_width=True)
+        st.plotly_chart(fig_conf_dist, width='stretch')
         
         # Types d'événements transformés
         event_types = {}
@@ -315,7 +315,7 @@ with tab4:
             names='Type',
             title='Répartition des types d\'événements transformés'
         )
-        st.plotly_chart(fig_types, use_container_width=True)
+        st.plotly_chart(fig_types, width='stretch')
     
     else:
         st.info("Aucune transformation de masse effectuée")
