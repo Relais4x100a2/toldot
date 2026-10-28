@@ -167,3 +167,16 @@ tmp/
 .vscode/
 .idea/
 .superpowers/
+
+# === Outils et assistants (ne jamais versionner) ===
+.idea/
+.cursor/
+.xxxcursor/
+.claude/
+.agents/
+.ai-team-orchestrator/
+
+# Données réelles locales (banc de test grand format, hors Git)
+_local_testdata/
+sample_tree*
+*.log
