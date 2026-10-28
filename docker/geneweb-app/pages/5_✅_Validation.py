@@ -165,10 +165,10 @@ with col3:
         col1, col2 = st.columns(2)
         
         with col1:
-            submit = st.form_submit_button("✅ Valider et Suivant", type="primary", use_container_width=True)
+            submit = st.form_submit_button("✅ Valider et Suivant", type="primary", width='stretch')
         
         with col2:
-            submit_stay = st.form_submit_button("💾 Valider et Rester", use_container_width=True)
+            submit_stay = st.form_submit_button("💾 Valider et Rester", width='stretch')
         
         if submit or submit_stay:
             # Créer le résultat de validation

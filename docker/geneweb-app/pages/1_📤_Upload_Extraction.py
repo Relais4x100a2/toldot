@@ -89,7 +89,7 @@ if st.session_state.all_pevts:
         columns=['Type', 'Count']
     ).sort_values('Count', ascending=False)
     
-    st.dataframe(dist_df, use_container_width=True)
+    st.dataframe(dist_df, width='stretch')
     
     # Visualisation
     import plotly.express as px
@@ -104,7 +104,7 @@ if st.session_state.all_pevts:
         color_continuous_scale='Viridis'
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     # Sélection d'un échantillon
     st.markdown("---")
@@ -142,7 +142,7 @@ if st.session_state.all_pevts:
             columns=['Type', 'Count']
         ).sort_values('Count', ascending=False)
         
-        st.dataframe(preview_df, use_container_width=True)
+        st.dataframe(preview_df, width='stretch')
 
 else:
     st.info("👆 Uploadez un fichier .gw pour commencer")

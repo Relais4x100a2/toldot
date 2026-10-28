@@ -1,5 +1,11 @@
 """
-Extracteur et classificateur de PEVT personnalisés
+Extracteur et classificateur de PEVT non standardisés (#strng)
+
+Ce module se concentre uniquement sur l'extraction des événements personnalisés
+(#strng) qui nécessitent une reformulation en texte libre.
+
+Les événements standardisés (#birt, #bapt, #deat, etc.) sont ignorés car ils
+n'ont pas besoin d'annotation manuelle.
 """
 from typing import List, Dict, Tuple
 from collections import Counter
@@ -8,7 +14,7 @@ from .gw_parser import extract_custom_pevts
 
 
 class PEVTExtractor:
-    """Extracteur intelligent de PEVT personnalisés"""
+    """Extracteur intelligent de PEVT non standardisés (#strng uniquement)"""
     
     def __init__(self):
         self.all_pevts: List[PEVTRaw] = []
@@ -35,8 +41,8 @@ class PEVTExtractor:
     
     def get_diverse_sample(self, n: int = 30) -> List[PEVTRaw]:
         """
-        Sélectionne un échantillon diversifié de PEVT
-        Stratégie: prendre des exemples de chaque type d'événement
+        Sélectionne un échantillon diversifié de PEVT non standardisés (#strng)
+        Stratégie: prendre des exemples de chaque type d'événement non standardisé
         """
         if not self.all_pevts:
             return []
