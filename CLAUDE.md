@@ -1,102 +1,23 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+@AGENTS.md
 
-## Commands
+Les consignes complètes (règle d'or sur les données réelles, `uv`, architecture, API, format `.gw`) sont dans `AGENTS.md`.
+Les règles transverses du workspace TOLDOT se trouvent dans `../AGENTS.md` (hors dépôt).
+
+## Commandes rapides
 
 ```bash
-# Testing
-pytest                                         # All tests
-pytest tests/unit/                             # Unit tests only
-pytest tests/unit/test_parser.py              # Single test file
-pytest -k "test_name"                         # Single test by name
-pytest --cov=geneweb_py --cov-report=html     # With coverage HTML report
-pytest -m "not slow"                          # Skip slow tests
-
-# Linting & formatting
-ruff check src/ tests/                        # Lint
-ruff format src/ tests/                       # Format
-
-# Type checking
-mypy src/geneweb_py/
-
-# API server
-python run_api.py --reload                    # Dev mode with hot reload
+uv sync --extra dev --extra api                  # installer
+uv run python -m pytest                          # tests (et non `uv run pytest`)
+uv run python -m pytest -k "nom" -x              # un test, arrêt au premier échec
+uv run ruff check src/ tests/ && uv run ruff format src/ tests/
+uv run mypy src/geneweb_py/
+uv run python run_api.py --reload                # API sur http://127.0.0.1:8000
 ```
 
-**Dev install:**
-```bash
-pip install -e ".[dev,api]"
-```
+## Rappels pour Claude Code
 
-## Architecture
-
-**geneweb-py** is a Python library for parsing, manipulating, and converting GeneWeb `.gw` genealogical files. It provides both a programmatic API and a REST API.
-
-### Package layout (`src/geneweb_py/`)
-
-```
-core/
-  parser/
-    lexical.py      # Tokenization (Token, TokenType, LRU regex cache)
-    syntax.py       # Syntax parsing (BlockType, SyntaxNode)
-    gw_parser.py    # Orchestrator: encoding detection → lex → parse → models
-    streaming.py    # Streaming mode for large files (>10MB, ~80% memory reduction)
-  date.py           # Date model: multi-calendar, prefixes (~/?/</>), ranges
-  person.py         # Person dataclass
-  family.py         # Family dataclass (spouses, children, witnesses)
-  event.py          # Event dataclass (personal/family)
-  genealogy.py      # Top-level container: Genealogy(persons, families, metadata)
-  exceptions.py     # GeneWebParseError, GeneWebValidationError, GeneWebEncodingError
-  validation.py     # Validation with graceful/strict modes
-  models.py         # Re-exports all public model classes
-
-api/
-  main.py                      # FastAPI app, CORS, security headers
-  routers/{persons,families,events,genealogy}.py
-  services/genealogy_service.py  # Business logic between API and models
-  models/{person,family,event,responses}.py  # Pydantic models
-  middleware/{error_handler,logging}.py
-
-formats/
-  base.py    # Abstract exporter/importer base classes
-  gedcom.py  # GEDCOM conversion
-  json.py    # JSON conversion
-  xml.py     # XML conversion
-```
-
-### Data flow
-
-```
-.gw file
-  → lexical.py  (tokenize)
-  → syntax.py   (SyntaxNode tree)
-  → gw_parser.py (Genealogy dataclass)
-  → formats/    (GEDCOM / JSON / XML export)
-     or api/    (REST endpoints)
-```
-
-### Key design decisions
-
-- **Dataclasses** for all models (Date, Person, Family, Event, Genealogy)
-- **Strict mypy** throughout — always add type annotations
-- **Error collector pattern**: `validation.py` accumulates errors in graceful mode rather than raising on the first issue
-- **Token/SyntaxNode use `__slots__`** for memory efficiency in the hot parsing path
-- **`lark` is listed as an optional dep but is NOT used** by the current parser (pure regex/hand-rolled)
-- Coverage threshold is **80%** — do not drop below it
-
-### Test markers
-
-`slow`, `integration`, `unit`, `coverage`, `parser`, `validation`, `formats`, `api`
-
-## GeneWeb `.gw` format
-
-Spec: `doc/geneweb/gw_format_documentation.md`
-
-Key syntax elements handled by the parser:
-- `fam` blocks (family), `ind` blocks (individual)
-- `wit` (witnesses), `sep`/`div` (separation/divorce)
-- `beg`/`end` children blocks
-- Comments starting with `*`
-- Occurrence numbers for disambiguation (e.g. `Dupont.1`)
-- Multi-calendar dates, date prefixes, date ranges
+- Dépôt **public** : jamais de `*.gw`/`*.ged` réels ni de nom de vraie personne (fixtures synthétiques uniquement).
+- Pas de `git add -A` ; pas de `git push` ni `--force` sans accord explicite.
+- Couverture ≥ 80 %, mypy strict, annotations de types obligatoires.
