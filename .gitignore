@@ -71,3 +71,27 @@ docker-volumes/
 *.bak
 *.swp
 
+
+# === Outils et assistants (ne jamais versionner) ===
+.idea/
+.cursor/
+.xxxcursor/
+.claude/
+.agents/
+.ai-team-orchestrator/
+
+# === Données généalogiques réelles : JAMAIS dans Git ===
+*.gw
+*.gwo
+*.gwb/
+*.ged
+*.gedcom
+*.gwplus
+sample_tree*
+data/geneweb_bases/
+_local_testdata/
+*.log
+.venv/
+# Exceptions : fixtures synthétiques uniquement
+!tests/fixtures/*.gw
+!tests/sample_data/*.gw
