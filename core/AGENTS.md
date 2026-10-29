@@ -1,16 +1,19 @@
 # AGENTS.md : geneweb-py
 
-Consignes pour les assistants de code (Claude Code, Cursor, Codex…) sur ce dépôt.
+Consignes pour les assistants de code (Claude Code, Cursor, Codex…) sur le paquet `core/` du monorepo TOLDOT (dépôt **public**).
+Les règles transverses (règle d'or, workspace `uv`, Docker, CI) sont dans [`../AGENTS.md`](../AGENTS.md).
 
 **geneweb-py** parse, manipule et convertit les fichiers généalogiques GeneWeb (`.gw`). C'est le **moteur central (`core`)** de
 l'écosystème TOLDOT : source de vérité pour le parsing `.gw`, les entités métier (dont l'entité `Organization`),
 l'export (GEDCOM / JSON / XML) et l'API REST. Il fournit une bibliothèque Python, une API REST (FastAPI) et un CLI.
 
-Rôle dans l'écosystème : une application Streamlit/LLM (dépôt privé) et des outils d'analyse (prosopographie, graphes)
-sont ou seront **consommateurs** de cette bibliothèque. Stratégie : dépôts reliés d'abord (Scénario C), monorepo TOLDOT ensuite (Scénario A).
-Pas de refonte brutale : évolutions incrémentales, tests verts à chaque étape.
+Rôle dans l'écosystème : l'application Streamlit/LLM (`../app/`, même monorepo, résolue via le workspace `uv`) et les outils
+d'analyse (prosopographie, graphes) sont **consommateurs** de cette bibliothèque. Le monorepo TOLDOT est en place ;
+`core/` reste publiable séparément (PyPI). Pas de refonte brutale : évolutions incrémentales, tests verts à chaque étape.
 
 ## RÈGLE D'OR : aucune donnée généalogique réelle dans ce dépôt (public)
+
+Le dépôt est public : tout ce qui est versionné (code, tests, docs, messages de commit, historique) est lisible par tous.
 
 - Interdit de versionner : `*.gw`, `*.gwo`, `*.ged`, `*.gedcom` issus d'une vraie base, exports CSV/HTML de vraies données,
   logs avec noms réels. Aucun nom, lieu ou date de vraie personne dans le code, les tests, les docs ou les messages de commit.
@@ -22,7 +25,8 @@ Pas de refonte brutale : évolutions incrémentales, tests verts à chaque étap
 
 ## Environnement et commandes (`uv` exclusivement)
 
-Pas de `pip install` direct. `.venv/` est local et n'est jamais commité. Dépendances dans `pyproject.toml` (+ `uv.lock`).
+Pas de `pip install` direct. `.venv/` est local et n'est jamais commité. Dépendances dans `pyproject.toml` ; un seul `uv.lock`, à la racine du monorepo.
+Les commandes ci-dessous se lancent depuis `core/` ; depuis la racine, utiliser `uv run --package geneweb-py …` (voir `../AGENTS.md`).
 
 ```bash
 # Installation du dev environment
@@ -47,7 +51,12 @@ uv run python run_api.py --reload                # dev : http://127.0.0.1:8000
 uv run python run_api.py --env prod --workers 4  # prod
 ```
 
-Python ≥ 3.8 (CI : 3.8 à 3.12 à chaque push/PR). Le seuil de couverture est de **80 %** : ne pas le faire baisser.
+Python ≥ 3.8 déclaré par le paquet `core` (le workspace impose ≥ 3.11). CI (`../.github/workflows/ci.yml`) : tests sur 3.11, 3.12 et 3.13
+à chaque push/PR ; la compatibilité 3.8-3.10 n'est donc plus testée en CI. Le seuil de couverture est de **80 %** : ne pas le faire baisser.
+
+Typage : la CI ne vérifie mypy que sur un périmètre ciblé (`analytics/`, `core/event_to_organization.py`, `api/routers/persons.py`,
+`api/models/person.py`) ; `mypy src/geneweb_py/` sur l'ensemble remonte encore des erreurs (dette suivie à part). Annoter tout code nouveau
+et ne pas dégrader le périmètre gardé.
 
 ## Architecture (`src/geneweb_py/`)
 
@@ -111,7 +120,7 @@ conservées qu'en mémoire : aucune persistance.
 ### Décisions de conception clés
 
 - **Dataclasses** pour tous les modèles (Date, Person, Family, Event, Genealogy).
-- **mypy strict** : toujours annoter les types ; cible `python_version = "3.8"`.
+- **Typage** : toujours annoter les types ; cible `python_version = "3.8"`. mypy est bloquant en CI sur le périmètre ciblé ci-dessus, pas encore sur tout `core`.
 - **Collecteur d'erreurs** : `validation.py` accumule les erreurs en mode gracieux au lieu de lever à la première.
 - **`__slots__`** sur Token/SyntaxNode (chemin chaud du parsing).
 - **`lark` est une dépendance optionnelle mais n'est PAS utilisé** : le parser est en regex / écrit à la main.

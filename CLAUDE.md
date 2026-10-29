@@ -15,6 +15,6 @@ docker compose -f app/docker-compose.yml up -d --build               # app en co
 
 ## Rappels pour Claude Code
 
-- Monorepo **privé** : jamais de `*.gw`/`*.ged` réels ni de nom de vraie personne (fixtures synthétiques uniquement).
+- Monorepo **public** : jamais de `*.gw`/`*.ged` réels, de clé d'API ni de nom de vraie personne (fixtures synthétiques uniquement).
 - Pas de `git add -A` ; pas de `git push` ni `--force` sans accord explicite.
 - Le paquet applicatif s'appelle `geneweb-app` (pas `app`) et vit dans `app/docker/geneweb-app/`.

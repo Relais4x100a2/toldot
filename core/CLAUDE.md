@@ -3,7 +3,7 @@
 @AGENTS.md
 
 Les consignes complètes (règle d'or sur les données réelles, `uv`, architecture, API, format `.gw`) sont dans `AGENTS.md`.
-Les règles transverses du workspace TOLDOT se trouvent dans `../AGENTS.md` (hors dépôt).
+Les règles transverses du monorepo TOLDOT (workspace `uv`, Docker, CI) se trouvent dans `../AGENTS.md`.
 
 ## Commandes rapides
 
@@ -18,6 +18,6 @@ uv run python run_api.py --reload                # API sur http://127.0.0.1:8000
 
 ## Rappels pour Claude Code
 
-- Dépôt **public** : jamais de `*.gw`/`*.ged` réels ni de nom de vraie personne (fixtures synthétiques uniquement).
+- Dépôt **public** : jamais de `*.gw`/`*.ged` réels, de clé d'API ni de nom de vraie personne (fixtures synthétiques uniquement). Historique compris.
 - Pas de `git add -A` ; pas de `git push` ni `--force` sans accord explicite.
-- Couverture ≥ 80 %, mypy strict, annotations de types obligatoires.
+- Couverture ≥ 80 % ; annotations de types obligatoires ; mypy bloquant en CI sur un périmètre ciblé (voir `AGENTS.md`).

@@ -25,7 +25,7 @@ L'historique de `core/` et `app/` a été importé par `git subtree` depuis les 
 
 ## 2. RÈGLE D'OR : aucune donnée généalogique réelle dans Git
 
-Ce dépôt est **PRIVÉ** (il contient l'application LLM), mais `core/` est aussi publié séparément : la règle reste stricte.
+Ce dépôt est **PUBLIC** (code, historique et documentation lisibles par tous) et `core/` est aussi publié séparément : la règle est stricte, sans exception.
 
 - Interdit de versionner : `*.gw`, `*.gwo`, `*.gwb/`, `*.ged`, `*.gedcom`, `*.org.json`, exports CSV/HTML de vraies bases,
   logs avec noms, et tout nom, lieu ou date de vraie personne (code, tests, docs, messages de commit).
