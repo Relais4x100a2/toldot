@@ -44,8 +44,8 @@ def test_wnote_de_bloc_fam_est_conserve_sans_perte():
         "wnote Cousin du marie\nwit f: LEROY Anne\nbeg\n- h Jean 1712\nend\n"
     )
     (fam,) = g.families.values()
-    assert fam.comments == ["wnote Cousin du marie"]
-    assert len(fam.witnesses) == 2 and len(fam.children) == 1
+    assert [w.get("note") for w in fam.witnesses] == ["Cousin du marie", None]
+    assert fam.comments == [] and len(fam.children) == 1
 
 
 def test_wnote_dans_fevt_est_conserve():
@@ -55,8 +55,9 @@ def test_wnote_dans_fevt_est_conserve():
         "wit m: LEROY Paul\nwnote Cousin du marie\nwit f: LEROY Anne\nend fevt\n"
     )
     (fam,) = g.families.values()
-    textes = [n for e in fam.events for n in e.notes]
-    assert "wnote Cousin du marie" in textes
+    (evt,) = fam.events
+    assert [w.get("note") for w in evt.witnesses] == ["Cousin du marie", None]
+    assert evt.notes == []
 
 
 def test_texte_nu_apres_temoin_date_dans_en_tete_fam():
@@ -67,3 +68,15 @@ def test_texte_nu_apres_temoin_date_dans_en_tete_fam():
     (fam,) = g.families.values()
     assert fam.comments == ["Parrain venu de Chartres"]
     assert len(fam.children) == 1
+
+
+def test_wnote_de_bloc_pevt_va_sur_le_temoin_precedent():
+    evts = _evts(
+        "pevt MARTIN Jean\n#bapt 1712\nwit m: LEROY Paul\n"
+        "wnote Parrain venu de Chartres\nwit f: LEROY Anne\nend pevt\n"
+    )
+    assert [w.get("note") for w in evts[0].witnesses] == [
+        "Parrain venu de Chartres",
+        None,
+    ]
+    assert evts[0].notes == []

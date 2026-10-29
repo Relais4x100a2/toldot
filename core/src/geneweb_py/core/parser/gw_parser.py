@@ -129,6 +129,15 @@ def _assign_event_end_lines(events: List[Any], tokens: List[Token]) -> None:
         event.end_line = max(inside) if inside else event.start_line
 
 
+def _attach_wnote(witnesses: List[Any], line_text: str) -> bool:
+    """Rattache une ligne ``wnote …`` au dernier témoin ; faux s'il n'y en a pas."""
+    if not witnesses:
+        return False
+    _, _, texte = line_text.partition(" ")
+    witnesses[-1]["note"] = texte.strip()
+    return True
+
+
 def _is_bang(token: Token) -> bool:
     """Le ``!`` qui précède la date de baptême."""
     return token.type == TokenType.UNKNOWN and token.value == "!"
@@ -1076,6 +1085,8 @@ class GeneWebParser:
                 # nouveau commentaire de famille
                 ligne = tok.line_number
                 texte, i = _tokens_line_text(tokens, i)
+                if tok.type == TokenType.WNOTE and _attach_wnote(family.witnesses, texte):
+                    continue
                 if comm_fin == ligne - 1 and family.comments:
                     family.comments[-1] += "\n" + texte
                 else:
@@ -2281,6 +2292,12 @@ class GeneWebParser:
                     line_no = token.line_number
                     line_text, i = _tokens_line_text(tokens, i)
                     holder = last_event or person
+                    if (
+                        token.type == TokenType.WNOTE
+                        and last_event is not None
+                        and _attach_wnote(last_event.witnesses, line_text)
+                    ):
+                        continue
                     if note_tail is not None and note_tail[1] == line_no - 1:
                         holder = note_tail[0]
                         holder.notes[-1] += "\n" + line_text
@@ -2636,8 +2653,11 @@ class GeneWebParser:
                 TokenType.NUMBER,
             ) and (i == 0 or tokens[i - 1].type == TokenType.NEWLINE):
                 # Texte nu ou ``wnote`` (R13) : ligne gardée telle quelle
+                est_wnote = token.type == TokenType.WNOTE
                 line_text, i = _tokens_line_text(tokens, i)
-                if current_event is not None:
+                if current_event is not None and not (
+                    est_wnote and _attach_wnote(current_event.witnesses, line_text)
+                ):
                     current_event.add_note(line_text)
                 continue
 
