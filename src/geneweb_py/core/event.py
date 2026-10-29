@@ -10,6 +10,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from .date import Date
+from .place import ParsedPlace, parse_place
 
 if TYPE_CHECKING:
     pass
@@ -159,6 +160,11 @@ class Event:
     def add_note(self, note: str) -> None:
         """Ajoute une note à l'événement"""
         self.notes.append(note)
+
+    @property
+    def place_parts(self) -> Optional[ParsedPlace]:
+        """Lieu décomposé (complément / commune) ; ``place`` reste la chaîne brute"""
+        return parse_place(self.place)
 
     def set_metadata(self, key: str, value: Any) -> None:
         """Définit une métadonnée spécifique à l'événement"""

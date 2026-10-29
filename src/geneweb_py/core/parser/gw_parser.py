@@ -43,6 +43,45 @@ _FEVT_MAX_EVENTS_PER_BLOCK = 500
 _FEVT_MAX_WITNESSES_PER_BLOCK = 200
 
 
+# Alias GEDCOM acceptés dans un bloc pevt (le tag d'origine reste dans event_type_raw)
+_PEVT_TAG_ALIASES = {"bapm": EventType.BAPTISM}
+
+# Tokens dédiés du lexer pour des tags d'événements standard dans un bloc pevt
+_PEVT_DEDICATED_TOKENS = (TokenType.OCCU, TokenType.BURI, TokenType.CREM)
+
+
+def _tokens_line_text(tokens: List[Token], start: int) -> Tuple[str, int]:
+    """Reconstitue le texte d'une ligne à partir de ses tokens.
+
+    Les espaces d'origine sont déduits des positions (un espace unique si les tokens
+    ne sont pas contigus), ce qui préserve la ponctuation collée aux mots.
+
+    Returns:
+        (texte de la ligne, index du NEWLINE/fin de bloc qui la termine)
+    """
+    parts: List[str] = []
+    prev_end = -1
+    i = start
+    while i < len(tokens) and tokens[i].type not in (TokenType.NEWLINE, TokenType.EOF):
+        tok = tokens[i]
+        if parts and tok.position != prev_end:
+            parts.append(" ")
+        parts.append(tok.value)
+        prev_end = tok.position + len(tok.value)
+        i += 1
+    return "".join(parts), i
+
+
+def _is_line_start_note(tokens: List[Token], i: int) -> bool:
+    """Vrai si tokens[i] est un mot ``note`` en début de ligne (hors ``#``)."""
+    tok = tokens[i]
+    return (
+        tok.type == TokenType.IDENTIFIER
+        and tok.value == "note"
+        and (i == 0 or tokens[i - 1].type == TokenType.NEWLINE)
+    )
+
+
 def _bounded_append_text_fragment(
     parts: List[str],
     agg_len: int,
@@ -1636,7 +1675,7 @@ class GeneWebParser:
 
         # Regex: #eventtype [date] [#p place] [#s source]
         pattern = _re.compile(
-            r"^#([A-Za-z]+)"  # groupe 1: type
+            r"^#([A-Za-z][A-Za-z0-9_-]*)"  # groupe 1: type (tags #strng inclus)
             r"(?:\s+([^#]+?))?"  # groupe 2: date (optionnelle, avant #p ou #s)
             r"(?:\s+#p\s+([^#]+?))?"  # groupe 3: lieu (optionnel)
             r"(?:\s+#s\s+(.+?))?$",  # groupe 4: source (optionnelle)
@@ -1646,18 +1685,24 @@ class GeneWebParser:
         if not m:
             return None
 
-        raw_type = m.group(1).lower()
+        raw_tag = m.group(1)
+        raw_type = raw_tag.lower()
         date_str = (m.group(2) or "").strip()
         place_str = (m.group(3) or "").strip()
         source_str = (m.group(4) or "").strip()
 
         # Mapper le type vers EventType
-        try:
-            evt_type = EventType(raw_type)
-            type_raw = None
-        except ValueError:
-            evt_type = EventType.OTHER
+        if raw_type in _PEVT_TAG_ALIASES:
+            # Alias GEDCOM : type canonique, tag d'origine conservé
+            evt_type = _PEVT_TAG_ALIASES[raw_type]
             type_raw = raw_type
+        else:
+            try:
+                evt_type = EventType(raw_type)
+                type_raw = None
+            except ValueError:
+                evt_type = EventType.OTHER
+                type_raw = raw_tag  # tag personnalisé (#strng) : casse d'origine
 
         # Parser la date
         evt_date = Date.parse_with_fallback(date_str) if date_str else None
@@ -2019,6 +2064,26 @@ class GeneWebParser:
                         last_event = evt
                     i += 1
 
+                elif token.type in _PEVT_DEDICATED_TOKENS:
+                    # #occu / #buri / #crem : tokens dédiés du lexer, reconstitués
+                    # en ligne puis traités comme les autres événements
+                    line_text, i = _tokens_line_text(tokens, i)
+                    evt = self._parse_pevt_comment_line(line_text, person.unique_id)
+                    if evt is not None:
+                        person.add_event(evt)
+                        last_event = evt
+
+                elif _is_line_start_note(tokens, i):
+                    # "note ..." sans '#' : lexé en IDENTIFIER, rattaché à l'événement
+                    line_text, i = _tokens_line_text(tokens, i)
+                    _, _, note_text = line_text.partition(" ")
+                    note_text = note_text.strip()
+                    if note_text:
+                        if last_event is not None:
+                            last_event.add_note(note_text)
+                        else:
+                            person.add_note(note_text)
+
                 else:
                     i += 1
 
@@ -2320,6 +2385,14 @@ class GeneWebParser:
                 ):
                     current_event.add_note(tokens[i].value)
                     i += 1
+                continue
+
+            if _is_line_start_note(tokens, i):
+                # "note ..." sans '#' : lexé en IDENTIFIER, rattaché à l'événement courant
+                line_text, i = _tokens_line_text(tokens, i)
+                _, _, note_text = line_text.partition(" ")
+                if note_text.strip() and current_event is not None:
+                    current_event.add_note(note_text.strip())
                 continue
 
             if token.type == TokenType.NOTE:
