@@ -72,7 +72,9 @@ class LLMExtractorProtocol(Protocol):
 
 
 @dataclass(frozen=True)
-class _TagRule:
+class PrefixRule:
+    """Règle d'un préfixe de tag : rôle déduit, type d'organisation"""
+
     role: str
     type: OrganizationType
     # Le reste du tag nomme l'organisation (``Membre_Academie``) ; faux pour
@@ -80,17 +82,17 @@ class _TagRule:
     remainder_is_name: bool = True
 
 
-_TAG_RULES: Dict[str, _TagRule] = {
-    "membre": _TagRule("Membre", OrganizationType.ASSOCIATION),
-    "eleve": _TagRule("Élève", OrganizationType.SCHOOL),
-    "cours": _TagRule("Élève", OrganizationType.SCHOOL, remainder_is_name=False),
-    "professeur": _TagRule("Professeur", OrganizationType.SCHOOL),
-    "employe": _TagRule("Employé", OrganizationType.COMPANY),
-    "ouvrier": _TagRule("Ouvrier", OrganizationType.COMPANY),
-    "directeur": _TagRule("Directeur", OrganizationType.OTHER),
-    "soldat": _TagRule("Soldat", OrganizationType.MILITARY),
-    "officier": _TagRule("Officier", OrganizationType.MILITARY),
-    "pretre": _TagRule("Prêtre", OrganizationType.RELIGIOUS),
+DEFAULT_PREFIX_RULES: Dict[str, PrefixRule] = {
+    "membre": PrefixRule("Membre", OrganizationType.ASSOCIATION),
+    "eleve": PrefixRule("Élève", OrganizationType.SCHOOL),
+    "cours": PrefixRule("Élève", OrganizationType.SCHOOL, remainder_is_name=False),
+    "professeur": PrefixRule("Professeur", OrganizationType.SCHOOL),
+    "employe": PrefixRule("Employé", OrganizationType.COMPANY),
+    "ouvrier": PrefixRule("Ouvrier", OrganizationType.COMPANY),
+    "directeur": PrefixRule("Directeur", OrganizationType.OTHER),
+    "soldat": PrefixRule("Soldat", OrganizationType.MILITARY),
+    "officier": PrefixRule("Officier", OrganizationType.MILITARY),
+    "pretre": PrefixRule("Prêtre", OrganizationType.RELIGIOUS),
 }
 
 
@@ -99,12 +101,14 @@ def _fold(text: str) -> str:
     return stripped.decode("ascii").lower()
 
 
-def _split_tag(tag: str) -> Tuple[Optional[_TagRule], Optional[str]]:
+def _split_tag(
+    tag: str, rules: Dict[str, PrefixRule]
+) -> Tuple[Optional[PrefixRule], Optional[str]]:
     """Sépare un tag en (règle de rôle, nom d'organisation candidat)."""
     parts = [p for p in re.split(r"[_-]+", tag) if p]
     if not parts:
         return None, None
-    rule = _TAG_RULES.get(_fold(parts[0]))
+    rule = rules.get(_fold(parts[0]))
     remainder_parts = parts[1:] if rule else []
     if rule is not None and not rule.remainder_is_name:
         return rule, None
@@ -119,8 +123,21 @@ def _split_tag(tag: str) -> Tuple[Optional[_TagRule], Optional[str]]:
 class EventToOrganizationMapper:
     """Convertit les événements personnalisés d'une généalogie en organisations."""
 
-    def __init__(self, llm: Optional[LLMExtractorProtocol] = None) -> None:
+    def __init__(
+        self,
+        llm: Optional[LLMExtractorProtocol] = None,
+        custom_rules: Optional[Dict[str, PrefixRule]] = None,
+    ) -> None:
+        """
+        Args:
+            llm: hook d'enrichissement optionnel (étage 2).
+            custom_rules: règles de préfixe ajoutées à ``DEFAULT_PREFIX_RULES`` ou les
+                remplaçant ; clés insensibles à la casse et aux accents.
+        """
         self.llm = llm
+        self.rules: Dict[str, PrefixRule] = dict(DEFAULT_PREFIX_RULES)
+        for prefix, rule in (custom_rules or {}).items():
+            self.rules[_fold(prefix)] = rule
 
     # -- Étage 1 : règles ---------------------------------------------------
     def propose(self, event: Event) -> Optional[OrganizationProposal]:
@@ -129,7 +146,7 @@ class EventToOrganizationMapper:
         if event.event_type is not EventType.OTHER or not tag:
             return None
 
-        rule, tag_name = _split_tag(tag)
+        rule, tag_name = _split_tag(tag, self.rules)
         parts = event.place_parts
         complement = parts.complement if parts else None
         city = parts.name if parts else None
