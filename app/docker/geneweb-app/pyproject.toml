@@ -2,6 +2,7 @@
 name = "geneweb-app"
 version = "0.2.0"
 description = "Application Streamlit pour le traitement de données généalogiques avec IA"
+license = {text = "MIT"}
 authors = [
     {name = "Guillaume Cayeux", email = "guillaume@example.com"},
 ]
