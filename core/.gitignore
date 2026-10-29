@@ -178,5 +178,5 @@ tmp/
 
 # Données réelles locales (banc de test grand format, hors Git)
 _local_testdata/
-sample_tree*
+real_base_*
 *.log
