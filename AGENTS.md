@@ -10,6 +10,8 @@ modèle objet (personnes, familles, événements, **organisations**), analyse de
 
 ```
 toldot/
+  run_app.sh            # lance l'app Streamlit depuis la racine
+  .github/workflows/ci.yml  # CI : lint, tests core (Python 3.11-3.13), build Docker
   pyproject.toml        # workspace uv (membres : core, app/docker/geneweb-app)
   uv.lock               # lock unifié, commité
   core/                 # paquet `geneweb-py` : parser .gw, modèles, organisations, analytics, API REST, CLI
@@ -47,7 +49,7 @@ uv lock                                        # après modification d'un pyproj
 uv run --package geneweb-py python -m pytest core        # tests du moteur
 uv run --package geneweb-py ruff check core/src core/tests
 uv run --package geneweb-py mypy core/src/geneweb_py
-cd app/docker/geneweb-app && uv run --package geneweb-app streamlit run app.py
+uv run --package geneweb-app streamlit run app/docker/geneweb-app/app.py   # app Streamlit (ou ./run_app.sh)
 ```
 
 Extra facultatif d'analyse de réseaux : `uv sync --extra analytics` (networkx, pyvis).
@@ -63,7 +65,14 @@ docker compose -f app/docker-compose.yml up -d --build   # Streamlit sur http://
 docker compose -f app/docker-compose.yml down
 ```
 
-## 5. Conventions
+## 5. CI (GitHub Actions)
+
+`.github/workflows/ci.yml` (setup-uv avec cache) : `uv lock --check`, ruff (check + format) et mypy ciblé sur `core/`,
+tests `core` sur Python 3.11 / 3.12 / 3.13 avec couverture ≥ 80 %, puis build de l'image Docker (sans push).
+Les anciens workflows de `geneweb-py` sont archivés, inactifs, dans `.github/legacy-workflows/`.
+Le lint local équivalent : `uv run --package geneweb-py ruff check core/src core/tests --ignore E501`.
+
+## 6. Conventions
 
 - Langue : français pour la documentation et les échanges ; code, identifiants et messages de commit en anglais
   (`type(scope): message` : `feat`, `fix`, `docs`, `test`, `chore`). Un sujet par commit.
