@@ -7,8 +7,11 @@ avec support des calendriers multiples, préfixes et dates textuelles.
 
 import re
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Tuple
+
+from .exceptions import UnsupportedCalendarError
 
 # Regex précompilée pour les dates textuelles 0(texte)
 TEXT_DATE_RE = re.compile(r"^0\((.+)\)$")
@@ -42,6 +45,15 @@ class DeathType(Enum):
     MURDERED = "m"  # Assassiné
     EXECUTED = "e"  # Exécuté
     DISAPPEARED = "s"  # Disparu
+
+
+def _shift_years(day: date, years: int) -> date:
+    """Décale d'un nombre d'années (29 février → 28 février si besoin)"""
+    year = min(max(day.year + years, date.min.year), date.max.year)
+    try:
+        return day.replace(year=year)
+    except ValueError:
+        return day.replace(year=year, day=28)
 
 
 @dataclass
@@ -188,6 +200,95 @@ class Date:
             result = f"{main_date}|{'|'.join(alt_texts)}"
 
         return result
+
+    def to_bounds(
+        self, fuzzy_window_years: int = 5
+    ) -> Tuple[Optional[date], Optional[date]]:
+        """Intervalle grégorien ``(date_min, date_max)`` couvert par la date
+
+        Une date partielle couvre toute sa période (année → 1er janvier au
+        31 décembre). Règles (modèle Chronologia §5.6) :
+
+        - ``~`` élargit de ``fuzzy_window_years`` ans de chaque côté ;
+        - ``?`` garde la précision déclarée (la crédibilité se règle ailleurs) ;
+        - ``<`` : borne basse ouverte, borne haute = veille du début de la date ;
+        - ``>`` : borne haute ouverte, borne basse = lendemain de la fin de la date ;
+        - ``|`` et ``..`` : enveloppe de toutes les alternatives.
+
+        Le calendrier julien est converti en grégorien (proleptique).
+
+        Args:
+            fuzzy_window_years: demi-fenêtre appliquée aux dates ``~``.
+
+        Returns:
+            ``(None, None)`` si la date est inconnue ou en texte libre.
+
+        Raises:
+            UnsupportedCalendarError: calendrier républicain ou hébraïque.
+            ValueError: date impossible (ex. 31 février) ou hors de 1..9999.
+        """
+        if self.is_unknown or self.text_date or self.year is None:
+            return (None, None)
+        if self.calendar not in (CalendarType.GREGORIAN, CalendarType.JULIAN):
+            raise UnsupportedCalendarError(
+                f"Le calendrier {self.calendar.name.lower()} n'est pas supporté "
+                "pour le calcul de bornes automatiques",
+            )
+
+        # Les alternatives (| et ..) héritent du calendrier de la date principale
+        spans = [self._span(self.year, self.month, self.day)]
+        spans += [
+            self._span(alt.year, alt.month, alt.day)
+            for alt in self.alternative_dates
+            if alt.year is not None
+        ]
+        low = min(start for start, _ in spans)
+        high = max(end for _, end in spans)
+
+        if self.prefix == DatePrefix.ABOUT:
+            return (
+                _shift_years(low, -fuzzy_window_years),
+                _shift_years(high, fuzzy_window_years),
+            )
+        if self.prefix == DatePrefix.BEFORE:
+            return (None, low - timedelta(days=1))
+        if self.prefix == DatePrefix.AFTER:
+            return (high + timedelta(days=1), None)
+        return (low, high)
+
+    def _span(
+        self, year: int, month: Optional[int], day: Optional[int]
+    ) -> Tuple[date, date]:
+        """Premier et dernier jour (grégoriens) de la période, dans le calendrier"""
+        if month is None:
+            first, last = (year, 1, 1), (year, 12, 31)
+        elif day is None:
+            first = (year, month, 1)
+            last = (year, month, self._days_in_month(year, month))
+        else:
+            first = last = (year, month, day)
+        return self._to_gregorian(*first), self._to_gregorian(*last)
+
+    def _days_in_month(self, year: int, month: int) -> int:
+        if month == 2:
+            if self.calendar == CalendarType.JULIAN:
+                leap = year % 4 == 0
+            else:
+                leap = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+            return 29 if leap else 28
+        return 30 if month in (4, 6, 9, 11) else 31
+
+    def _to_gregorian(self, year: int, month: int, day: int) -> date:
+        if self.calendar != CalendarType.JULIAN:
+            return date(year, month, day)
+        if day > self._days_in_month(year, month):
+            raise ValueError(f"Jour invalide: {day}/{month}/{year}")
+        # Jour julien -> ordinal grégorien (Python compte le 01/01/0001 grégorien = 1)
+        a = (14 - month) // 12
+        y = year + 4800 - a
+        m = month + 12 * a - 3
+        julian_day_number = day + (153 * m + 2) // 5 + 365 * y + y // 4 - 32083
+        return date.fromordinal(julian_day_number - 1721425)
 
     def to_iso_format(self) -> Optional[str]:
         """Convertit la date au format ISO (YYYY-MM-DD) si possible"""
