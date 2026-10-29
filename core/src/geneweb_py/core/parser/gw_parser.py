@@ -1162,6 +1162,16 @@ class GeneWebParser:
                         )
                         i_ += 1
                     continue
+                if tok.type == TokenType.DASH:
+                    # ``- [DivorceDate]`` : divorcés, date facultative
+                    result["marriage_status"] = MarriageStatus.DIVORCED
+                    i_ += 1
+                    if i_ < len(tokens) and tokens[i_].type == TokenType.DATE:
+                        result["divorce_date"] = Date.parse_with_fallback(
+                            tokens[i_].value
+                        )
+                        i_ += 1
+                    continue
                 if tok.type == TokenType.NM:
                     result["marriage_status"] = MarriageStatus.NOT_MARRIED
                     i_ += 1
@@ -1202,6 +1212,15 @@ class GeneWebParser:
                 TokenType.DIV,
                 TokenType.NM,
                 TokenType.ENG,
+            ):
+                i = consume_sep_div(i)
+                continue
+
+            # ``- [DivorceDate]`` seulement sur la ligne fam : les lignes suivantes
+            # du bloc (src, comm…) peuvent contenir des tirets sans rapport.
+            elif (
+                token.type == TokenType.DASH
+                and token.line_number == tokens[0].line_number
             ):
                 i = consume_sep_div(i)
                 continue
@@ -2312,12 +2331,9 @@ class GeneWebParser:
                 continue
             if tok.type == TokenType.S:
                 i += 1
-                if i < len(tokens) and tokens[i].type in (
-                    TokenType.IDENTIFIER,
-                    TokenType.STRING,
-                ):
-                    event.source = tokens[i].value
-                    i += 1
+                source, i = self._parse_source_value(tokens, i)
+                if source is not None:
+                    event.source = source
                 continue
             break
         return i
@@ -2652,7 +2668,7 @@ class GeneWebParser:
             return None
         if tokens[index].type == TokenType.GODP:
             return WitnessKind.GODPARENT
-        if tokens[index].value == "#offi":
+        if tokens[index].type == TokenType.OFFI:
             return WitnessKind.OFFICER
         return None
 

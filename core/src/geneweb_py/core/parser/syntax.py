@@ -459,6 +459,15 @@ class FamilyBlockParser(BlockParser):
                         i += 1
                 continue
 
+            # Divorce de la ligne fam : ``- [DivorceDate]`` après le mariage
+            if token.type == TokenType.DASH:
+                node.add_token(token)
+                i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.DATE:
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
+
             # Autres modificateurs reconnus
             if token.type in [TokenType.SRC, TokenType.S]:
                 node.add_token(token)
