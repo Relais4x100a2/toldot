@@ -1,0 +1,225 @@
+# Groupe par défaut de `uv run` : outils de test + extras API/validation (CI : `pip install -e ".[dev,api,validation]"`)
+[dependency-groups]
+dev = ["geneweb-py[dev,api,validation]"]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geneweb-py"
+version = "0.1.0"
+description = "Librairie Python complète pour parser, manipuler et convertir les fichiers généalogiques au format GeneWeb (.gw)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Guillaume Cayeux", email = "guillaume.cayeux@relais4x100a2.fr"},
+]
+keywords = ["genealogy", "geneweb", "parser", "gedcom", "family-tree"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Sociology :: Genealogy",
+]
+
+dependencies = [
+    "typing_extensions>=4.0.0",
+    "chardet>=5.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",      # Remplace black + flake8
+    "mypy>=1.0.0",
+    "hypothesis>=6.0.0",
+    "httpx>=0.24.0",  # Requis pour TestClient de FastAPI
+    "pip-audit>=2.6.0",
+    "click>=8.0.0",   # Aligné sur l'extra [cli] (tests du binaire)
+    "rich>=13.0.0",
+]
+docs = [
+    "sphinx>=5.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+]
+cli = [
+    "click>=8.0.0",
+    "rich>=13.0.0",
+]
+validation = [
+    "pydantic>=2.0.0",
+]
+analytics = [
+    "networkx>=3.0",
+    "pyvis>=0.3",
+]
+api = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.20.0",
+    "pydantic>=2.0.0",
+    "python-multipart>=0.0.5",
+    "slowapi>=0.1.9",
+    "httpx>=0.24.0",  # Requis pour TestClient
+]
+# Extra optionnel documenté (README, section Installation) : le parser .gw livré
+# n'utilise pas Lark ; dépendance réservée à des expérimentations ou évolutions
+# futures sur une grammaire déclarative — non requis pour l'usage standard.
+parsing = [
+    "lark>=1.0.0",
+]
+
+[project.scripts]
+geneweb-py = "geneweb_py.cli.entry:main"
+
+[project.urls]
+Homepage = "https://github.com/Relais4x100a2/geneweb-py"
+Repository = "https://github.com/Relais4x100a2/geneweb-py"
+Documentation = "https://geneweb-py.readthedocs.io"
+Changelog = "https://github.com/Relais4x100a2/geneweb-py/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/Relais4x100a2/geneweb-py/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["geneweb_py*"]
+
+[tool.setuptools.package-data]
+"geneweb_py" = ["api/static/**/*"]
+
+# ===================================================================
+# Configuration Ruff (remplace Black + Flake8 + isort)
+# ===================================================================
+# Les anciennes configs Black/Flake8 ont été supprimées - Ruff fait tout !
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "coverage: marks tests for coverage analysis",
+    "parser: marks parser-specific tests",
+    "validation: marks validation tests",
+    "formats: marks format conversion tests",
+    "security: marks security-related static checks",
+    "performance: marks performance / benchmark comparisons",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# Configuration de couverture pour les tests avec --cov
+[tool.coverage.run]
+source = ["src/geneweb_py"]
+relative_files = true
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+    "*/venv/*",
+    "*/env/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.ruff]
+# Compatibilité avec Black
+line-length = 88
+target-version = "py38"
+
+# Exclure les mêmes répertoires que Black
+extend-exclude = [
+    ".eggs",
+    ".git",
+    ".mypy_cache",
+    ".venv",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+# Activer les règles (équivalent flake8 + extras)
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (tri des imports)
+    "UP",  # pyupgrade (modernisation)
+    "B",   # flake8-bugbear
+]
+
+# E203 : whitespace before ':' (incompatible avec Black/Ruff format)
+# Note : W503 (line break before binary operator) est obsolète dans Ruff
+ignore = ["E203"]
+
+# B008 : function call in default (faux positif pour FastAPI Depends/File/Query)
+extend-ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts CI : syntaxe compat 3.8 (Optional / Dict depuis typing — pas PEP 604)
+"scripts/ci/**" = ["UP006", "UP045"]
+# Couche API : typage explicite typing.* (compat Python 3.8, pas PEP 604)
+"src/geneweb_py/api/serialization.py" = ["UP006", "UP045", "UP007"]
+"src/geneweb_py/api/person_payload.py" = ["UP006", "UP045"]
+"src/geneweb_py/api/family_payload.py" = ["UP006", "UP045"]
+"src/geneweb_py/core/parser/multipass_parser.py" = ["UP006", "UP045"]
+"tests/performance/test_multipass_vs_streaming.py" = ["UP006"]
+
+[tool.ruff.lint.isort]
+# Configuration des imports
+known-first-party = ["geneweb_py"]
+
+[tool.ruff.format]
+# Options de formatage (compatibles Black)
+quote-style = "double"
+indent-style = "space"

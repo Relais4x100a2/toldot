@@ -1,0 +1,38 @@
+# Fichier avec incohérences logiques
+
+# Personne A
+PARENT Jean
+    0
+    m
+    *1920
+    +2000
+
+# Personne B (enfant)
+PARENT Marie
+    0
+    f
+    *1915  # Née avant son parent !
+
+# Famille avec incohérence
+fam PARENT Jean + UNKNOWN Jeanne
+    0
+    m 1950
+    - f PARENT Marie
+    # Marie est née en 1915, mais ses parents se sont mariés en 1950
+
+# Personne avec mariage/divorce incohérent
+DUPOND Robert
+    0
+    m
+    *1970
+
+DUPOND Alice
+    0
+    f
+    *1975
+
+fam DUPOND Robert + DUPOND Alice
+    0
+    m 2010  # Mariage
+    div 2005  # Divorce avant mariage !
+
