@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Tuple
 
 from ..exceptions import GeneWebParseError
 from .lexical import Token, TokenType
+from .place_tokens import place_run_end
 
 
 class BlockType(Enum):
@@ -193,6 +194,11 @@ class FamilyBlockParser(BlockParser):
             if token.type == TokenType.BP:
                 node.add_token(token)
                 i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.BRACKET_OPEN:
+                    fin = place_run_end(tokens, i)
+                    for tok in tokens[i:fin]:
+                        node.add_token(tok)
+                    i = fin
                 while i < len(tokens) and tokens[i].type in [
                     TokenType.IDENTIFIER,
                     TokenType.UNKNOWN,
@@ -218,6 +224,11 @@ class FamilyBlockParser(BlockParser):
             if token.type == TokenType.DP:
                 node.add_token(token)
                 i += 1
+                if i < len(tokens) and tokens[i].type == TokenType.BRACKET_OPEN:
+                    fin = place_run_end(tokens, i)
+                    for tok in tokens[i:fin]:
+                        node.add_token(tok)
+                    i = fin
                 while i < len(tokens) and tokens[i].type in [
                     TokenType.IDENTIFIER,
                     TokenType.UNKNOWN,
@@ -400,7 +411,12 @@ class FamilyBlockParser(BlockParser):
             if token.type in [TokenType.MP, TokenType.P]:
                 node.add_token(token)
                 i += 1
-                if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
+                if i < len(tokens) and tokens[i].type == TokenType.BRACKET_OPEN:
+                    fin = place_run_end(tokens, i)
+                    for tok in tokens[i:fin]:
+                        node.add_token(tok)
+                    i = fin
+                elif i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
                     node.add_token(tokens[i])
                     i += 1
                     while (
@@ -611,11 +627,7 @@ class FamilyBlockParser(BlockParser):
                     TokenType.SEP_EVENT,
                     TokenType.ENGA,
                 ]:
-                    if tokens[i].type in [
-                        TokenType.IDENTIFIER,
-                        TokenType.STRING,
-                    ]:
-                        node.add_token(tokens[i])
+                    node.add_token(tokens[i])
                     i += 1
                 continue
 
