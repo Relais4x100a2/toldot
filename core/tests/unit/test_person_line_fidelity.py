@@ -49,3 +49,10 @@ def test_parent_sur_la_ligne_fam_garde_ses_dates_et_l_epouse():
     assert _d(fam.marriage_date) == "1750"
     assert fam.wife_id == "MARTIN_Anne_0"
     assert _d(g.persons["MARTIN_Anne_0"].birth_date) == "1725"
+
+
+def test_les_dates_de_la_ligne_src_ne_vont_pas_a_l_epouse():
+    p = _persons(
+        "fam MARTIN Pierre +1705 DUBOIS Marie\nsrc BMS Saint-Aubin 1705-1715\n"
+    )["DUBOIS_Marie_0"]
+    assert p.birth_date is None and p.death_date is None

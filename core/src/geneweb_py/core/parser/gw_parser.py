@@ -1180,6 +1180,11 @@ class GeneWebParser:
         while i < len(tokens):
             token = tokens[i]
 
+            # La ligne fam s'arrête au saut de ligne : la suite (src, comm…) n'est
+            # pas une donnée d'époux/se
+            if token.type in (TokenType.NEWLINE, TokenType.EOF):
+                break
+
             # Passer le token 'fam'
             if token.type == TokenType.FAM:
                 i += 1
