@@ -95,11 +95,13 @@ def _content_lines(tokens: List[Token], with_end: bool = False) -> List[int]:
     )
 
 
-def _node_line_span(node: SyntaxNode) -> Tuple[Optional[int], Optional[int]]:
+def _node_line_span(
+    node: SyntaxNode, with_end: bool = False
+) -> Tuple[Optional[int], Optional[int]]:
     """Première et dernière ligne source d'un nœud (enfants compris)."""
-    lines = _content_lines(node.tokens)
+    lines = _content_lines(node.tokens, with_end)
     for child in node.children:
-        lines.extend(_content_lines(child.tokens))
+        lines.extend(_content_lines(child.tokens, with_end))
     return (min(lines), max(lines)) if lines else (None, None)
 
 
@@ -123,6 +125,22 @@ def _assign_event_end_lines(events: List[Any], tokens: List[Token]) -> None:
             n for n in lines if n >= event.start_line and (limit is None or n < limit)
         ]
         event.end_line = max(inside) if inside else event.start_line
+
+
+def _join_tokens_text(tokens: List[Token]) -> str:
+    """Recolle des jetons en un texte, avec un espace là où la source en avait un.
+
+    Un espace est inséré quand deux jetons ne sont pas contigus (positions) ; les
+    chaînes collées (URL, ``f°42v``) restent donc intactes.
+    """
+    parts: List[str] = []
+    prev_end = -1
+    for tok in tokens:
+        if parts and tok.position != prev_end:
+            parts.append(" ")
+        parts.append(tok.value)
+        prev_end = tok.position + len(tok.value)
+    return "".join(parts)
 
 
 def _is_line_start_note(tokens: List[Token], i: int) -> bool:
@@ -877,7 +895,7 @@ class GeneWebParser:
                 is_separated=family_info["is_separated"],
             )
 
-            family.start_line, family.end_line = _node_line_span(node)
+            family.start_line, family.end_line = _node_line_span(node, with_end=True)
             header_line = tokens[0].line_number if tokens else None
             for spouse_id in (husband_id, wife_id):
                 if spouse_id:
@@ -1010,12 +1028,14 @@ class GeneWebParser:
                 continue
             if tok.type == TokenType.SRC:
                 i += 1
-                if i < len(tokens) and tokens[i].type in (
-                    TokenType.IDENTIFIER,
-                    TokenType.STRING,
+                src_start = i
+                while i < len(tokens) and tokens[i].type not in (
+                    TokenType.NEWLINE,
+                    TokenType.EOF,
                 ):
-                    family.family_source = tokens[i].value
                     i += 1
+                if i > src_start:
+                    family.family_source = _join_tokens_text(tokens[src_start:i])
                 continue
             if tok.type == TokenType.COMM:
                 i += 1
@@ -1840,7 +1860,7 @@ class GeneWebParser:
         Returns:
             Tuple (valeur_de_la_source, nouvel_index)
         """
-        source_parts = []
+        source_tokens: List[Token] = []
         i = start_index
 
         # Continuer à parser jusqu'à trouver un token spécial
@@ -1860,13 +1880,11 @@ class GeneWebParser:
                 break
 
             # Tous les autres tokens font partie de la source
-            source_parts.append(token.value)
+            source_tokens.append(token)
             i += 1
 
-        if source_parts:
-            # Joindre sans espaces pour préserver les URLs et autres chaînes
-            source_value = "".join(source_parts)
-            return source_value, i
+        if source_tokens:
+            return _join_tokens_text(source_tokens), i
 
         return None, start_index
 
