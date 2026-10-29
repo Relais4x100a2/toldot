@@ -46,3 +46,24 @@ def test_wnote_de_bloc_fam_est_conserve_sans_perte():
     (fam,) = g.families.values()
     assert fam.comments == ["wnote Cousin du marie"]
     assert len(fam.witnesses) == 2 and len(fam.children) == 1
+
+
+def test_wnote_dans_fevt_est_conserve():
+    g = GeneWebParser(validate=False).parse_string(
+        "fam MARTIN Pierre +1705 DUBOIS Marie\nbeg\n- h Jean 1712\nend\n\n"
+        "fevt MARTIN Pierre + DUBOIS Marie\n#marr 1705 #p Dreux\n"
+        "wit m: LEROY Paul\nwnote Cousin du marie\nwit f: LEROY Anne\nend fevt\n"
+    )
+    (fam,) = g.families.values()
+    textes = [n for e in fam.events for n in e.notes]
+    assert "wnote Cousin du marie" in textes
+
+
+def test_texte_nu_apres_temoin_date_dans_en_tete_fam():
+    g = GeneWebParser(validate=False).parse_string(
+        "fam MARTIN Pierre +1705 DUBOIS Marie\nwit m: LEROY Paul 1650\n"
+        "Parrain venu de Chartres\nbeg\n- h Jean 1712\nend\n"
+    )
+    (fam,) = g.families.values()
+    assert fam.comments == ["Parrain venu de Chartres"]
+    assert len(fam.children) == 1

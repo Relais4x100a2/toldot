@@ -2629,6 +2629,18 @@ class GeneWebParser:
                     current_event.add_note(texte_libre(tokens[note_debut:i], len(note_content)))
                 continue
 
+            if token.type in (
+                TokenType.WNOTE,
+                TokenType.IDENTIFIER,
+                TokenType.STRING,
+                TokenType.NUMBER,
+            ) and (i == 0 or tokens[i - 1].type == TokenType.NEWLINE):
+                # Texte nu ou ``wnote`` (R13) : ligne gardée telle quelle
+                line_text, i = _tokens_line_text(tokens, i)
+                if current_event is not None:
+                    current_event.add_note(line_text)
+                continue
+
             i += 1
 
         _assign_event_end_lines(parsed_events, tokens)
