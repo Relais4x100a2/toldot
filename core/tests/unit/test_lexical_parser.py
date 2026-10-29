@@ -304,7 +304,8 @@ end"""
         text = "#nsck #nsckm #noment #banns #contract #license"
         lexer = LexicalParser(text)
         tokens = [
-            t for t in lexer.tokenize()
+            t
+            for t in lexer.tokenize()
             if t.type not in (TokenType.NEWLINE, TokenType.WHITESPACE)
         ]
         types = {t.type for t in tokens}

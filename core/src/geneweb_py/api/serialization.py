@@ -202,9 +202,9 @@ def event_to_schema(
         if person_id is not None:
             p = genealogy.persons.get(person_id)
             if p is not None:
-                resolved_person_name = (
-                    f"{p.first_name} {p.last_name}".replace("_", " ").strip()
-                )
+                resolved_person_name = f"{p.first_name} {p.last_name}".replace(
+                    "_", " "
+                ).strip()
 
         if family_id is not None:
             fam = genealogy.families.get(family_id)

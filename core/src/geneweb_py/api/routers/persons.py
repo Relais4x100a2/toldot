@@ -314,7 +314,10 @@ async def get_person_events(
         )
         events_out.append(
             event_to_schema(
-                ev, event_id=eid, person_id=person.unique_id, family_id=None,
+                ev,
+                event_id=eid,
+                person_id=person.unique_id,
+                family_id=None,
                 genealogy=service.genealogy,
             ).model_dump()
         )
