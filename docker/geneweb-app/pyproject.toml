@@ -6,6 +6,7 @@ authors = [
     {name = "Guillaume Cayeux", email = "guillaume@example.com"},
 ]
 dependencies = [
+    "geneweb-py",
     "streamlit>=1.28.0",
     "pandas>=2.0.0",
     "plotly>=5.15.0",
@@ -27,13 +28,12 @@ packages = ["src"]
 
 [dependency-groups]
 dev = [
-    "geneweb-py",
     "pytest>=7.0.0",
     "black>=23.0.0",
     "flake8>=6.0.0",
     "mypy>=1.0.0",
 ]
 
-# Moteur de parsing .gw (dépôt voisin, développement local uniquement)
+# Moteur de parsing .gw (dépôt voisin ; copié dans le contexte de build Docker)
 [tool.uv.sources]
 geneweb-py = { path = "../../../geneweb-py", editable = true }

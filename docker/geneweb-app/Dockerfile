@@ -33,18 +33,26 @@ RUN mkdir -p /opt/geneweb/data/training \
     && mkdir -p /opt/geneweb/bases \
     && mkdir -p /app
 
-# Définir le répertoire de travail
-WORKDIR /app
+# Le contexte de build est la racine du workspace (voir docker-compose.yml) : il contient
+# geneweb-py à côté de geneweb_revamped. Les chemins relatifs de pyproject.toml
+# (../../../geneweb-py) y restent valables.
+WORKDIR /workspace/geneweb_revamped/docker/geneweb-app
 
-# Copier les fichiers de dépendances (verrouillées par uv.lock)
-COPY pyproject.toml uv.lock ./
+# Environnement virtuel hors du dossier applicatif : un bind mount de développement sur
+# ce dossier ne doit pas le masquer
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Installer les dépendances de production exactement telles que verrouillées
-RUN uv sync --frozen --no-dev --no-install-project
-ENV PATH="/app/.venv/bin:$PATH"
+# Moteur geneweb-py (dépendance locale, installée non éditable dans l'image)
+COPY geneweb-py/pyproject.toml geneweb-py/README.md geneweb-py/LICENSE /workspace/geneweb-py/
+COPY geneweb-py/src /workspace/geneweb-py/src
 
-# Copier le code source
-COPY . .
+# Dépendances verrouillées par uv.lock
+COPY geneweb_revamped/docker/geneweb-app/pyproject.toml geneweb_revamped/docker/geneweb-app/uv.lock ./
+RUN uv sync --frozen --no-dev --no-editable --no-install-project
+
+# Copier le code source de l'application
+COPY geneweb_revamped/docker/geneweb-app/ ./
 
 # Créer un fichier de configuration Streamlit
 RUN mkdir -p /root/.streamlit && \
