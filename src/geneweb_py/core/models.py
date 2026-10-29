@@ -8,6 +8,7 @@ from .date import CalendarType, Date, DatePrefix, DeathType
 from .event import Event, EventType, FamilyEvent, FamilyEventType, PersonalEvent
 from .family import Child, ChildSex, Family, MarriageStatus
 from .genealogy import Genealogy, GenealogyMetadata
+from .organization import Organization, OrganizationLink, OrganizationType
 from .person import AccessLevel, Gender, Person, Title
 
 __all__ = [
@@ -35,4 +36,7 @@ __all__ = [
     # Généalogie
     "Genealogy",
     "GenealogyMetadata",
+    "Organization",
+    "OrganizationLink",
+    "OrganizationType",
 ]

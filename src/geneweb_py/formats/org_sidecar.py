@@ -1,0 +1,82 @@
+"""Fichier compagnon JSON (``base.org.json``) pour les organisations.
+
+Niveau 1 de la spécification : le ``.gw`` n'est jamais modifié ; les organisations et
+leurs liens vivent à côté, référencés par identifiant de personne.
+"""
+
+import json
+from pathlib import Path
+from typing import Tuple, Union
+
+from ..core.exceptions import GeneWebValidationError
+from ..core.genealogy import Genealogy
+from ..core.organization import Organization, OrganizationLink
+
+SIDECAR_VERSION = 1
+
+PathLike = Union[str, Path]
+
+
+def sidecar_path_for(gw_path: PathLike) -> Path:
+    """Chemin du fichier compagnon d'un ``.gw`` (``base.gw`` -> ``base.org.json``)."""
+    return Path(gw_path).with_suffix(".org.json")
+
+
+def export_organizations(genealogy: Genealogy, path: PathLike) -> Path:
+    """Écrit les organisations et liens de la généalogie dans ``path`` (UTF-8)."""
+    payload = {
+        "version": SIDECAR_VERSION,
+        "organizations": [o.to_dict() for o in genealogy.organizations.values()],
+        "links": [link.to_dict() for link in genealogy.organization_links],
+    }
+    target = Path(path)
+    target.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    return target
+
+
+def import_organizations(genealogy: Genealogy, path: PathLike) -> Tuple[int, int]:
+    """Charge un fichier compagnon dans la généalogie.
+
+    Un fichier absent est sans effet.
+
+    Returns:
+        (nombre d'organisations, nombre de liens) importés.
+
+    Raises:
+        GeneWebValidationError: JSON invalide, ou lien vers une personne inconnue.
+    """
+    source = Path(path)
+    if not source.is_file():
+        return (0, 0)
+
+    try:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        organizations = [Organization.from_dict(d) for d in payload["organizations"]]
+        links = [OrganizationLink.from_dict(d) for d in payload.get("links", [])]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise GeneWebValidationError(
+            f"Fichier compagnon invalide ({source.name}): {exc}",
+            context=str(source),
+        ) from exc
+
+    for org in organizations:
+        genealogy.add_organization(org)
+    for link in links:
+        genealogy.link_person_to_organization(
+            link.person_id,
+            link.organization_id,
+            role=link.role,
+            start_date=link.start_date,
+            end_date=link.end_date,
+            source_event_id=link.source_event_id,
+            source_event_type=link.source_event_type,
+            notes=link.notes,
+        )
+    return (len(organizations), len(links))
+
+
+def load_sidecar_for(genealogy: Genealogy, gw_path: PathLike) -> Tuple[int, int]:
+    """Charge le compagnon d'un ``.gw`` s'il existe ; sinon ne fait rien."""
+    return import_organizations(genealogy, sidecar_path_for(gw_path))
