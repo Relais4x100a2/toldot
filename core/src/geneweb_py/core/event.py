@@ -105,6 +105,7 @@ class FamilyEventType(Enum):
     PACS = "pacs"
     RESIDENCE = "resi"
     NAME_STRING = "strng"
+    OTHER = "other"  # tag libre : voir ``Event.event_type_raw``
 
 
 class WitnessKind(Enum):
