@@ -10,28 +10,30 @@ from pydantic import BaseModel, Field
 class ErrorDetail(BaseModel):
     """Détail d'une erreur."""
 
-    field: Optional[str] = Field(None, description="Champ concerné par l'erreur")
+    field: Optional[str] = Field(
+        default=None, description="Champ concerné par l'erreur"
+    )
     message: str = Field(..., description="Message d'erreur")
-    code: Optional[str] = Field(None, description="Code d'erreur")
+    code: Optional[str] = Field(default=None, description="Code d'erreur")
 
 
 class ErrorResponse(BaseModel):
     """Réponse d'erreur standardisée."""
 
-    error: bool = Field(True, description="Indique qu'il s'agit d'une erreur")
+    error: bool = Field(default=True, description="Indique qu'il s'agit d'une erreur")
     message: str = Field(..., description="Message d'erreur principal")
     details: Optional[List[ErrorDetail]] = Field(
-        None, description="Détails des erreurs"
+        default=None, description="Détails des erreurs"
     )
-    code: Optional[str] = Field(None, description="Code d'erreur HTTP")
+    code: Optional[str] = Field(default=None, description="Code d'erreur HTTP")
 
 
 class SuccessResponse(BaseModel):
     """Réponse de succès standardisée."""
 
-    success: bool = Field(True, description="Indique que l'opération a réussi")
+    success: bool = Field(default=True, description="Indique que l'opération a réussi")
     message: str = Field(..., description="Message de succès")
-    data: Optional[Any] = Field(None, description="Données retournées")
+    data: Optional[Any] = Field(default=None, description="Données retournées")
 
 
 class PaginationInfo(BaseModel):
@@ -90,29 +92,33 @@ class StatsResponse(BaseModel):
         default_factory=dict, description="Répartition des événements par siècle"
     )
     average_children_per_family: float = Field(
-        0.0, ge=0, description="Nombre moyen d'enfants par famille"
+        default=0.0, ge=0, description="Nombre moyen d'enfants par famille"
     )
     metadata: Optional[Dict[str, Any]] = Field(
-        None, description="Métadonnées (fichier source, encodage, dates)"
+        default=None, description="Métadonnées (fichier source, encodage, dates)"
     )
     persons_with_birth_date: int = Field(
-        0, ge=0, description="Nombre de personnes avec date de naissance"
+        default=0, ge=0, description="Nombre de personnes avec date de naissance"
     )
     persons_with_death_date: int = Field(
-        0, ge=0, description="Nombre de personnes avec date de décès"
+        default=0, ge=0, description="Nombre de personnes avec date de décès"
     )
     families_with_children: int = Field(
-        0, ge=0, description="Nombre de familles ayant au moins un enfant"
+        default=0, ge=0, description="Nombre de familles ayant au moins un enfant"
     )
-    personal_events: int = Field(0, ge=0, description="Nombre d'événements personnels")
-    family_events: int = Field(0, ge=0, description="Nombre d'événements familiaux")
+    personal_events: int = Field(
+        default=0, ge=0, description="Nombre d'événements personnels"
+    )
+    family_events: int = Field(
+        default=0, ge=0, description="Nombre d'événements familiaux"
+    )
     families_with_marriage_date: int = Field(
-        0, ge=0, description="Familles avec date de mariage renseignée"
+        default=0, ge=0, description="Familles avec date de mariage renseignée"
     )
     families_with_divorce_date: int = Field(
-        0, ge=0, description="Familles avec date de divorce renseignée"
+        default=0, ge=0, description="Familles avec date de divorce renseignée"
     )
     advanced: Optional[Dict[str, Any]] = Field(
-        None,
+        default=None,
         description="Statistiques avancées (longévité, géographie, tailles de famille)",
     )

@@ -15,10 +15,10 @@ class EventBaseSchema(BaseModel):
     event_type: Union[EventType, FamilyEventType] = Field(
         ..., description="Type d'événement"
     )
-    date: Optional[str] = Field(None, description="Date de l'événement")
-    place: Optional[str] = Field(None, description="Lieu de l'événement")
-    reason: Optional[str] = Field(None, description="Raison ou cause")
-    note: Optional[str] = Field(None, description="Note sur l'événement")
+    date: Optional[str] = Field(default=None, description="Date de l'événement")
+    place: Optional[str] = Field(default=None, description="Lieu de l'événement")
+    reason: Optional[str] = Field(default=None, description="Raison ou cause")
+    note: Optional[str] = Field(default=None, description="Note sur l'événement")
     witnesses: List[str] = Field(default_factory=list, description="Témoins")
     sources: List[str] = Field(default_factory=list, description="Sources")
 
@@ -96,14 +96,14 @@ class EventUpdateSchema(BaseModel):
     """Schéma pour la mise à jour d'un événement."""
 
     event_type: Optional[Union[EventType, FamilyEventType]] = Field(
-        None, description="Type d'événement"
+        default=None, description="Type d'événement"
     )
-    date: Optional[str] = Field(None, description="Date de l'événement")
-    place: Optional[str] = Field(None, description="Lieu de l'événement")
-    reason: Optional[str] = Field(None, description="Raison ou cause")
-    note: Optional[str] = Field(None, description="Note sur l'événement")
-    witnesses: Optional[List[str]] = Field(None, description="Témoins")
-    sources: Optional[List[str]] = Field(None, description="Sources")
+    date: Optional[str] = Field(default=None, description="Date de l'événement")
+    place: Optional[str] = Field(default=None, description="Lieu de l'événement")
+    reason: Optional[str] = Field(default=None, description="Raison ou cause")
+    note: Optional[str] = Field(default=None, description="Note sur l'événement")
+    witnesses: Optional[List[str]] = Field(default=None, description="Témoins")
+    sources: Optional[List[str]] = Field(default=None, description="Sources")
 
 
 class EventSchema(EventBaseSchema):
@@ -111,19 +111,25 @@ class EventSchema(EventBaseSchema):
 
     id: str = Field(..., description="Identifiant unique de l'événement")
     person_id: Optional[str] = Field(
-        None, description="Identifiant de la personne (pour événements personnels)"
+        default=None,
+        description="Identifiant de la personne (pour événements personnels)",
     )
     family_id: Optional[str] = Field(
-        None, description="Identifiant de la famille (pour événements familiaux)"
+        default=None,
+        description="Identifiant de la famille (pour événements familiaux)",
     )
-    person_name: Optional[str] = Field(None, description="Nom résolu de la personne")
+    person_name: Optional[str] = Field(
+        default=None, description="Nom résolu de la personne"
+    )
     family_label: Optional[str] = Field(
-        None, description="Libellé résolu de la famille"
+        default=None, description="Libellé résolu de la famille"
     )
     witness_names: List[str] = Field(
         default_factory=list, description="Noms des témoins résolus"
     )
-    date_sort_year: Optional[int] = Field(None, description="Année de tri numérique")
+    date_sort_year: Optional[int] = Field(
+        default=None, description="Année de tri numérique"
+    )
 
     class Config:
         """Configuration Pydantic."""
@@ -138,34 +144,40 @@ class EventListSchema(BaseModel):
     event_type: Union[EventType, FamilyEventType] = Field(
         ..., description="Type d'événement"
     )
-    date: Optional[str] = Field(None, description="Date de l'événement")
-    place: Optional[str] = Field(None, description="Lieu de l'événement")
-    person_id: Optional[str] = Field(None, description="Identifiant de la personne")
-    family_id: Optional[str] = Field(None, description="Identifiant de la famille")
+    date: Optional[str] = Field(default=None, description="Date de l'événement")
+    place: Optional[str] = Field(default=None, description="Lieu de l'événement")
+    person_id: Optional[str] = Field(
+        default=None, description="Identifiant de la personne"
+    )
+    family_id: Optional[str] = Field(
+        default=None, description="Identifiant de la famille"
+    )
 
 
 class EventSearchSchema(BaseModel):
     """Schéma pour la recherche d'événements."""
 
-    query: Optional[str] = Field(None, description="Recherche textuelle")
+    query: Optional[str] = Field(default=None, description="Recherche textuelle")
     event_type: Optional[Union[EventType, FamilyEventType]] = Field(
-        None, description="Filtrer par type d'événement"
+        default=None, description="Filtrer par type d'événement"
     )
-    person_id: Optional[str] = Field(None, description="Filtrer par personne")
-    family_id: Optional[str] = Field(None, description="Filtrer par famille")
+    person_id: Optional[str] = Field(default=None, description="Filtrer par personne")
+    family_id: Optional[str] = Field(default=None, description="Filtrer par famille")
     year_from: Optional[int] = Field(
-        None, ge=1000, le=3000, description="Année minimum"
+        default=None, ge=1000, le=3000, description="Année minimum"
     )
-    year_to: Optional[int] = Field(None, ge=1000, le=3000, description="Année maximum")
-    place: Optional[str] = Field(None, description="Filtrer par lieu")
+    year_to: Optional[int] = Field(
+        default=None, ge=1000, le=3000, description="Année maximum"
+    )
+    place: Optional[str] = Field(default=None, description="Filtrer par lieu")
     has_witnesses: Optional[bool] = Field(
-        None, description="Filtrer par présence de témoins"
+        default=None, description="Filtrer par présence de témoins"
     )
     has_sources: Optional[bool] = Field(
-        None, description="Filtrer par présence de sources"
+        default=None, description="Filtrer par présence de sources"
     )
-    page: int = Field(1, ge=1, description="Numéro de page")
-    size: int = Field(20, ge=1, le=100, description="Taille de la page")
+    page: int = Field(default=1, ge=1, description="Numéro de page")
+    size: int = Field(default=20, ge=1, le=100, description="Taille de la page")
 
 
 class EventStatsSchema(BaseModel):

@@ -13,9 +13,9 @@ class ChildSchema(BaseModel):
     """Schéma pour un enfant dans une famille."""
 
     person_id: str = Field(..., description="Identifiant de la personne")
-    sex: Union[str, ChildSex] = Field("unknown", description="Sexe de l'enfant")
+    sex: Union[str, ChildSex] = Field(default="unknown", description="Sexe de l'enfant")
     last_name: Optional[str] = Field(
-        None, description="Nom de famille si différent du père"
+        default=None, description="Nom de famille si différent du père"
     )
 
     @field_validator("sex", mode="before")
@@ -35,11 +35,11 @@ class ChildSchema(BaseModel):
 class FamilyBaseSchema(BaseModel):
     """Schéma de base pour une famille."""
 
-    husband_id: Optional[str] = Field(None, description="Identifiant du mari")
-    wife_id: Optional[str] = Field(None, description="Identifiant de l'épouse")
+    husband_id: Optional[str] = Field(default=None, description="Identifiant du mari")
+    wife_id: Optional[str] = Field(default=None, description="Identifiant de l'épouse")
     children: List[ChildSchema] = Field(default_factory=list, description="Enfants")
     marriage_status: Union[str, MarriageStatus] = Field(
-        "married", description="Statut du mariage"
+        default="married", description="Statut du mariage"
     )
     notes: List[str] = Field(default_factory=list, description="Notes familiales")
     sources: List[str] = Field(default_factory=list, description="Sources")
@@ -69,14 +69,14 @@ class FamilyCreateSchema(FamilyBaseSchema):
 class FamilyUpdateSchema(BaseModel):
     """Schéma pour la mise à jour d'une famille."""
 
-    husband_id: Optional[str] = Field(None, description="Identifiant du mari")
-    wife_id: Optional[str] = Field(None, description="Identifiant de l'épouse")
-    children: Optional[List[ChildSchema]] = Field(None, description="Enfants")
+    husband_id: Optional[str] = Field(default=None, description="Identifiant du mari")
+    wife_id: Optional[str] = Field(default=None, description="Identifiant de l'épouse")
+    children: Optional[List[ChildSchema]] = Field(default=None, description="Enfants")
     marriage_status: Optional[Union[str, MarriageStatus]] = Field(
-        None, description="Statut du mariage"
+        default=None, description="Statut du mariage"
     )
-    notes: Optional[List[str]] = Field(None, description="Notes familiales")
-    sources: Optional[List[str]] = Field(None, description="Sources")
+    notes: Optional[List[str]] = Field(default=None, description="Notes familiales")
+    sources: Optional[List[str]] = Field(default=None, description="Sources")
 
     @field_validator("marriage_status", mode="before")
     @classmethod
@@ -98,10 +98,10 @@ class FamilySchema(FamilyBaseSchema):
     """Schéma complet pour une famille."""
 
     id: str = Field(..., description="Identifiant unique de la famille")
-    marriage_date: Optional[str] = Field(None, description="Date de mariage")
-    marriage_place: Optional[str] = Field(None, description="Lieu de mariage")
-    divorce_date: Optional[str] = Field(None, description="Date de divorce")
-    divorce_place: Optional[str] = Field(None, description="Lieu de divorce")
+    marriage_date: Optional[str] = Field(default=None, description="Date de mariage")
+    marriage_place: Optional[str] = Field(default=None, description="Lieu de mariage")
+    divorce_date: Optional[str] = Field(default=None, description="Date de divorce")
+    divorce_place: Optional[str] = Field(default=None, description="Lieu de divorce")
     events: List[str] = Field(
         default_factory=list, description="IDs des événements familiaux"
     )
@@ -116,46 +116,46 @@ class FamilyListSchema(BaseModel):
     """Schéma pour la liste des familles."""
 
     id: str = Field(..., description="Identifiant unique")
-    husband_id: Optional[str] = Field(None, description="Identifiant du mari")
-    wife_id: Optional[str] = Field(None, description="Identifiant de l'épouse")
+    husband_id: Optional[str] = Field(default=None, description="Identifiant du mari")
+    wife_id: Optional[str] = Field(default=None, description="Identifiant de l'épouse")
     children_count: int = Field(..., ge=0, description="Nombre d'enfants")
-    marriage_date: Optional[str] = Field(None, description="Date de mariage")
+    marriage_date: Optional[str] = Field(default=None, description="Date de mariage")
     marriage_status: MarriageStatus = Field(..., description="Statut du mariage")
 
 
 class FamilySearchSchema(BaseModel):
     """Schéma pour la recherche de familles."""
 
-    query: Optional[str] = Field(None, description="Recherche textuelle")
-    husband_id: Optional[str] = Field(None, description="Filtrer par mari")
-    wife_id: Optional[str] = Field(None, description="Filtrer par épouse")
+    query: Optional[str] = Field(default=None, description="Recherche textuelle")
+    husband_id: Optional[str] = Field(default=None, description="Filtrer par mari")
+    wife_id: Optional[str] = Field(default=None, description="Filtrer par épouse")
     marriage_status: Optional[MarriageStatus] = Field(
-        None, description="Filtrer par statut de mariage"
+        default=None, description="Filtrer par statut de mariage"
     )
     marriage_year_from: Optional[int] = Field(
-        None, ge=1000, le=3000, description="Année de mariage minimum"
+        default=None, ge=1000, le=3000, description="Année de mariage minimum"
     )
     marriage_year_to: Optional[int] = Field(
-        None, ge=1000, le=3000, description="Année de mariage maximum"
+        default=None, ge=1000, le=3000, description="Année de mariage maximum"
     )
     divorce_year_from: Optional[int] = Field(
-        None, ge=1000, le=3000, description="Année de divorce minimum"
+        default=None, ge=1000, le=3000, description="Année de divorce minimum"
     )
     divorce_year_to: Optional[int] = Field(
-        None, ge=1000, le=3000, description="Année de divorce maximum"
+        default=None, ge=1000, le=3000, description="Année de divorce maximum"
     )
-    place: Optional[str] = Field(None, description="Filtrer par lieu")
+    place: Optional[str] = Field(default=None, description="Filtrer par lieu")
     has_children: Optional[bool] = Field(
-        None, description="Filtrer par présence d'enfants"
+        default=None, description="Filtrer par présence d'enfants"
     )
     min_children: Optional[int] = Field(
-        None, ge=0, description="Nombre minimum d'enfants"
+        default=None, ge=0, description="Nombre minimum d'enfants"
     )
     max_children: Optional[int] = Field(
-        None, ge=0, description="Nombre maximum d'enfants"
+        default=None, ge=0, description="Nombre maximum d'enfants"
     )
-    page: int = Field(1, ge=1, description="Numéro de page")
-    size: int = Field(20, ge=1, le=100, description="Taille de la page")
+    page: int = Field(default=1, ge=1, description="Numéro de page")
+    size: int = Field(default=20, ge=1, le=100, description="Taille de la page")
 
 
 class FamilyStatsSchema(BaseModel):

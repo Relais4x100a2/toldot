@@ -444,7 +444,7 @@ class Genealogy:
 
     def _calculate_stats(self) -> None:
         """Calcule et met en cache les statistiques"""
-        stats = {
+        stats: Dict[str, Any] = {
             "total_persons": len(self.persons),
             "total_families": len(self.families),
             "living_persons": sum(1 for p in self.persons.values() if p.is_alive),

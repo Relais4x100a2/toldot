@@ -122,8 +122,9 @@ class GenealogyService:
         Raises:
             GeneWebParseError: Erreur de parsing du fichier
         """
-        self._genealogy = self._parser.parse_file(file_path)
-        return self._genealogy
+        genealogy = self._parser.parse_file(file_path)
+        self._genealogy = genealogy
+        return genealogy
 
     def create_empty(self) -> Genealogy:
         """
@@ -133,6 +134,7 @@ class GenealogyService:
             Genealogy: Nouvelle généalogie vide
         """
         self._initialize_empty_genealogy()
+        assert self._genealogy is not None  # posé par _initialize_empty_genealogy
         return self._genealogy
 
     @property
@@ -1052,8 +1054,8 @@ class GenealogyService:
         genealogy = self.genealogy
 
         # Statistiques des personnes
-        persons_by_sex = {}
-        persons_by_access = {}
+        persons_by_sex: Dict[str, int] = {}
+        persons_by_access: Dict[str, int] = {}
         persons_with_birth_date = 0
         persons_with_death_date = 0
 
@@ -1073,7 +1075,7 @@ class GenealogyService:
                 persons_with_death_date += 1
 
         # Statistiques des familles
-        families_by_status = {}
+        families_by_status: Dict[str, int] = {}
         families_with_children = 0
         total_children = 0
 
@@ -1090,7 +1092,7 @@ class GenealogyService:
             total_children += len(family.children)
 
         # Statistiques des événements (collectés depuis les personnes et familles)
-        events_by_type = {}
+        events_by_type: Dict[str, int] = {}
         personal_events = 0
         family_events = 0
 

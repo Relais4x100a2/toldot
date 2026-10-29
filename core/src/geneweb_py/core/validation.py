@@ -54,7 +54,7 @@ class ValidationContext:
 
     def get_errors(self) -> List[Exception]:
         """Retourne la liste des erreurs collectées"""
-        return self.error_collector.get_errors()
+        return list(self.error_collector.get_errors())
 
     def get_result(self) -> ValidationResult:
         """Retourne le résultat de validation"""

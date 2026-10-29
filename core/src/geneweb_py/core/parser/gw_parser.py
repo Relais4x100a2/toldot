@@ -537,7 +537,7 @@ class GeneWebParser:
             detected_encoding = result["encoding"]
             confidence = result["confidence"]
 
-            if confidence >= 0.7:
+            if detected_encoding is not None and confidence >= 0.7:
                 # Si la confiance est élevée, utiliser l'encodage détecté
                 try:
                     content = raw_data.decode(detected_encoding)
@@ -623,8 +623,8 @@ class GeneWebParser:
         genealogy = Genealogy()
 
         # Dictionnaires pour stocker les entités pendant la construction
-        persons = {}  # ID -> Person
-        families = {}  # ID -> Family
+        persons: Dict[str, Person] = {}  # ID -> Person
+        families: Dict[str, Family] = {}  # ID -> Family
 
         # Contexte pour associer fevt et enfants à la famille précédente
         current_family = None  # Référence à la dernière famille créée
@@ -993,7 +993,7 @@ class GeneWebParser:
         Returns:
             Dictionnaire avec toutes les informations extraites
         """
-        result = {
+        result: Dict[str, Any] = {
             "husband_name": None,
             "husband_firstname": None,
             "husband_occurrence": None,
@@ -1255,7 +1255,7 @@ class GeneWebParser:
             # Occupation (#occu)
             elif token.type == TokenType.OCCU:
                 i += 1
-                occupation_parts = []
+                occupation_parts: List[str] = []
                 occ_agg = 0
                 while i < len(tokens) and tokens[i].type in [
                     TokenType.IDENTIFIER,
@@ -1620,7 +1620,7 @@ class GeneWebParser:
                 genealogy.add_or_update_person(person)
 
             # Extraire le contenu des notes
-            notes_content = []
+            notes_content: List[str] = []
             notes_agg = 0
             notes_stop = False
             in_content = False
@@ -2015,7 +2015,7 @@ class GeneWebParser:
                 elif token.type == TokenType.NOTE:
                     i += 1
                     # Contenu de la note
-                    note_content = []
+                    note_content: List[str] = []
                     note_agg = 0
                     while i < len(tokens) and tokens[i].type not in [
                         TokenType.NEWLINE,
@@ -2502,7 +2502,7 @@ class GeneWebParser:
 
     def _parse_relation_line(
         self, child_node: SyntaxNode, persons: dict, genealogy: Genealogy
-    ) -> dict:
+    ) -> Optional[Dict[str, Any]]:
         """Parse une ligne de relation et crée les Person référencées"""
         tokens = child_node.tokens
 
@@ -2713,7 +2713,7 @@ class GeneWebParser:
             # Occupation (#occu)
             elif token.type == TokenType.OCCU:
                 i += 1
-                occupation_parts = []
+                occupation_parts: List[str] = []
                 occ_agg = 0
                 while i < len(tokens) and tokens[i].type in [
                     TokenType.IDENTIFIER,
@@ -2724,11 +2724,11 @@ class GeneWebParser:
                 ]:
                     # Remplacer les underscores par des espaces pour l'affichage
                     # Garder les virgules et apostrophes telles quelles
-                    value = tokens[i].value.replace("_", " ")
+                    fragment = tokens[i].value.replace("_", " ")
                     occ_agg, stop = _bounded_append_text_fragment(
                         occupation_parts,
                         occ_agg,
-                        value,
+                        fragment,
                         inter_fragment_sep_len=0,
                         max_fragments=_TEXT_AGGREGATE_MAX_FRAGMENTS,
                         max_aggregate_chars=_TEXT_AGGREGATE_MAX_CHARS,
@@ -2885,7 +2885,7 @@ class GeneWebParser:
             # Notes (#note)
             elif token.type == TokenType.NOTE:
                 i += 1
-                note_content = []
+                note_content: List[str] = []
                 note_agg = 0
                 while i < len(tokens) and tokens[i].type not in [
                     TokenType.NEWLINE,
@@ -2989,7 +2989,7 @@ class GeneWebParser:
         tokens = node.tokens
 
         # Extraire le contenu des notes
-        notes_content = []
+        notes_content: List[str] = []
         notes_agg = 0
         in_content = False
 
@@ -3050,7 +3050,7 @@ class GeneWebParser:
             )
 
             # Extraire le contenu de la page
-            page_content = []
+            page_content: List[str] = []
             page_agg = 0
             in_content = False
 
@@ -3112,7 +3112,7 @@ class GeneWebParser:
             )
 
             # Extraire le contenu des notes de wizard
-            wizard_content = []
+            wizard_content: List[str] = []
             wiz_agg = 0
             in_content = False
 

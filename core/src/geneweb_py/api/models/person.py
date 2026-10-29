@@ -13,16 +13,16 @@ class TitleSchema(BaseModel):
     """Schéma pour un titre d'une personne."""
 
     name: str = Field(..., description="Nom du titre")
-    title_type: str = Field("", description="Type de titre")
-    place: str = Field("", description="Lieu du titre")
+    title_type: str = Field(default="", description="Type de titre")
+    place: str = Field(default="", description="Lieu du titre")
     start_date: Optional[str] = Field(
-        None, description="Date de début (format ISO ou GeneWeb)"
+        default=None, description="Date de début (format ISO ou GeneWeb)"
     )
     end_date: Optional[str] = Field(
-        None, description="Date de fin (format ISO ou GeneWeb)"
+        default=None, description="Date de fin (format ISO ou GeneWeb)"
     )
-    number: int = Field(0, description="Numéro du titre")
-    is_main: bool = Field(False, description="Titre principal")
+    number: int = Field(default=0, description="Numéro du titre")
+    is_main: bool = Field(default=False, description="Titre principal")
 
 
 class PersonLinkModel(BaseModel):
@@ -30,22 +30,22 @@ class PersonLinkModel(BaseModel):
 
     first_name: str = Field(..., description="Prénom")
     last_name: str = Field(..., description="Nom")
-    occurrence: int = Field(0, description="Numéro d'occurrence")
-    display_text: str = Field("", description="Texte d'affichage du lien")
+    occurrence: int = Field(default=0, description="Numéro d'occurrence")
+    display_text: str = Field(default="", description="Texte d'affichage du lien")
 
 
 class PageLinkModel(BaseModel):
     """Lien vers une page étendue dans une note wikitext."""
 
     page_name: str = Field(..., description="Nom de la page")
-    display_text: str = Field("", description="Texte d'affichage")
+    display_text: str = Field(default="", description="Texte d'affichage")
 
 
 class WizardLinkModel(BaseModel):
     """Lien vers un magicien dans une note wikitext."""
 
     wizard_name: str = Field(..., description="Nom du magicien")
-    display_text: str = Field("", description="Texte d'affichage")
+    display_text: str = Field(default="", description="Texte d'affichage")
 
 
 class FicheTagsModel(BaseModel):
@@ -74,12 +74,12 @@ class PersonBaseSchema(BaseModel):
 
     first_name: str = Field(..., min_length=1, description="Prénom")
     surname: str = Field(..., min_length=1, description="Nom de famille")
-    public_name: Optional[str] = Field(None, description="Nom public")
+    public_name: Optional[str] = Field(default=None, description="Nom public")
     titles: List[TitleSchema] = Field(default_factory=list, description="Titres")
-    image: Optional[str] = Field(None, description="Image ou photo")
+    image: Optional[str] = Field(default=None, description="Image ou photo")
     sex: Union[str, Gender] = Field(..., description="Sexe")
     access_level: Union[str, AccessLevel] = Field(
-        "default", description="Niveau d'accès"
+        default="default", description="Niveau d'accès"
     )
 
     @field_validator("sex", mode="before")
@@ -118,14 +118,16 @@ class PersonCreateSchema(PersonBaseSchema):
 class PersonUpdateSchema(BaseModel):
     """Schéma pour la mise à jour d'une personne."""
 
-    first_name: Optional[str] = Field(None, min_length=1, description="Prénom")
-    surname: Optional[str] = Field(None, min_length=1, description="Nom de famille")
-    public_name: Optional[str] = Field(None, description="Nom public")
-    titles: Optional[List[TitleSchema]] = Field(None, description="Titres")
-    image: Optional[str] = Field(None, description="Image ou photo")
-    sex: Optional[Union[str, Gender]] = Field(None, description="Sexe")
+    first_name: Optional[str] = Field(default=None, min_length=1, description="Prénom")
+    surname: Optional[str] = Field(
+        default=None, min_length=1, description="Nom de famille"
+    )
+    public_name: Optional[str] = Field(default=None, description="Nom public")
+    titles: Optional[List[TitleSchema]] = Field(default=None, description="Titres")
+    image: Optional[str] = Field(default=None, description="Image ou photo")
+    sex: Optional[Union[str, Gender]] = Field(default=None, description="Sexe")
     access_level: Optional[Union[str, AccessLevel]] = Field(
-        None, description="Niveau d'accès"
+        default=None, description="Niveau d'accès"
     )
 
     @field_validator("sex", mode="before")
@@ -159,15 +161,15 @@ class PersonSchema(PersonBaseSchema):
     """Schéma complet pour une personne."""
 
     id: str = Field(..., description="Identifiant unique de la personne")
-    birth_date: Optional[str] = Field(None, description="Date de naissance")
-    birth_place: Optional[str] = Field(None, description="Lieu de naissance")
-    death_date: Optional[str] = Field(None, description="Date de décès")
-    death_place: Optional[str] = Field(None, description="Lieu de décès")
-    death_cause: Optional[str] = Field(None, description="Cause du décès")
-    burial_date: Optional[str] = Field(None, description="Date d'inhumation")
-    burial_place: Optional[str] = Field(None, description="Lieu d'inhumation")
-    baptism_date: Optional[str] = Field(None, description="Date de baptême")
-    baptism_place: Optional[str] = Field(None, description="Lieu de baptême")
+    birth_date: Optional[str] = Field(default=None, description="Date de naissance")
+    birth_place: Optional[str] = Field(default=None, description="Lieu de naissance")
+    death_date: Optional[str] = Field(default=None, description="Date de décès")
+    death_place: Optional[str] = Field(default=None, description="Lieu de décès")
+    death_cause: Optional[str] = Field(default=None, description="Cause du décès")
+    burial_date: Optional[str] = Field(default=None, description="Date d'inhumation")
+    burial_place: Optional[str] = Field(default=None, description="Lieu d'inhumation")
+    baptism_date: Optional[str] = Field(default=None, description="Date de baptême")
+    baptism_place: Optional[str] = Field(default=None, description="Lieu de baptême")
     notes: List[str] = Field(default_factory=list, description="Notes personnelles")
     sources: List[str] = Field(default_factory=list, description="Sources")
     families: List[str] = Field(default_factory=list, description="IDs des familles")
@@ -191,9 +193,9 @@ class PersonListSchema(BaseModel):
     id: str = Field(..., description="Identifiant unique")
     first_name: str = Field(..., description="Prénom")
     surname: str = Field(..., description="Nom de famille")
-    public_name: Optional[str] = Field(None, description="Nom public")
-    birth_date: Optional[str] = Field(None, description="Date de naissance")
-    death_date: Optional[str] = Field(None, description="Date de décès")
+    public_name: Optional[str] = Field(default=None, description="Nom public")
+    birth_date: Optional[str] = Field(default=None, description="Date de naissance")
+    death_date: Optional[str] = Field(default=None, description="Date de décès")
     sex: Gender = Field(..., description="Sexe")
     access_level: AccessLevel = Field(..., description="Niveau d'accès")
 
@@ -201,28 +203,30 @@ class PersonListSchema(BaseModel):
 class PersonSearchSchema(BaseModel):
     """Schéma pour la recherche de personnes."""
 
-    query: Optional[str] = Field(None, description="Recherche textuelle")
-    first_name: Optional[str] = Field(None, description="Filtrer par prénom")
-    surname: Optional[str] = Field(None, description="Filtrer par nom de famille")
-    sex: Optional[Gender] = Field(None, description="Filtrer par sexe")
+    query: Optional[str] = Field(default=None, description="Recherche textuelle")
+    first_name: Optional[str] = Field(default=None, description="Filtrer par prénom")
+    surname: Optional[str] = Field(
+        default=None, description="Filtrer par nom de famille"
+    )
+    sex: Optional[Gender] = Field(default=None, description="Filtrer par sexe")
     birth_year_from: Optional[int] = Field(
-        None, ge=1000, le=3000, description="Année de naissance minimum"
+        default=None, ge=1000, le=3000, description="Année de naissance minimum"
     )
     birth_year_to: Optional[int] = Field(
-        None, ge=1000, le=3000, description="Année de naissance maximum"
+        default=None, ge=1000, le=3000, description="Année de naissance maximum"
     )
     death_year_from: Optional[int] = Field(
-        None, ge=1000, le=3000, description="Année de décès minimum"
+        default=None, ge=1000, le=3000, description="Année de décès minimum"
     )
     death_year_to: Optional[int] = Field(
-        None, ge=1000, le=3000, description="Année de décès maximum"
+        default=None, ge=1000, le=3000, description="Année de décès maximum"
     )
-    place: Optional[str] = Field(None, description="Filtrer par lieu")
+    place: Optional[str] = Field(default=None, description="Filtrer par lieu")
     access_level: Optional[AccessLevel] = Field(
-        None, description="Filtrer par niveau d'accès"
+        default=None, description="Filtrer par niveau d'accès"
     )
-    page: int = Field(1, ge=1, description="Numéro de page")
-    size: int = Field(20, ge=1, le=100, description="Taille de la page")
+    page: int = Field(default=1, ge=1, description="Numéro de page")
+    size: int = Field(default=20, ge=1, le=100, description="Taille de la page")
 
     @field_validator("sex", mode="before")
     @classmethod
