@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Installer uv (gestionnaire de paquets Python ultra-rapide)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:$PATH"
+ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
 
 # Créer les dossiers nécessaires
 RUN mkdir -p /opt/geneweb/data/training \
@@ -36,20 +36,12 @@ RUN mkdir -p /opt/geneweb/data/training \
 # Définir le répertoire de travail
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY pyproject.toml ./
+# Copier les fichiers de dépendances (verrouillées par uv.lock)
+COPY pyproject.toml uv.lock ./
 
-# Installer les dépendances Python avec uv
-RUN uv pip install --system --no-cache \
-    streamlit>=1.28.0 \
-    pandas>=2.0.0 \
-    plotly>=5.15.0 \
-    dspy-ai>=2.4.0 \
-    openai>=1.0.0 \
-    anthropic>=0.18.0 \
-    python-dotenv>=1.0.0 \
-    scikit-learn>=1.3.0 \
-    jsonlines>=4.0.0
+# Installer les dépendances de production exactement telles que verrouillées
+RUN uv sync --frozen --no-dev --no-install-project
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Copier le code source
 COPY . .
