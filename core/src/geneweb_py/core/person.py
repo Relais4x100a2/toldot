@@ -29,6 +29,35 @@ class AccessLevel(Enum):
     DEFAULT = ""  # Suit la règle "If Titles"
 
 
+class RelationType(Enum):
+    """Type de relation d'un bloc ``rel``"""
+
+    ADOPTION = "adop"
+    RECOGNITION = "reco"
+    CANDIDATE = "cand"
+    GODPARENT = "godp"
+    FOSTER = "fost"
+
+
+class ParentRole(Enum):
+    """Côté du parent concerné par une relation (``fath`` / ``moth``)"""
+
+    FATHER = "fath"
+    MOTHER = "moth"
+
+
+@dataclass(frozen=True)
+class Relation:
+    """Ligne ``- <type> [fath|moth]: Personne`` d'un bloc ``rel``
+
+    ``target_person_key`` est l'identifiant complet ``Nom_Prenom_occ``.
+    """
+
+    relation_type: RelationType
+    parent_role: Optional[ParentRole]
+    target_person_key: str
+
+
 @dataclass
 class Title:
     """Titre d'une personne (noblesse, profession, etc.)"""
@@ -132,6 +161,8 @@ class Person:
 
     # Relations spéciales (adoption, parrainage, etc.)
     relations: Dict[str, List[str]] = field(default_factory=dict)
+    # Relations typées (bloc rel) ; ``relations`` en garde la vue par type
+    relation_links: List[Relation] = field(default_factory=list)
 
     # Métadonnées personnalisées
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -246,6 +277,11 @@ class Person:
         parser = WikitextParser()
         return [parser.parse(note) for note in self.notes]
 
+    def add_relation_link(self, relation: Relation) -> None:
+        """Ajoute une relation typée et met à jour la vue ``relations``"""
+        self.relation_links.append(relation)
+        self.add_relation(relation.relation_type.value, relation.target_person_key)
+
     def add_relation(self, relation_type: str, person_id: str) -> None:
         """Ajoute une relation spéciale (adoption, parrainage, etc.)"""
         if relation_type not in self.relations:
@@ -297,6 +333,14 @@ class Person:
             "families_as_spouse": self.families_as_spouse,
             "events": [event.to_dict() for event in self.events],
             "relations": self.relations,
+            "relation_links": [
+                {
+                    "type": r.relation_type.value,
+                    "parent_role": r.parent_role.value if r.parent_role else None,
+                    "target": r.target_person_key,
+                }
+                for r in self.relation_links
+            ],
             "notes": self.notes,
             "is_valid": self.is_valid,
             "validation_errors": [str(e) for e in self.validation_errors],

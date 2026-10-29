@@ -19,7 +19,14 @@ from ..exceptions import (
 )
 from ..family import ChildSex, FamilyQualifier, MarriageStatus
 from ..models import Date, Family, FamilyEvent, FamilyEventType, Genealogy, Person
-from ..person import AccessLevel, Gender, Title
+from ..person import (
+    AccessLevel,
+    Gender,
+    ParentRole,
+    Relation,
+    RelationType,
+    Title,
+)
 from .lexical import LexicalParser, Token, TokenType
 from .streaming import (
     StreamingGeneWebParser,
@@ -2467,56 +2474,50 @@ class GeneWebParser:
             and tokens[1].type == TokenType.IDENTIFIER
             and tokens[2].type == TokenType.IDENTIFIER
         ):
-            person_last_name = tokens[1].value
-            person_first_name = tokens[2].value
+            subject_occurrence = None
+            if len(tokens) > 3 and tokens[3].type == TokenType.NUMBER:
+                subject_occurrence = self._occurrence_from_token(tokens[3])
 
-            person_id = f"{person_last_name}_{person_first_name}_0"
-
-            # Créer la personne si elle n'existe pas
-            if person_id not in persons:
-                person = Person(
-                    last_name=person_last_name,
-                    first_name=person_first_name,
-                    gender=Gender.UNKNOWN,
-                )
-                persons[person_id] = person
-                genealogy.add_or_update_person(person)
+            person_id = self._get_or_create_person(
+                tokens[1].value,
+                tokens[2].value,
+                subject_occurrence,
+                persons,
+                genealogy,
+            )
 
             # Parser les relations dans les enfants du nœud
-            relations = []
             for child_node in node.children:
                 if child_node.tokens and child_node.tokens[0].type == TokenType.DASH:
                     relation = self._parse_relation_line(child_node, persons, genealogy)
                     if relation:
-                        relations.append(relation)
+                        persons[person_id].add_relation_link(relation)
 
-            # Stocker les relations dans les notes de la personne
-            if relations:
-                relations_text = "; ".join(
-                    [
-                        f"{rel['type']} {rel['parent_type'] or ''}: {rel['person_name']}"  # noqa: E501
-                        for rel in relations
-                    ]
-                )
-                persons[person_id].add_note(f"Relations: {relations_text}")
+    @staticmethod
+    def _occurrence_from_token(token: Token) -> int:
+        """Numéro d'occurrence d'un jeton ``.N`` (0 si illisible)"""
+        try:
+            return int(token.value.lstrip("."))
+        except ValueError:
+            return 0
 
     def _parse_relation_line(
         self, child_node: SyntaxNode, persons: dict, genealogy: Genealogy
-    ) -> Optional[Dict[str, Any]]:
-        """Parse une ligne de relation et crée les Person référencées"""
+    ) -> Optional[Relation]:
+        """Parse une ligne de relation et crée la Person référencée"""
         tokens = child_node.tokens
 
         if len(tokens) < 4:  # Au minimum: -, type, :, nom
             return None
 
         # Type de relation (adop, reco, cand, godp, fost)
-        relation_type = None
-        parent_type = None
-        person_tokens = []
+        relation_type: Optional[RelationType] = None
+        parent_role: Optional[ParentRole] = None
+        person_tokens: List[str] = []
+        occurrence: Optional[int] = None
 
-        i = 1  # Passer le tire
+        i = 1  # Passer le tiret
 
-        # Type de relation
         if i < len(tokens) and tokens[i].type in [
             TokenType.ADOP,
             TokenType.RECO,
@@ -2524,12 +2525,12 @@ class GeneWebParser:
             TokenType.GODP,
             TokenType.FOST,
         ]:
-            relation_type = tokens[i].value
+            relation_type = RelationType(tokens[i].value.lstrip("#"))
             i += 1
 
-        # Type de parent (fath, moth) - optionnel
+        # Côté du parent (fath, moth) - optionnel
         if i < len(tokens) and tokens[i].type in [TokenType.FATH, TokenType.MOTH]:
-            parent_type = tokens[i].value
+            parent_role = ParentRole(tokens[i].value)
             i += 1
 
         # Passer les deux points
@@ -2540,30 +2541,16 @@ class GeneWebParser:
         while i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
             person_tokens.append(tokens[i].value)
             i += 1
+        if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
+            occurrence = self._occurrence_from_token(tokens[i])
 
-        if len(person_tokens) >= 2:
-            # Créer la personne référencée
-            related_last_name = person_tokens[0]
-            related_first_name = person_tokens[1]
-            related_person_id = f"{related_last_name}_{related_first_name}_0"
+        if relation_type is None or len(person_tokens) < 2:
+            return None
 
-            if related_person_id not in persons:
-                related_person = Person(
-                    last_name=related_last_name,
-                    first_name=related_first_name,
-                    gender=Gender.UNKNOWN,
-                )
-                persons[related_person_id] = related_person
-                # Ne pas appeler genealogy.add_person() ici pour éviter les doublons
-
-            return {
-                "type": relation_type,
-                "parent_type": parent_type,
-                "person_id": related_person_id,
-                "person_name": f"{related_last_name} {related_first_name}",
-            }
-
-        return None
+        target_id = self._get_or_create_person(
+            person_tokens[0], person_tokens[1], occurrence, persons, genealogy
+        )
+        return Relation(relation_type, parent_role, target_id)
 
     @staticmethod
     def _witness_kind_at(tokens: List[Token], index: int) -> Optional[WitnessKind]:
