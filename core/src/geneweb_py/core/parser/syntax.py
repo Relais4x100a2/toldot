@@ -14,6 +14,11 @@ from .lexical import Token, TokenType
 from .place_tokens import place_run_end
 
 
+_MOTS_CLES_BLOC = frozenset(
+    {"notes-db", "page-ext", "wizard-note", "notes", "rel", "fevt", "pevt", "fam"}
+)
+
+
 class BlockType(Enum):
     """Types de blocs dans le format .gw"""
 
@@ -648,6 +653,22 @@ class FamilyBlockParser(BlockParser):
 
             if token.type == TokenType.BEG:
                 break
+
+            # Texte nu en début de ligne (R13) : gardé dans le nœud, jamais jeté
+            if (
+                i > start_index
+                and tokens[i - 1].type == TokenType.NEWLINE
+                and token.type
+                in (TokenType.IDENTIFIER, TokenType.STRING, TokenType.NUMBER)
+                and token.value not in _MOTS_CLES_BLOC
+            ):
+                while i < len(tokens) and tokens[i].type not in (
+                    TokenType.NEWLINE,
+                    TokenType.EOF,
+                ):
+                    node.add_token(tokens[i])
+                    i += 1
+                continue
 
             # Token inattendu, on s'arrête
             break
