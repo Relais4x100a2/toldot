@@ -32,12 +32,7 @@ def main():
     parser = GeneWebParser()
 
     # Utiliser le fichier d'exemple
-    gw_file = (
-        Path(__file__).parent.parent
-        / "doc"
-        / "baseGWexamples"
-        / "sample_tree.gw"
-    )
+    gw_file = Path(__file__).parent.parent / "tests" / "fixtures" / "sample_tree.gw"
 
     if not gw_file.exists():
         print(f"❌ Fichier .gw non trouvé : {gw_file}")
