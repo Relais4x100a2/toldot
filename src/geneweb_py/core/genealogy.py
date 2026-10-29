@@ -9,8 +9,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from .date import Date
 from .exceptions import GeneWebError, GeneWebValidationError
 from .family import Family
+from .organization import Organization, OrganizationLink
 from .person import Person
 
 
@@ -56,6 +58,10 @@ class Genealogy:
     # Validation gracieuse
     is_valid: bool = field(default=True)
     validation_errors: List[GeneWebError] = field(default_factory=list)
+
+    # Organisations (entreprises, écoles, associations…) et leurs liens aux personnes
+    organizations: Dict[str, Organization] = field(default_factory=dict)
+    organization_links: List[OrganizationLink] = field(default_factory=list)
 
     # Statistiques (calculées automatiquement)
     _stats_cache: Dict[str, Any] = field(default_factory=dict, init=False)
@@ -508,9 +514,129 @@ class Genealogy:
                 if child:
                     child.families_as_child.append(family.family_id)
 
+    # ------------------------------------------------------------------
+    # Organisations
+    # ------------------------------------------------------------------
+
+    def add_organization(self, organization: Organization) -> None:
+        """Ajoute une organisation (identifiant unique obligatoire)"""
+        if organization.id in self.organizations:
+            raise GeneWebValidationError(
+                f"Organisation déjà présente: {organization.id}",
+                entity_type="organization",
+                entity_id=organization.id,
+            )
+        self.organizations[organization.id] = organization
+
+    def get_organization(self, organization_id: str) -> Optional[Organization]:
+        """Retourne l'organisation d'identifiant donné, ou ``None``"""
+        return self.organizations.get(organization_id)
+
+    def link_person_to_organization(
+        self,
+        person_id: str,
+        organization_id: str,
+        role: Optional[str] = None,
+        start_date: Optional[Date] = None,
+        end_date: Optional[Date] = None,
+        source_event_id: Optional[str] = None,
+        source_event_type: Optional[str] = None,
+        notes: Optional[List[str]] = None,
+    ) -> OrganizationLink:
+        """Relie une personne à une organisation (les deux doivent exister)"""
+        if person_id not in self.persons:
+            raise GeneWebValidationError(
+                f"Personne inconnue: {person_id}",
+                entity_type="organization_link",
+                entity_id=person_id,
+            )
+        if organization_id not in self.organizations:
+            raise GeneWebValidationError(
+                f"Organisation inconnue: {organization_id}",
+                entity_type="organization_link",
+                entity_id=organization_id,
+            )
+        link = OrganizationLink(
+            person_id=person_id,
+            organization_id=organization_id,
+            role=role,
+            start_date=start_date,
+            end_date=end_date,
+            source_event_id=source_event_id,
+            source_event_type=source_event_type,
+            notes=list(notes or []),
+        )
+        self.organization_links.append(link)
+        return link
+
+    def get_organization_links(
+        self,
+        person_id: Optional[str] = None,
+        organization_id: Optional[str] = None,
+    ) -> List[OrganizationLink]:
+        """Liens filtrés par personne et/ou organisation"""
+        return [
+            link
+            for link in self.organization_links
+            if (person_id is None or link.person_id == person_id)
+            and (organization_id is None or link.organization_id == organization_id)
+        ]
+
+    def get_person_organizations(self, person_id: str) -> List[Organization]:
+        """Organisations d'une personne, sans doublon, dans l'ordre des liens"""
+        seen: Dict[str, Organization] = {}
+        for link in self.get_organization_links(person_id=person_id):
+            org = self.organizations.get(link.organization_id)
+            if org is not None:
+                seen.setdefault(org.id, org)
+        return list(seen.values())
+
+    def get_organization_members(self, organization_id: str) -> List[Person]:
+        """Membres d'une organisation, sans doublon, dans l'ordre des liens"""
+        seen: Dict[str, Person] = {}
+        for link in self.get_organization_links(organization_id=organization_id):
+            person = self.persons.get(link.person_id)
+            if person is not None:
+                seen.setdefault(link.person_id, person)
+        return list(seen.values())
+
+    def validate_organizations(self) -> List[str]:
+        """Contrôle les organisations : champs, parents existants, cycles, liens"""
+        problems: List[str] = []
+        for org in self.organizations.values():
+            problems.extend(org.validate())
+            if org.parent_id and org.parent_id not in self.organizations:
+                problems.append(f"{org.id}: parent inconnu ({org.parent_id})")
+
+        reported: set = set()
+        for org in self.organizations.values():
+            chain: List[str] = []
+            current: Optional[str] = org.id
+            while current is not None and current in self.organizations:
+                if current in chain:
+                    cycle = frozenset(chain[chain.index(current) :])
+                    if cycle not in reported:
+                        reported.add(cycle)
+                        problems.append(
+                            "cycle de parenté: " + " -> ".join(chain + [current])
+                        )
+                    break
+                chain.append(current)
+                current = self.organizations[current].parent_id
+
+        for link in self.organization_links:
+            problems.extend(link.validate())
+            if link.person_id not in self.persons:
+                problems.append(f"lien vers une personne inconnue: {link.person_id}")
+            if link.organization_id not in self.organizations:
+                problems.append(
+                    f"lien vers une organisation inconnue: {link.organization_id}"
+                )
+        return problems
+
     def to_dict(self) -> Dict[str, Any]:
         """Convertit la généalogie en dictionnaire pour sérialisation"""
-        return {
+        data: Dict[str, Any] = {
             "metadata": {
                 "source_file": self.metadata.source_file,
                 "encoding": self.metadata.encoding,
@@ -529,6 +655,12 @@ class Genealogy:
                 "errors": [e.to_dict() for e in self.validation_errors],
             },
         }
+        if self.organizations or self.organization_links:
+            data["organizations"] = [o.to_dict() for o in self.organizations.values()]
+            data["organization_links"] = [
+                link.to_dict() for link in self.organization_links
+            ]
+        return data
 
     def __len__(self) -> int:
         """Retourne le nombre total de personnes"""
