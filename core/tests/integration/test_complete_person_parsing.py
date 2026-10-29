@@ -149,7 +149,7 @@ class TestCompletePersonParsing:
             "Fichier trop volumineux pour les tests de couverture, prend trop de temps"
         )
         parser = GeneWebParser()
-        genealogy = parser.parse_file("doc/baseGWexamples/sample_tree.gw")
+        genealogy = parser.parse_file("doc/baseGWexamples/reference_base.gw")
 
         # Vérifier que le nombre de personnes est significativement plus élevé
         # qu'avant les modifications (devrait être > 8000)
