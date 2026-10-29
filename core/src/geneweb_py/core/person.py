@@ -56,6 +56,10 @@ class Relation:
     relation_type: RelationType
     parent_role: Optional[ParentRole]
     target_person_key: str
+    # Provenance : ligne du ``.gw`` (1-indexée). Hors comparaison : deux relations
+    # identiques écrites à des endroits différents restent égales.
+    start_line: Optional[int] = field(default=None, compare=False)
+    end_line: Optional[int] = field(default=None, compare=False)
 
 
 @dataclass

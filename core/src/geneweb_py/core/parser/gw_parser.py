@@ -2659,7 +2659,8 @@ class GeneWebParser:
         target_id = self._get_or_create_person(
             person_tokens[0], person_tokens[1], occurrence, persons, genealogy
         )
-        return Relation(relation_type, parent_role, target_id)
+        ligne = tokens[0].line_number
+        return Relation(relation_type, parent_role, target_id, ligne, ligne)
 
     @staticmethod
     def _witness_kind_at(tokens: List[Token], index: int) -> Optional[WitnessKind]:
