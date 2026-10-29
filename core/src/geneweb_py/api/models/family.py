@@ -2,7 +2,7 @@
 Schémas Pydantic pour les familles dans l'API geneweb-py.
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -13,7 +13,7 @@ class ChildSchema(BaseModel):
     """Schéma pour un enfant dans une famille."""
 
     person_id: str = Field(..., description="Identifiant de la personne")
-    sex: Union[str, ChildSex] = Field(default="unknown", description="Sexe de l'enfant")
+    sex: ChildSex = Field(default=ChildSex.UNKNOWN, description="Sexe de l'enfant")
     last_name: Optional[str] = Field(
         default=None, description="Nom de famille si différent du père"
     )
@@ -38,8 +38,8 @@ class FamilyBaseSchema(BaseModel):
     husband_id: Optional[str] = Field(default=None, description="Identifiant du mari")
     wife_id: Optional[str] = Field(default=None, description="Identifiant de l'épouse")
     children: List[ChildSchema] = Field(default_factory=list, description="Enfants")
-    marriage_status: Union[str, MarriageStatus] = Field(
-        default="married", description="Statut du mariage"
+    marriage_status: MarriageStatus = Field(
+        default=MarriageStatus.MARRIED, description="Statut du mariage"
     )
     notes: List[str] = Field(default_factory=list, description="Notes familiales")
     sources: List[str] = Field(default_factory=list, description="Sources")
@@ -72,7 +72,7 @@ class FamilyUpdateSchema(BaseModel):
     husband_id: Optional[str] = Field(default=None, description="Identifiant du mari")
     wife_id: Optional[str] = Field(default=None, description="Identifiant de l'épouse")
     children: Optional[List[ChildSchema]] = Field(default=None, description="Enfants")
-    marriage_status: Optional[Union[str, MarriageStatus]] = Field(
+    marriage_status: Optional[MarriageStatus] = Field(
         default=None, description="Statut du mariage"
     )
     notes: Optional[List[str]] = Field(default=None, description="Notes familiales")

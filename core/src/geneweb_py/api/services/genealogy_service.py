@@ -707,8 +707,8 @@ class GenealogyService:
                 if ev is event:
                     return person.unique_id, None, idx
         for family in genealogy.families.values():
-            for idx, ev in enumerate(family.events):
-                if ev is event:
+            for idx, fev in enumerate(family.events):
+                if fev is event:
                     return None, family.family_id, idx
         return None, None, -1
 
@@ -978,8 +978,8 @@ class GenealogyService:
                 for wid in event_witnesses_to_api_strings(event.witnesses):
                     index.setdefault(wid, set()).add(person.unique_id)
         for family in genealogy.families.values():
-            for event in family.events:
-                for wid in event_witnesses_to_api_strings(event.witnesses):
+            for family_event in family.events:
+                for wid in event_witnesses_to_api_strings(family_event.witnesses):
                     for pid in [family.husband_id, family.wife_id]:
                         if pid:
                             index.setdefault(wid, set()).add(pid)
@@ -1105,8 +1105,12 @@ class GenealogyService:
 
         # Compter les événements familiaux
         for family in genealogy.families.values():
-            for event in family.events:
-                type_key = event.event_type.value if event.event_type else "unknown"
+            for family_event in family.events:
+                type_key = (
+                    family_event.event_type.value
+                    if family_event.event_type
+                    else "unknown"
+                )
                 events_by_type[type_key] = events_by_type.get(type_key, 0) + 1
                 family_events += 1
 

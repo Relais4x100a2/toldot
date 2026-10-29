@@ -77,7 +77,11 @@ def create_app() -> FastAPI:
     )
 
     application.state.limiter = limiter
-    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    # SlowAPI type son handler sur RateLimitExceeded, plus étroit que Exception
+    application.add_exception_handler(
+        RateLimitExceeded,
+        _rate_limit_exceeded_handler,  # type: ignore[arg-type]
+    )
     application.add_middleware(SlowAPIMiddleware)
 
     @application.middleware("http")

@@ -2,7 +2,7 @@
 Schémas Pydantic pour les personnes dans l'API geneweb-py.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -77,9 +77,9 @@ class PersonBaseSchema(BaseModel):
     public_name: Optional[str] = Field(default=None, description="Nom public")
     titles: List[TitleSchema] = Field(default_factory=list, description="Titres")
     image: Optional[str] = Field(default=None, description="Image ou photo")
-    sex: Union[str, Gender] = Field(..., description="Sexe")
-    access_level: Union[str, AccessLevel] = Field(
-        default="default", description="Niveau d'accès"
+    sex: Gender = Field(..., description="Sexe")
+    access_level: AccessLevel = Field(
+        default=AccessLevel.DEFAULT, description="Niveau d'accès"
     )
 
     @field_validator("sex", mode="before")
@@ -89,10 +89,18 @@ class PersonBaseSchema(BaseModel):
         if isinstance(v, str):
             mapping = {
                 "male": Gender.MALE,
+                "m": Gender.MALE,
                 "female": Gender.FEMALE,
+                "f": Gender.FEMALE,
                 "unknown": Gender.UNKNOWN,
+                "?": Gender.UNKNOWN,
             }
-            return mapping.get(v.lower(), Gender.UNKNOWN)
+            key = v.strip().lower()
+            if key not in mapping:
+                raise ValueError(
+                    "Valeur de sexe invalide ; utiliser male, female, unknown, m, f ou ?."
+                )
+            return mapping[key]
         return v
 
     @field_validator("access_level", mode="before")
@@ -125,8 +133,8 @@ class PersonUpdateSchema(BaseModel):
     public_name: Optional[str] = Field(default=None, description="Nom public")
     titles: Optional[List[TitleSchema]] = Field(default=None, description="Titres")
     image: Optional[str] = Field(default=None, description="Image ou photo")
-    sex: Optional[Union[str, Gender]] = Field(default=None, description="Sexe")
-    access_level: Optional[Union[str, AccessLevel]] = Field(
+    sex: Optional[Gender] = Field(default=None, description="Sexe")
+    access_level: Optional[AccessLevel] = Field(
         default=None, description="Niveau d'accès"
     )
 
@@ -137,10 +145,18 @@ class PersonUpdateSchema(BaseModel):
         if isinstance(v, str):
             mapping = {
                 "male": Gender.MALE,
+                "m": Gender.MALE,
                 "female": Gender.FEMALE,
+                "f": Gender.FEMALE,
                 "unknown": Gender.UNKNOWN,
+                "?": Gender.UNKNOWN,
             }
-            return mapping.get(v.lower(), Gender.UNKNOWN)
+            key = v.strip().lower()
+            if key not in mapping:
+                raise ValueError(
+                    "Valeur de sexe invalide ; utiliser male, female, unknown, m, f ou ?."
+                )
+            return mapping[key]
         return v
 
     @field_validator("access_level", mode="before")

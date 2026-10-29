@@ -63,6 +63,20 @@ class TestPersonModels:
         assert isinstance(person.sex, Gender)
         assert person.sex == Gender.MALE
 
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [("male", Gender.MALE), ("F", Gender.FEMALE), ("?", Gender.UNKNOWN)],
+    )
+    def test_person_create_schema_sex_aliases(self, raw, expected):
+        """Noms et codes GeneWeb acceptés, insensibles à la casse."""
+        person = PersonCreateSchema(first_name="Jean", surname="Dupont", sex=raw)
+        assert person.sex is expected
+
+    def test_person_create_schema_invalid_sex(self):
+        """Un sexe inconnu est rejeté au lieu d'être converti en silence."""
+        with pytest.raises(ValidationError):
+            PersonCreateSchema(first_name="Jean", surname="Dupont", sex="badvalue")
+
     def test_title_schema(self):
         """Test schéma de titre."""
         title = TitleSchema(name="Duc", title_type="noblesse", place="Paris")

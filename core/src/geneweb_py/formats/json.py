@@ -8,14 +8,16 @@ et l'échange de données généalogiques.
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Type, TypeVar, Union
 
-from ..core.date import Date
-from ..core.event import Event
+from ..core.date import CalendarType, Date, DeathType
+from ..core.event import Event, FamilyEvent, PersonalEvent
 from ..core.family import Family
 from ..core.genealogy import Genealogy
 from ..core.person import Person
 from .base import BaseExporter, BaseImporter, ConversionError
+
+_E = TypeVar("_E", bound=Event)
 
 
 class JSONExporter(BaseExporter):
@@ -318,7 +320,7 @@ class JSONImporter(BaseImporter):
             # Ajouter les événements
             if "events" in data:
                 for event_data in data["events"]:
-                    event = self._deserialize_event(event_data)
+                    event = self._deserialize_event(event_data, PersonalEvent)
                     if event:
                         person.add_event(event)
 
@@ -366,7 +368,7 @@ class JSONImporter(BaseImporter):
             # Ajouter les événements
             if "events" in data:
                 for event_data in data["events"]:
-                    event = self._deserialize_event(event_data)
+                    event = self._deserialize_event(event_data, FamilyEvent)
                     if event:
                         family.add_event(event)
 
@@ -377,16 +379,20 @@ class JSONImporter(BaseImporter):
                 f"Erreur lors de la désérialisation de la famille : {e}"
             ) from e
 
-    def _deserialize_event(self, data: Dict[str, Any]) -> Optional[Event]:
+    def _deserialize_event(
+        self,
+        data: Dict[str, Any],
+        event_cls: Type[_E] = Event,  # type: ignore[assignment]
+    ) -> Optional[_E]:
         """Désérialise un événement depuis un dictionnaire JSON."""
         try:
             from ..core.event import EventType
 
-            event_type = (
-                EventType(data.get("event_type")) if data.get("event_type") else None
-            )
+            if not data.get("event_type"):
+                return None
+            event_type = EventType(data["event_type"])
 
-            event = Event(
+            event = event_cls(
                 event_type=event_type,
                 date=self._deserialize_date(data.get("date")),
                 place=data.get("place"),
@@ -411,11 +417,11 @@ class JSONImporter(BaseImporter):
                 year=data.get("year"),
                 month=data.get("month"),
                 day=data.get("day"),
-                calendar=data.get("calendar"),
+                calendar=CalendarType(data.get("calendar") or CalendarType.GREGORIAN),
                 prefix=data.get("prefix"),
                 text_date=data.get("text"),
                 # Les attributs is_* sont dérivés du préfixe
-                death_type=data.get("death_type"),
+                death_type=DeathType(data.get("death_type") or DeathType.NORMAL),
             )
         except Exception as e:
             raise ConversionError(

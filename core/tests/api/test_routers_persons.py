@@ -118,6 +118,16 @@ class TestCreatePerson:
 
         assert response.status_code == 422  # Validation error
 
+    def test_create_person_invalid_sex_returns_422(self, client, mock_service):
+        """Sexe hors valeurs admises → 422 sans appel au service."""
+        response = client.post(
+            "/api/v1/persons/",
+            json={"first_name": "Jean", "surname": "Dupont", "sex": "badvalue"},
+        )
+
+        assert response.status_code == 422
+        mock_service.create_person.assert_not_called()
+
     def test_create_person_service_error(self, client, mock_service):
         """Test erreur du service lors de la création."""
         mock_service.create_person.side_effect = Exception("Database error")

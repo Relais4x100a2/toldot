@@ -6,6 +6,7 @@ from typing import Generator, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from ...core.event import Event
 from ...core.person import Person
 from ..dependencies import get_session_service, require_write_mode
 from ..models.event import (
@@ -42,7 +43,7 @@ def _family_events_index_for_response(family: object) -> int:
 
 
 def _unpack_event_context(
-    service: GenealogyService, event: object
+    service: GenealogyService, event: Event
 ) -> Tuple[Optional[str], Optional[str], int]:
     """Décompacte le contexte d'événement si le service le fournit correctement."""
     ctx = service.get_event_context(event)
@@ -57,7 +58,7 @@ def _unpack_event_context(
 
 def _iterate_search_events(
     service: GenealogyService, hits: object
-) -> Generator[Tuple[object, Optional[str], Optional[str], int], None, None]:
+) -> Generator[Tuple[Event, Optional[str], Optional[str], int], None, None]:
     """Parcourt ``search_events`` : ``EventSearchHit`` ou liste d'``Event``."""
     if not isinstance(hits, list):
         return

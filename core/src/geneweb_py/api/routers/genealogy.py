@@ -318,19 +318,21 @@ async def search_genealogy(
                         results["events"].append(event_data)
 
             for family in genealogy.families.values():
-                for event in family.events:
+                for family_event in family.events:
                     if (
-                        query_lower in (event.place or "").lower()
-                        or query_lower in (event.reason or "").lower()
-                        or _event_notes_match(event.notes, query_lower)
+                        query_lower in (family_event.place or "").lower()
+                        or query_lower in (family_event.reason or "").lower()
+                        or _event_notes_match(family_event.notes, query_lower)
                     ):
                         event_data = {
-                            "id": getattr(event, "unique_id", "unknown"),
+                            "id": getattr(family_event, "unique_id", "unknown"),
                             "event_type": (
-                                event.event_type.value if event.event_type else None
+                                family_event.event_type.value
+                                if family_event.event_type
+                                else None
                             ),
-                            "place": event.place,
-                            "reason": event.reason,
+                            "place": family_event.place,
+                            "reason": family_event.reason,
                             "person_id": None,
                             "family_id": family.id,
                         }

@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from ...core.family import MarriageStatus
 from ...core.person import Person
 from ..dependencies import get_session_service, require_write_mode
 from ..family_payload import family_to_family_schema, family_to_list_schema
@@ -161,7 +162,7 @@ async def list_families(
     query: Optional[str] = Query(None, description="Recherche textuelle"),
     husband_id: Optional[str] = Query(None, description="Filtrer par mari"),
     wife_id: Optional[str] = Query(None, description="Filtrer par épouse"),
-    marriage_status: Optional[str] = Query(
+    marriage_status: Optional[MarriageStatus] = Query(
         None, description="Filtrer par statut de mariage"
     ),
     has_children: Optional[bool] = Query(
@@ -200,7 +201,7 @@ async def list_families(
         query=query,
         husband_id=husband_id,
         wife_id=wife_id,
-        marriage_status=marriage_status,  # TODO: Conversion depuis string
+        marriage_status=marriage_status,
         marriage_year_from=None,
         marriage_year_to=None,
         divorce_year_from=None,
@@ -260,7 +261,7 @@ async def get_family_children(
     children_out: List[Dict[str, Any]] = []
     for ch in family.children:
         if isinstance(ch, str):
-            pid = ch
+            pid: str = ch
             sex_val: Optional[str] = None
             last: Optional[str] = None
         else:
