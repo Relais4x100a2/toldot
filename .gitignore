@@ -1,0 +1,59 @@
+# === Données généalogiques réelles : JAMAIS dans Git (dépôt PRIVÉ, mais règle d'or) ===
+*.gw
+*.gwo
+*.gwb/
+*.gwplus
+*.ged
+*.gedcom
+sample_tree*
+_local_testdata/
+data/geneweb_bases/
+# Compagnons JSON d'organisations issus de vraies bases
+*.org.json
+# Exceptions : fixtures synthétiques uniquement
+!core/tests/fixtures/*.gw
+!core/tests/fixtures/*.gwplus
+!core/tests/sample_data/*.gw
+!app/**/tests/fixtures/*.gw
+!app/**/tests/sample_data/*.gw
+
+# === Environnements et secrets ===
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+!.env.example
+
+# === Outils et assistants (ne jamais versionner) ===
+.idea/
+.vscode/
+.cursor/
+.xxxcursor/
+.claude/
+.agents/
+.ai-team-orchestrator/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# === Divers ===
+.streamlit/
+docker-volumes/
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
