@@ -1,3 +1,10 @@
+# Groupe par défaut de `uv run` : outils de test + extras API/validation (CI : `pip install -e ".[dev,api,validation]"`)
+[dependency-groups]
+dev = ["geneweb-py[dev,api,validation]"]
+
+[tool.uv]
+default-groups = ["dev"]
+
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -109,6 +116,7 @@ strict_equality = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
