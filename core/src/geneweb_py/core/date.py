@@ -85,6 +85,9 @@ class Date:
     # Date inconnue mais obligatoire
     is_unknown: bool = False
 
+    # Chaîne telle qu'écrite dans le .gw (renseignée par parse ; hors comparaison)
+    raw_text: Optional[str] = field(default=None, compare=False)
+
     def __post_init__(self) -> None:
         """Validation et normalisation après initialisation"""
         if self.is_unknown:
@@ -299,6 +302,18 @@ class Date:
 
     @classmethod
     def parse(cls, date_str: Optional[str]) -> "Date":
+        """Parse une chaîne de date au format GeneWeb et garde le texte d'origine
+
+        ``raw_text`` reçoit la chaîne écrite (sans espaces de bord), ``None`` si
+        ``date_str`` est ``None``. Voir ``_parse_impl`` pour le détail des formats.
+        """
+        resultat = cls._parse_impl(date_str)
+        if date_str is not None:
+            resultat.raw_text = date_str.strip()
+        return resultat
+
+    @classmethod
+    def _parse_impl(cls, date_str: Optional[str]) -> "Date":
         """Parse une chaîne de date au format GeneWeb
 
         Args:
@@ -479,8 +494,8 @@ class Date:
         try:
             return cls.parse(date_str)
         except ValueError:
-            # En cas d'erreur, retourner une date inconnue
-            return cls(is_unknown=True)
+            # En cas d'erreur, date inconnue ; le texte écrit reste disponible
+            return cls(is_unknown=True, raw_text=date_str.strip())
 
     def is_after(self, other: "Date") -> bool:
         """Vérifie si cette date est après une autre date
