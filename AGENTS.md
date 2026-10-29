@@ -3,7 +3,7 @@
 Consignes pour les assistants de code (Claude Code, Cursor, Codex…) sur ce dépôt.
 
 **geneweb-py** parse, manipule et convertit les fichiers généalogiques GeneWeb (`.gw`). C'est le **moteur central (`core`)** de
-l'écosystème TOLDOT : source de vérité pour le parsing `.gw`, les entités métier (dont l'entité `Organisation`, à venir),
+l'écosystème TOLDOT : source de vérité pour le parsing `.gw`, les entités métier (dont l'entité `Organization`),
 l'export (GEDCOM / JSON / XML) et l'API REST. Il fournit une bibliothèque Python, une API REST (FastAPI) et un CLI.
 
 Rôle dans l'écosystème : une application Streamlit/LLM (dépôt privé) et des outils d'analyse (prosopographie, graphes)
@@ -27,9 +27,10 @@ Pas de `pip install` direct. `.venv/` est local et n'est jamais commité. Dépen
 ```bash
 # Installation du dev environment
 uv sync --extra dev --extra api            # + --extra cli pour le CLI
+uv sync --extra analytics                  # optionnel : networkx + pyvis (module analytics)
 
 # Tests (forme fiable : python -m pytest)
-uv run python -m pytest                          # toute la suite (1055 passés, 19 ignorés au dernier passage)
+uv run python -m pytest                          # toute la suite (1105 passés, 17 ignorés au dernier passage)
 uv run python -m pytest tests/unit/              # unitaires seulement
 uv run python -m pytest tests/unit/test_lexical_parser.py   # un fichier
 uv run python -m pytest -k "test_name"           # un test par nom
@@ -63,6 +64,9 @@ core/
   family.py         # Dataclass Family (conjoints, enfants, témoins)
   event.py          # Dataclass Event (personnel / familial)
   place.py          # parse_place : décompose « [complément]_-_lieu » (chaîne brute conservée)
+  organization.py   # Organization, OrganizationLink, OrganizationType (liens personne <-> organisation)
+  event_to_organization.py  # EventToOrganizationMapper : règles par préfixe (DEFAULT_PREFIX_RULES,
+                            # custom_rules injectables) + hook LLM optionnel ; Genealogy.infer_organizations()
   genealogy.py      # Conteneur : Genealogy(persons, families, metadata)
   exceptions.py     # GeneWebParseError, GeneWebValidationError, GeneWebEncodingError
   validation.py     # Validation en modes strict / gracieux
@@ -84,6 +88,11 @@ cli/
 
 formats/
   base.py / gedcom.py / json.py / xml.py   # Import/export
+  org_sidecar.py   # Fichier compagnon JSON `base.org.json` (organisations + liens ; le .gw n'est pas modifié)
+
+analytics/          # Extra facultatif : `uv sync --extra analytics` (networkx, pyvis)
+  network.py        # build_network(genealogy) -> Network ; exports vis.js JSON, NetworkX, GraphML,
+                    # GEXF (Gephi), Pyvis HTML ; projection co_membership()
 ```
 
 Flux de données :
@@ -131,9 +140,14 @@ blocs `fam` (famille) et `ind` (individu), `wit` (témoins), `sep`/`div`, enfant
 numéros d'occurrence (`Dupont.1`), dates multi-calendriers / préfixes / intervalles, extensions GW Plus (`fevt`, `#ms`/`#bs`/`#ds`),
 blocs `notes-db`, `page-ext`, `wizard-note`, événements personnels `pevt`.
 
-## Feuille de route immédiate (à valider avec l'utilisateur avant d'agir)
+## Feuille de route
 
-1. Audit comparatif du parser vs les parsers regex historiques (extraction des `pevt` / `#strng`, cas limites) : ne rien perdre.
-2. Ajouter l'entité `Organisation` dans `core/` (modèle, parsing, validation, export `.gw`), spécifiée via le fork OCaml `geneweb-org`.
-3. Porter les analyses de réseau/prosopographie (graphes) issues de l'ancien parser regex, comme module optionnel.
-4. Permettre à l'application Streamlit/LLM de dépendre de ce paquet (via `uv`).
+Réalisé : audit du parser (pevt / `#strng`), entité `Organization` + fichier compagnon, déduction d'organisations
+depuis les événements, module `analytics`, dépendance de l'application Streamlit/LLM via `uv`.
+
+Backlog :
+
+- **Notices d'autorité (portage éventuel)** : l'ancien dépôt `Geneweb` (V2) définissait dans `app/data_schema.py` un schéma
+  d'identités (`authorityRecord`, `othernames`) prévu pour des identifiants externes (VIAF, Wikidata). Non porté ;
+  à étudier si l'on veut rattacher des personnes ou organisations à des référentiels d'autorité.
+- Export CSV individus / organisations / événements (équivalent des anciens `csv_ind/csv_org/csv_evt` de V2), si besoin.
