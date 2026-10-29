@@ -2335,7 +2335,7 @@ class GeneWebParser:
 
         while i < len(tokens):
             tok = tokens[i]
-            if tok.type == TokenType.END_FEVT:
+            if tok.type in (TokenType.END_FEVT, TokenType.NEWLINE):
                 break
             if tok.type in (
                 TokenType.MARR,

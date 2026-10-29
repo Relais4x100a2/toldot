@@ -80,3 +80,20 @@ def test_wnote_de_bloc_pevt_va_sur_le_temoin_precedent():
         None,
     ]
     assert evts[0].notes == []
+
+
+def _evts_fam(texte: str):
+    g = GeneWebParser(validate=False).parse_string(texte)
+    return [e.event_type.name for f in g.families.values() for e in f.events]
+
+
+def test_fevt_commencant_par_une_note_reste_rattache_a_sa_famille():
+    base = "fam MARTIN Pierre +1705 DUBOIS Marie\nfevt\n"
+    assert _evts_fam(base + "note x\n#marr 1705\nend fevt\n") == ["MARRIAGE"]
+
+
+def test_fevt_commencant_par_un_texte_nu_ne_cree_pas_de_personne_fantome():
+    g = GeneWebParser(validate=False).parse_string(
+        "fam MARTIN Pierre +1705 DUBOIS Marie\nfevt\nPrecision utile\n#marr 1705\nend fevt\n"
+    )
+    assert sorted(g.persons) == ["DUBOIS_Marie_0", "MARTIN_Pierre_0"]
