@@ -67,7 +67,7 @@ docker compose -f app/docker-compose.yml down
 
 ## 5. CI (GitHub Actions)
 
-`.github/workflows/ci.yml` (setup-uv avec cache) : `uv lock --check`, ruff (check + format) et mypy ciblé sur `core/`,
+`.github/workflows/ci.yml` (setup-uv avec cache) : `uv lock --check`, ruff (check + format) et mypy sur tout `core/src/geneweb_py`,
 tests `core` sur Python 3.11 / 3.12 / 3.13 avec couverture ≥ 80 %, puis build de l'image Docker (sans push).
 Les anciens workflows de `geneweb-py` sont archivés, inactifs, dans `.github/legacy-workflows/`.
 Le lint local équivalent : `uv run --package geneweb-py ruff check core/src core/tests --ignore E501`.

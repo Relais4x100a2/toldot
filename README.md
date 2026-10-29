@@ -244,7 +244,7 @@ Depuis une `Genealogy`, `build_network(genealogy)` produit un réseau exportable
 - **Le `.gw` n'est jamais réécrit.** Les organisations vivent dans un fichier compagnon : la source de l'historien reste intacte et le travail réversible.
 - **Règles d'abord, LLM ensuite.** Le LLM est un recours, jamais le point de départ : ce qui peut être décidé de façon déterministe l'est, avec un score de confiance.
 - **Vie privée par conception.** Les sessions de l'API sont en mémoire, expirent (TTL glissant d'une heure) et ne sont jamais persistées. Les en-têtes de sécurité, le CORS fermé par défaut en production, la limite de taille d'upload (50 Mo) et le *rate limiting* (5 créations de session par heure) complètent le dispositif. Le parser embarque des garde-fous contre les entrées démesurées.
-- **Qualité outillée.** ruff, mypy sur les modules clés (périmètre élargi progressivement), couverture ≥ 80 %, tests marqués (`unit`, `integration`, `slow`, `security`, `performance`…), CI sur Python 3.11, 3.12 et 3.13.
+- **Qualité outillée.** ruff, mypy sur l'ensemble de `core`, couverture ≥ 80 %, tests marqués (`unit`, `integration`, `slow`, `security`, `performance`…), CI sur Python 3.11, 3.12 et 3.13.
 - **Un workspace `uv`, un seul `uv.lock`.** `core` et `app` se résolvent ensemble ; aucun chemin relatif entre eux.
 - **Politique de données stricte.** Aucune donnée généalogique réelle dans ce dépôt : les fixtures sont synthétiques (`DUPONT Jean`, `MARTIN Marie`…).
 
@@ -253,9 +253,7 @@ Depuis une `Genealogy`, `build_network(genealogy)` produit un réseau exportable
 ```bash
 uv run --package geneweb-py ruff check core/src core/tests --ignore E501
 uv run --package geneweb-py ruff format --check core/src core/tests
-uv run --package geneweb-py mypy core/src/geneweb_py/analytics core/src/geneweb_py/core/event_to_organization.py \
-  core/src/geneweb_py/api/routers/persons.py core/src/geneweb_py/api/models/person.py \
-  --ignore-missing-imports --disable-error-code no-untyped-def --disable-error-code call-arg
+uv run --package geneweb-py mypy core/src/geneweb_py
 uv run --package geneweb-py python -m pytest core --cov=geneweb_py
 uv lock --check
 ```
@@ -266,7 +264,6 @@ Conventions : messages de commit en anglais au format `type(scope): message` (`f
 
 - Rattachement des personnes et organisations à des référentiels d'autorité (VIAF, Wikidata).
 - Export CSV individus / organisations / événements.
-- Élargissement progressif du périmètre mypy à l'ensemble de `core` (aujourd'hui : modules clés).
 
 Voir [`core/doc/roadmap.md`](core/doc/roadmap.md).
 

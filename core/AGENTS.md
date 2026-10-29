@@ -34,7 +34,7 @@ uv sync --extra dev --extra api            # + --extra cli pour le CLI
 uv sync --extra analytics                  # optionnel : networkx + pyvis (module analytics)
 
 # Tests (forme fiable : python -m pytest)
-uv run python -m pytest                          # toute la suite (1105 passés, 17 ignorés au dernier passage)
+uv run python -m pytest                          # toute la suite (1110 passés, 17 ignorés au dernier passage)
 uv run python -m pytest tests/unit/              # unitaires seulement
 uv run python -m pytest tests/unit/test_lexical_parser.py   # un fichier
 uv run python -m pytest -k "test_name"           # un test par nom
@@ -54,9 +54,8 @@ uv run python run_api.py --env prod --workers 4  # prod
 Python ≥ 3.8 déclaré par le paquet `core` (le workspace impose ≥ 3.11). CI (`../.github/workflows/ci.yml`) : tests sur 3.11, 3.12 et 3.13
 à chaque push/PR ; la compatibilité 3.8-3.10 n'est donc plus testée en CI. Le seuil de couverture est de **80 %** : ne pas le faire baisser.
 
-Typage : la CI ne vérifie mypy que sur un périmètre ciblé (`analytics/`, `core/event_to_organization.py`, `api/routers/persons.py`,
-`api/models/person.py`) ; `mypy src/geneweb_py/` sur l'ensemble remonte encore des erreurs (dette suivie à part). Annoter tout code nouveau
-et ne pas dégrader le périmètre gardé.
+Typage : mypy est bloquant en CI sur tout `src/geneweb_py/` (0 erreur) avec la configuration de `pyproject.toml`. Annoter tout code nouveau
+et ne rien masquer par des `# type: ignore` sans justification.
 
 ## Architecture (`src/geneweb_py/`)
 
@@ -120,7 +119,7 @@ conservées qu'en mémoire : aucune persistance.
 ### Décisions de conception clés
 
 - **Dataclasses** pour tous les modèles (Date, Person, Family, Event, Genealogy).
-- **Typage** : toujours annoter les types ; cible `python_version = "3.8"`. mypy est bloquant en CI sur le périmètre ciblé ci-dessus, pas encore sur tout `core`.
+- **Typage** : toujours annoter les types ; mypy est configuré sur `python_version = "3.11"` (version minimale du workspace) et bloquant en CI sur tout `core`.
 - **Collecteur d'erreurs** : `validation.py` accumule les erreurs en mode gracieux au lieu de lever à la première.
 - **`__slots__`** sur Token/SyntaxNode (chemin chaud du parsing).
 - **`lark` est une dépendance optionnelle mais n'est PAS utilisé** : le parser est en regex / écrit à la main.

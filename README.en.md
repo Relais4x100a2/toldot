@@ -244,7 +244,7 @@ From a `Genealogy`, `build_network(genealogy)` produces a network exportable to 
 - **The `.gw` is never rewritten.** Organizations live in a sidecar file: the historian's source stays intact and the work reversible.
 - **Rules first, LLM second.** The LLM is a fallback, never the starting point: whatever can be decided deterministically is, with a confidence score.
 - **Privacy by design.** API sessions are in-memory, expire (one-hour sliding TTL) and are never persisted. Security headers, CORS closed by default in production, an upload size cap (50 MB) and rate limiting (5 session creations per hour) complete the picture. The parser includes safeguards against oversized input.
-- **Tooled quality.** ruff, mypy on key modules (scope widened progressively), coverage ≥ 80%, marked tests (`unit`, `integration`, `slow`, `security`, `performance`…), CI on Python 3.11, 3.12 and 3.13.
+- **Tooled quality.** ruff, mypy on all of `core`, coverage ≥ 80%, marked tests (`unit`, `integration`, `slow`, `security`, `performance`…), CI on Python 3.11, 3.12 and 3.13.
 - **One `uv` workspace, one `uv.lock`.** `core` and `app` resolve together; no relative paths between them.
 - **Strict data policy.** No real genealogical data in this repository: fixtures are synthetic (`DUPONT Jean`, `MARTIN Marie`…).
 
@@ -253,9 +253,7 @@ From a `Genealogy`, `build_network(genealogy)` produces a network exportable to 
 ```bash
 uv run --package geneweb-py ruff check core/src core/tests --ignore E501
 uv run --package geneweb-py ruff format --check core/src core/tests
-uv run --package geneweb-py mypy core/src/geneweb_py/analytics core/src/geneweb_py/core/event_to_organization.py \
-  core/src/geneweb_py/api/routers/persons.py core/src/geneweb_py/api/models/person.py \
-  --ignore-missing-imports --disable-error-code no-untyped-def --disable-error-code call-arg
+uv run --package geneweb-py mypy core/src/geneweb_py
 uv run --package geneweb-py python -m pytest core --cov=geneweb_py
 uv lock --check
 ```
@@ -266,7 +264,6 @@ Conventions: commit messages in English as `type(scope): message` (`feat`, `fix`
 
 - Link people and organizations to authority records (VIAF, Wikidata).
 - CSV export of individuals / organizations / events.
-- Gradually extend mypy coverage to all of `core` (today: key modules).
 
 See [`core/doc/roadmap.md`](core/doc/roadmap.md).
 

@@ -40,15 +40,8 @@ jobs:
       - name: Ruff format
         run: uv run --package geneweb-py ruff format --check core/src core/tests
 
-      # Gate ciblé : la dette mypy globale de core reste suivie à part
-      - name: Mypy (modules gardés)
-        run: |
-          uv run --package geneweb-py mypy \
-            core/src/geneweb_py/api/models/person.py core/src/geneweb_py/api/routers/persons.py \
-            core/src/geneweb_py/analytics core/src/geneweb_py/core/event_to_organization.py \
-            --ignore-missing-imports \
-            --disable-error-code no-untyped-def \
-            --disable-error-code call-arg
+      - name: Mypy (ensemble de core)
+        run: uv run --package geneweb-py mypy core/src/geneweb_py
 
   tests:
     name: Tests core (Python ${{ matrix.python-version }})

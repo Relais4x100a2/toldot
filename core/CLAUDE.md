@@ -20,4 +20,4 @@ uv run python run_api.py --reload                # API sur http://127.0.0.1:8000
 
 - Dépôt **public** : jamais de `*.gw`/`*.ged` réels, de clé d'API ni de nom de vraie personne (fixtures synthétiques uniquement). Historique compris.
 - Pas de `git add -A` ; pas de `git push` ni `--force` sans accord explicite.
-- Couverture ≥ 80 % ; annotations de types obligatoires ; mypy bloquant en CI sur un périmètre ciblé (voir `AGENTS.md`).
+- Couverture ≥ 80 % ; annotations de types obligatoires ; mypy bloquant en CI sur tout `core` (0 erreur à maintenir).
