@@ -1,6 +1,7 @@
 """``Date.raw_text`` conserve la date telle qu'écrite dans le ``.gw`` (R13)."""
 
 import pytest
+
 from geneweb_py import GeneWebParser
 from geneweb_py.core.date import Date
 

@@ -36,11 +36,15 @@ def test_note_de_personne_multi_lignes_garde_les_retours():
 
 
 def test_note_d_evenement_pevt_garde_la_ponctuation():
-    g = _parse("pevt DUPONT Paul\n#bapt 3/3/1751\nnote Acte lisible, f°42v.\nend pevt\n")
+    g = _parse(
+        "pevt DUPONT Paul\n#bapt 3/3/1751\nnote Acte lisible, f°42v.\nend pevt\n"
+    )
     assert g.persons["DUPONT_Paul_0"].events[0].notes == ["Acte lisible, f°42v."]
 
 
 def test_comm_de_famille_garde_la_ponctuation():
-    g = _parse("fam DUPONT Paul +1750 MARTIN Anne\ncomm Mariage contesté, voir (acte).\n")
+    g = _parse(
+        "fam DUPONT Paul +1750 MARTIN Anne\ncomm Mariage contesté, voir (acte).\n"
+    )
     (fam,) = g.families.values()
     assert fam.comments == ["Mariage contesté, voir (acte)."]

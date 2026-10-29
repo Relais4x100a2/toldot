@@ -28,13 +28,13 @@ from ..person import (
     Title,
 )
 from .lexical import LexicalParser, Token, TokenType
+from .place_tokens import join_tokens_text as _join_tokens_text
+from .place_tokens import mot_end, place_run_end, texte_libre
 from .streaming import (
     StreamingGeneWebParser,
     estimate_memory_usage,
     should_use_streaming,
 )
-from .place_tokens import join_tokens_text as _join_tokens_text
-from .place_tokens import mot_end, place_run_end, texte_libre
 from .syntax import BlockType, SyntaxNode, SyntaxParser
 
 logger = logging.getLogger(__name__)
@@ -1081,13 +1081,20 @@ class GeneWebParser:
                 and i > 0
                 and tokens[i - 1].type == TokenType.NEWLINE
                 and tok.type
-                not in (TokenType.NEWLINE, TokenType.WHITESPACE, TokenType.END, TokenType.EOF)
+                not in (
+                    TokenType.NEWLINE,
+                    TokenType.WHITESPACE,
+                    TokenType.END,
+                    TokenType.EOF,
+                )
             ):
                 # Texte nu (R13) : suite du commentaire de la ligne d'avant, sinon
                 # nouveau commentaire de famille
                 ligne = tok.line_number
                 texte, i = _tokens_line_text(tokens, i)
-                if tok.type == TokenType.WNOTE and _attach_wnote(family.witnesses, texte):
+                if tok.type == TokenType.WNOTE and _attach_wnote(
+                    family.witnesses, texte
+                ):
                     continue
                 if comm_fin == ligne - 1 and family.comments:
                     family.comments[-1] += "\n" + texte
@@ -1391,7 +1398,9 @@ class GeneWebParser:
                 i += 1
                 fin = place_run_end(tokens, i)
                 if fin > i and tokens[i].type == TokenType.BRACKET_OPEN:
-                    result[f"{current_person}_birth_place"] = _join_tokens_text(tokens[i:fin])
+                    result[f"{current_person}_birth_place"] = _join_tokens_text(
+                        tokens[i:fin]
+                    )
                     i = fin
                 elif i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
                     result[f"{current_person}_birth_place"] = tokens[i].value
@@ -1403,7 +1412,9 @@ class GeneWebParser:
                 i += 1
                 fin = place_run_end(tokens, i)
                 if fin > i and tokens[i].type == TokenType.BRACKET_OPEN:
-                    result[f"{current_person}_death_place"] = _join_tokens_text(tokens[i:fin])
+                    result[f"{current_person}_death_place"] = _join_tokens_text(
+                        tokens[i:fin]
+                    )
                     i = fin
                 elif i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
                     result[f"{current_person}_death_place"] = tokens[i].value
@@ -1820,7 +1831,9 @@ class GeneWebParser:
                         break
 
             if notes_content:
-                persons[person_id].add_note(texte_libre(notes_tokens, len(notes_content)))
+                persons[person_id].add_note(
+                    texte_libre(notes_tokens, len(notes_content))
+                )
 
     def _parse_pevt_comment_line(
         self, comment_value: str, person_id: str
@@ -2083,7 +2096,9 @@ class GeneWebParser:
             i = 3  # Passer pevt, nom, prénom
             # Garder une référence au dernier événement construit pour y rattacher les témoins  # noqa: E501
             last_event = None
-            note_tail: Optional[Tuple[Any, int]] = None  # (porteur, dernière ligne de note)
+            note_tail: Optional[Tuple[Any, int]] = (
+                None  # (porteur, dernière ligne de note)
+            )
             while i < len(tokens):
                 token = tokens[i]
 
@@ -2287,16 +2302,12 @@ class GeneWebParser:
                             person.add_note(note_text)
                         note_tail = (last_event or person, token.line_number)
 
-                elif (
-                    token.type
-                    not in (
-                        TokenType.NEWLINE,
-                        TokenType.WHITESPACE,
-                        TokenType.END_PEVT,
-                        TokenType.EOF,
-                    )
-                    and (i == 0 or tokens[i - 1].type == TokenType.NEWLINE)
-                ):
+                elif token.type not in (
+                    TokenType.NEWLINE,
+                    TokenType.WHITESPACE,
+                    TokenType.END_PEVT,
+                    TokenType.EOF,
+                ) and (i == 0 or tokens[i - 1].type == TokenType.NEWLINE):
                     # Texte nu (R13) : suite de la note précédente si elle occupe la
                     # ligne d'avant, sinon note de l'événement courant
                     line_no = token.line_number
@@ -2708,7 +2719,9 @@ class GeneWebParser:
                     if stop:
                         break
                 if note_content and current_event is not None:
-                    current_event.add_note(texte_libre(tokens[note_debut:i], len(note_content)))
+                    current_event.add_note(
+                        texte_libre(tokens[note_debut:i], len(note_content))
+                    )
                 continue
 
             if token.type in (
@@ -3226,7 +3239,9 @@ class GeneWebParser:
                     if stop:
                         break
                 if note_content:
-                    person.add_note(texte_libre(tokens[note_debut:i], len(note_content)))
+                    person.add_note(
+                        texte_libre(tokens[note_debut:i], len(note_content))
+                    )
 
             # Sources (#src)
             elif token.type == TokenType.SRC:

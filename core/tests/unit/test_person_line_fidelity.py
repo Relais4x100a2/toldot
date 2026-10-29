@@ -32,7 +32,9 @@ def test_enfant_naissance_bapteme_deces_avec_lieux_et_sources():
 
 
 def test_enfant_naissance_inconnue_puis_deces():
-    p = _persons("fam DUPONT Paul +1750 MARTIN Anne\nbeg\n- Jean 0 1790\nend\n")["DUPONT_Jean_0"]
+    p = _persons("fam DUPONT Paul +1750 MARTIN Anne\nbeg\n- Jean 0 1790\nend\n")[
+        "DUPONT_Jean_0"
+    ]
     assert _d(p.death_date) == "1790"
 
 

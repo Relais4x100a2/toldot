@@ -105,7 +105,9 @@ def test_source_de_mariage_sur_la_ligne_fam_ne_devient_pas_le_nom_de_l_epouse():
         "fevt\n#marr 1705\nend fevt\n"
     )
     assert sorted(g.persons) == ["DUBOIS_Marie_0", "MARTIN_Pierre_0"]
-    assert [e.event_type.name for f in g.families.values() for e in f.events] == ["MARRIAGE"]
+    assert [e.event_type.name for f in g.families.values() for e in f.events] == [
+        "MARRIAGE"
+    ]
 
 
 def test_source_de_mariage_avec_url_contenant_des_plus_ne_casse_pas_la_ligne_fam():
@@ -114,7 +116,9 @@ def test_source_de_mariage_avec_url_contenant_des_plus_ne_casse_pas_la_ligne_fam
         "fevt\n#marr 1705\nend fevt\n"
     )
     assert sorted(g.persons) == ["DUBOIS_Marie_0", "MARTIN_Pierre_0"]
-    assert [e.event_type.name for f in g.families.values() for e in f.events] == ["MARRIAGE"]
+    assert [e.event_type.name for f in g.families.values() for e in f.events] == [
+        "MARRIAGE"
+    ]
 
 
 def test_temoin_au_nom_compose_avec_barre_recoit_sa_wnote():

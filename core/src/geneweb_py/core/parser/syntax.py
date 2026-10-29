@@ -13,7 +13,6 @@ from ..exceptions import GeneWebParseError
 from .lexical import Token, TokenType
 from .place_tokens import mot_end, place_run_end
 
-
 _MOTS_CLES_BLOC = frozenset(
     {"notes-db", "page-ext", "wizard-note", "notes", "rel", "fevt", "pevt", "fam"}
 )

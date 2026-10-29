@@ -457,7 +457,9 @@ class Date:
             if len(parts) > 1:
                 # Borne de fin : année seule ou date complète, même calendrier
                 fin = cls._parse_impl(parts[1] + calendar.value)
-                fin.calendar = CalendarType.GREGORIAN  # le calendrier reste porté par la date principale
+                fin.calendar = (
+                    CalendarType.GREGORIAN
+                )  # le calendrier reste porté par la date principale
                 alternative_dates.append(fin)
 
         # Parser la date principale avec gestion des champs vides
