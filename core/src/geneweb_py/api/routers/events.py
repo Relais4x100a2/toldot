@@ -108,8 +108,11 @@ async def create_personal_event(
             else stable_event_id(event, scope="person", scope_key=person_key, index=idx)
         )
         event_schema = event_to_schema(
-            event, event_id=eid, person_id=person_key, family_id=None,
-            genealogy=service.genealogy
+            event,
+            event_id=eid,
+            person_id=person_key,
+            family_id=None,
+            genealogy=service.genealogy,
         )
 
         return SuccessResponse(

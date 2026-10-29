@@ -337,7 +337,7 @@ def genealogy_service_with_events() -> tuple:
     return svc, p, fam, EventUpdateSchema
 
 
-from geneweb_py.core.genealogy import GenealogyMetadata
+from geneweb_py.core.genealogy import GenealogyMetadata  # noqa: E402
 
 
 def _make_genealogy():

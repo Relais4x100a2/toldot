@@ -1,4 +1,5 @@
 """Tests d'intégration pour le router /api/v1/sessions."""
+
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,7 @@ FIXTURE_GW = Path(__file__).parent.parent / "fixtures" / "simple_test.gw"
 @pytest.fixture
 def client():
     from geneweb_py.api.main import create_app
+
     app = create_app()
     with TestClient(app) as c:
         yield c

@@ -892,9 +892,7 @@ class GenealogyService:
         if search_params.get("place"):
             needle = _normalize_search_text(search_params["place"])
             hits = [
-                h
-                for h in hits
-                if needle in _normalize_search_text(h.event.place or "")
+                h for h in hits if needle in _normalize_search_text(h.event.place or "")
             ]
 
         if search_params.get("has_witnesses") is not None:
@@ -986,9 +984,7 @@ class GenealogyService:
         self._witness_index = index
         return self._witness_index
 
-    def get_related_person_ids(
-        self, person_id: str, degree: int
-    ) -> Dict[str, Any]:
+    def get_related_person_ids(self, person_id: str, degree: int) -> Dict[str, Any]:
         """Returns person_ids and family_ids related to person_id up to the given degree.
 
         Degree 1: self + spouses + families_as_spouse

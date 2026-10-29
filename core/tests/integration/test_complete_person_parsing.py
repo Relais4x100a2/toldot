@@ -133,10 +133,7 @@ class TestCompletePersonParsing:
         # Vérifier que les relations sont stockées
         pierre = None
         for person in genealogy.persons.values():
-            if (
-                person.last_name == "CORNO"
-                and person.first_name == "Paul_Henri"
-            ):
+            if person.last_name == "CORNO" and person.first_name == "Paul_Henri":
                 pierre = person
                 break
 

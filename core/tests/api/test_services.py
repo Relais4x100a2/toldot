@@ -855,6 +855,7 @@ class TestStatistics:
 
 def test_genealogy_service_accepts_existing_genealogy(sample_genealogy):
     from geneweb_py.api.services.genealogy_service import GenealogyService
+
     service = GenealogyService(genealogy=sample_genealogy)
     assert service.genealogy is sample_genealogy
     assert len(service.genealogy.persons) == len(sample_genealogy.persons)
@@ -862,14 +863,16 @@ def test_genealogy_service_accepts_existing_genealogy(sample_genealogy):
 
 def test_normalize_search_text_accents():
     from geneweb_py.api.services.genealogy_service import _normalize_search_text
+
     assert _normalize_search_text("Évreux") == "evreux"
     assert _normalize_search_text("île-de-france") == "ile de france"
     assert _normalize_search_text("Saône-et-Loire") == "saone et loire"
 
 
 def test_search_events_place_accent_insensitive(service):
-    from geneweb_py.core.event import PersonalEvent, EventType
+    from geneweb_py.core.event import EventType, PersonalEvent
     from geneweb_py.core.person import Person
+
     p = Person(first_name="Test", last_name="User", occurrence_number=0)
     ev = PersonalEvent(event_type=EventType.BIRTH)
     ev.place = "Île-de-France"
@@ -893,11 +896,12 @@ def _build_family_genealogy():
       - Enfant Dupont (pid_enfant) — child in fam_couple
       - Pierre Temoin (pid_pierre) — witnesses an event of pid_jean
     """
-    from geneweb_py.core.person import Person
-    from geneweb_py.core.family import Family, Child, ChildSex
-    from geneweb_py.core.event import PersonalEvent, EventType
-    from geneweb_py.core.genealogy import Genealogy, GenealogyMetadata
     from datetime import datetime
+
+    from geneweb_py.core.event import EventType, PersonalEvent
+    from geneweb_py.core.family import Child, ChildSex, Family
+    from geneweb_py.core.genealogy import Genealogy, GenealogyMetadata
+    from geneweb_py.core.person import Person
 
     def mkp(first, last):
         p = Person(first_name=first, last_name=last, occurrence_number=0)
@@ -940,17 +944,23 @@ def _build_family_genealogy():
     jean.events.append(birth_jean)
 
     meta = GenealogyMetadata(
-        source_file=None, encoding="utf-8", is_gwplus=False,
-        created_date=datetime.now(), modified_date=datetime.now(),
+        source_file=None,
+        encoding="utf-8",
+        is_gwplus=False,
+        created_date=datetime.now(),
+        modified_date=datetime.now(),
         geneweb_version="1.0",
     )
-    persons = {p.unique_id: p for p in [jean, marie, paul, henri, louise, enfant, pierre]}
+    persons = {
+        p.unique_id: p for p in [jean, marie, paul, henri, louise, enfant, pierre]
+    }
     families = {fam_couple.family_id: fam_couple, fam_parents.family_id: fam_parents}
     return Genealogy(persons=persons, families=families, metadata=meta), jean.unique_id
 
 
 def test_get_related_degree1_includes_self_and_spouse():
     from geneweb_py.api.services.genealogy_service import GenealogyService
+
     g, jean_id = _build_family_genealogy()
     svc = GenealogyService(genealogy=g)
     result = svc.get_related_person_ids(jean_id, degree=1)
@@ -962,6 +972,7 @@ def test_get_related_degree1_includes_self_and_spouse():
 
 def test_get_related_degree1_family_ids():
     from geneweb_py.api.services.genealogy_service import GenealogyService
+
     g, jean_id = _build_family_genealogy()
     svc = GenealogyService(genealogy=g)
     result = svc.get_related_person_ids(jean_id, degree=1)
@@ -971,6 +982,7 @@ def test_get_related_degree1_family_ids():
 
 def test_get_related_degree2_includes_parents_children_siblings():
     from geneweb_py.api.services.genealogy_service import GenealogyService
+
     g, jean_id = _build_family_genealogy()
     svc = GenealogyService(genealogy=g)
     result = svc.get_related_person_ids(jean_id, degree=2)
@@ -979,12 +991,13 @@ def test_get_related_degree2_includes_parents_children_siblings():
     paul = next(p for p in g.persons.values() if p.first_name == "Paul")
     enfant = next(p for p in g.persons.values() if p.first_name == "Enfant")
     assert henri.unique_id in pids  # parent
-    assert paul.unique_id in pids   # sibling
-    assert enfant.unique_id in pids # child
+    assert paul.unique_id in pids  # sibling
+    assert enfant.unique_id in pids  # child
 
 
 def test_get_related_degree3_includes_persons_x_witnessed():
     from geneweb_py.api.services.genealogy_service import GenealogyService
+
     g, jean_id = _build_family_genealogy()
     # Pierre witnessed an event of Jean.
     # From Pierre's perspective at degree=3, Jean should be included.
@@ -997,6 +1010,7 @@ def test_get_related_degree3_includes_persons_x_witnessed():
 
 def test_get_related_unknown_person_returns_empty():
     from geneweb_py.api.services.genealogy_service import GenealogyService
+
     g, _ = _build_family_genealogy()
     svc = GenealogyService(genealogy=g)
     result = svc.get_related_person_ids("nonexistent_id", degree=1)
