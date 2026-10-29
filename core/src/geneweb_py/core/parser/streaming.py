@@ -76,6 +76,7 @@ class StreamingLexicalParser:
             GeneWebParseError: En cas d'erreur de tokenisation
         """
         accumulated_text = []
+        block_start_line = 0
         current_block = None
         inside_multiline_block = False
 
@@ -88,6 +89,7 @@ class StreamingLexicalParser:
                 "notes-db"
             ):
                 inside_multiline_block = True
+                block_start_line = self.line_number
                 current_block = (
                     "notes" if line_stripped.startswith("notes ") else "notes-db"
                 )
@@ -95,11 +97,13 @@ class StreamingLexicalParser:
                 continue
             elif line_stripped.startswith("page-ext "):
                 inside_multiline_block = True
+                block_start_line = self.line_number
                 current_block = "page-ext"
                 accumulated_text.append(line)
                 continue
             elif line_stripped.startswith("wizard-note "):
                 inside_multiline_block = True
+                block_start_line = self.line_number
                 current_block = "wizard-note"
                 accumulated_text.append(line)
                 continue
@@ -130,42 +134,42 @@ class StreamingLexicalParser:
                     tokens = parser.tokenize()
                     for token in tokens:
                         if token.type != TokenType.EOF:
-                            yield token
+                            # Numéros de ligne globaux (le bloc est lexé isolément)
+                            yield Token(
+                                type=token.type,
+                                value=token.value,
+                                line_number=block_start_line + token.line_number - 1,
+                                column=token.column,
+                                position=token.position,
+                            )
                     accumulated_text = []
                     inside_multiline_block = False
                     current_block = None
                 continue
 
-            # Pour les lignes simples, parser directement
-            if line_stripped and not line_stripped.startswith("#"):
-                # Parser la ligne
-                parser = LexicalParser(line + "\n", self.filename)
-                tokens = parser.tokenize()
-                for token in tokens:
+            # Pour les lignes simples, même tokenisation que le lexeur complet
+            # (les lignes ``#tag`` d'un bloc pevt/fevt ne sont pas des commentaires)
+            if line_stripped:
+                text = line if line.endswith("\n") else line + "\n"
+                for token in LexicalParser(text, self.filename).tokenize():
                     if token.type != TokenType.EOF:
                         # Ajuster le numéro de ligne au numéro global
-                        token = Token(
+                        yield Token(
                             type=token.type,
                             value=token.value,
                             line_number=self.line_number,
                             column=token.column,
                             position=token.position,
                         )
-                        yield token
-            elif line_stripped.startswith("#"):
-                # Commentaire
-                parser = LexicalParser(line, self.filename)
-                tokens = parser.tokenize()
-                for token in tokens:
-                    if token.type == TokenType.COMMENT:
-                        token = Token(
-                            type=token.type,
-                            value=token.value,
-                            line_number=self.line_number,
-                            column=token.column,
-                            position=token.position,
-                        )
-                        yield token
+            else:
+                # Ligne vide : le lexeur complet émet un NEWLINE
+                yield Token(
+                    type=TokenType.NEWLINE,
+                    value="\n",
+                    line_number=self.line_number,
+                    column=1,
+                    position=0,
+                )
 
         # Token EOF final
         yield Token(

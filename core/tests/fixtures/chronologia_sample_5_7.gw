@@ -1,0 +1,28 @@
+encoding: utf-8
+gwplus
+
+fam MARTIN Pierre +1705 #mp Saint-Aubin DUBOIS Marie
+src BMS Saint-Aubin 1705-1715
+beg
+- h Jean 3/3/1712 #bp Saint-Aubin
+end
+
+pevt MARTIN Jean
+#bapt 3/3/1712 #p Saint-Aubin #s BMS Saint-Aubin f°42v
+wit m: LEROY Jean
+wit m: #godp MOREAU Louis
+wit f: #godp DUBOIS Anne.2
+wit: GIRARD Camille
+end pevt
+
+pevt MARTIN Jean
+#deat ~1790 #p Saint-Aubin
+end pevt
+
+rel MARTIN Jean
+beg
+- godp fath: MOREAU Louis.1
+- godp moth: DUBOIS Anne.2
+- adop: LEROY Jean.3
+- fost moth: GIRARD Camille
+end

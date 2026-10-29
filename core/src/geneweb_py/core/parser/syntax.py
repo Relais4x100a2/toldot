@@ -1257,6 +1257,11 @@ class RelationsBlockParser(BlockParser):
             node.add_token(tokens[i])
             i += 1
 
+        # Numéro d'occurrence (.N), optionnel
+        if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
+            node.add_token(tokens[i])
+            i += 1
+
         return i
 
 

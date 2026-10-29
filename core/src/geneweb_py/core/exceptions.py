@@ -245,6 +245,10 @@ class GeneWebValidationError(GeneWebError):
         return result
 
 
+class UnsupportedCalendarError(GeneWebError):
+    """Calendrier non pris en charge pour le calcul de bornes grégoriennes"""
+
+
 class GeneWebConversionError(GeneWebError):
     """Erreur lors de la conversion vers un autre format"""
 
