@@ -87,7 +87,7 @@ docker-volumes/
 *.ged
 *.gedcom
 *.gwplus
-sample_tree*
+real_base_*
 data/geneweb_bases/
 _local_testdata/
 *.log

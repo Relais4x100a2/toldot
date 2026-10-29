@@ -5,7 +5,7 @@
 *.gwplus
 *.ged
 *.gedcom
-sample_tree*
+real_base_*
 _local_testdata/
 data/geneweb_bases/
 # Compagnons JSON d'organisations issus de vraies bases
