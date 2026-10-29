@@ -24,15 +24,16 @@ services:
 
   geneweb-app:
     build:
-      context: ./docker/geneweb-app
-      dockerfile: Dockerfile
+      # Racine du workspace (parent de ce dépôt) : permet d'embarquer ../geneweb-py
+      context: ..
+      dockerfile: geneweb_revamped/docker/geneweb-app/Dockerfile
     container_name: geneweb-app
     ports:
       - "8501:8501"
     volumes:
       - ${GENEWEB_BASES_HOST_DIR:-./data/geneweb_bases}:/opt/geneweb/bases
       - ./data/training:/opt/geneweb/data/training
-      - ./docker/geneweb-app:/app
+      - ./docker/geneweb-app:/workspace/geneweb_revamped/docker/geneweb-app
     environment:
       # Charger depuis le fichier .env
       - API_KEY_OPENROUTER=${API_KEY_OPENROUTER}
