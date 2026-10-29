@@ -175,6 +175,7 @@ class Event:
             "person_id": person_id,
             "type": witness_type,
             "witness_kind": witness_kind,
+            "note": None,
         }
         self.witnesses.append(witness_info)
 

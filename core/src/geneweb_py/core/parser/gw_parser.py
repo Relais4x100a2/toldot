@@ -129,6 +129,15 @@ def _assign_event_end_lines(events: List[Any], tokens: List[Token]) -> None:
         event.end_line = max(inside) if inside else event.start_line
 
 
+def _attach_wnote(witnesses: List[Any], line_text: str) -> bool:
+    """Rattache une ligne ``wnote …`` au dernier témoin ; faux s'il n'y en a pas."""
+    if not witnesses:
+        return False
+    _, _, texte = line_text.partition(" ")
+    witnesses[-1]["note"] = texte.strip()
+    return True
+
+
 def _is_bang(token: Token) -> bool:
     """Le ``!`` qui précède la date de baptême."""
     return token.type == TokenType.UNKNOWN and token.value == "!"
@@ -922,6 +931,8 @@ class GeneWebParser:
         couvre les lignes suivantes (témoins multi-lignes, etc.).
         """
         i = 0
+        en_tete = True  # avant le ``beg`` des enfants
+        comm_fin = -1  # dernière ligne de commentaire
         while i < len(tokens):
             tok = tokens[i]
             if tok.type == TokenType.WIT:
@@ -965,8 +976,8 @@ class GeneWebParser:
                     TokenType.IDENTIFIER,
                     TokenType.STRING,
                 ):
-                    family.marriage_source = tokens[i].value
-                    i += 1
+                    value, i = self._parse_short_source(tokens, i)
+                    family.marriage_source = value
                 continue
             if tok.type in (
                 TokenType.NSCK,
@@ -1059,6 +1070,28 @@ class GeneWebParser:
                     i += 1
                 if parts:
                     family.add_comment(texte_libre(tokens[comm_debut:i], len(parts)))
+                    comm_fin = tokens[i - 1].line_number
+                continue
+            if tok.type == TokenType.BEG:
+                en_tete = False
+            elif (
+                en_tete
+                and i > 0
+                and tokens[i - 1].type == TokenType.NEWLINE
+                and tok.type
+                not in (TokenType.NEWLINE, TokenType.WHITESPACE, TokenType.END, TokenType.EOF)
+            ):
+                # Texte nu (R13) : suite du commentaire de la ligne d'avant, sinon
+                # nouveau commentaire de famille
+                ligne = tok.line_number
+                texte, i = _tokens_line_text(tokens, i)
+                if tok.type == TokenType.WNOTE and _attach_wnote(family.witnesses, texte):
+                    continue
+                if comm_fin == ligne - 1 and family.comments:
+                    family.comments[-1] += "\n" + texte
+                else:
+                    family.add_comment(texte)
+                comm_fin = ligne
                 continue
             i += 1
 
@@ -1529,6 +1562,14 @@ class GeneWebParser:
                 value, i = self._parse_short_source(tokens, i)
                 if value:
                     result[f"{current_person}_burial_source"] = value.replace("_", " ")
+                continue
+
+            # Source du mariage (#ms) : un mot, jamais le nom de l'épouse
+            elif token.type == TokenType.MS:
+                i += 1
+                value, i = self._parse_short_source(tokens, i)
+                if value:
+                    result["marriage_source"] = value.replace("_", " ")
                 continue
 
             # Lieu de mariage (#mp)
@@ -2040,6 +2081,7 @@ class GeneWebParser:
             i = 3  # Passer pevt, nom, prénom
             # Garder une référence au dernier événement construit pour y rattacher les témoins  # noqa: E501
             last_event = None
+            note_tail: Optional[Tuple[Any, int]] = None  # (porteur, dernière ligne de note)
             while i < len(tokens):
                 token = tokens[i]
 
@@ -2199,6 +2241,7 @@ class GeneWebParser:
                             last_event.add_note(note_text)
                         else:
                             person.add_note(note_text)
+                        note_tail = (last_event or person, tokens[i - 1].line_number)
 
                 elif token.type == TokenType.WIT:
                     # Parser les témoins avec informations complètes et les rattacher à l'événement courant  # noqa: E501
@@ -2240,6 +2283,35 @@ class GeneWebParser:
                             last_event.add_note(note_text)
                         else:
                             person.add_note(note_text)
+                        note_tail = (last_event or person, token.line_number)
+
+                elif (
+                    token.type
+                    not in (
+                        TokenType.NEWLINE,
+                        TokenType.WHITESPACE,
+                        TokenType.END_PEVT,
+                        TokenType.EOF,
+                    )
+                    and (i == 0 or tokens[i - 1].type == TokenType.NEWLINE)
+                ):
+                    # Texte nu (R13) : suite de la note précédente si elle occupe la
+                    # ligne d'avant, sinon note de l'événement courant
+                    line_no = token.line_number
+                    line_text, i = _tokens_line_text(tokens, i)
+                    holder = last_event or person
+                    if (
+                        token.type == TokenType.WNOTE
+                        and last_event is not None
+                        and _attach_wnote(last_event.witnesses, line_text)
+                    ):
+                        continue
+                    if note_tail is not None and note_tail[1] == line_no - 1:
+                        holder = note_tail[0]
+                        holder.notes[-1] += "\n" + line_text
+                    else:
+                        holder.add_note(line_text)
+                    note_tail = (holder, line_no)
 
                 else:
                     i += 1
@@ -2271,7 +2343,7 @@ class GeneWebParser:
 
         while i < len(tokens):
             tok = tokens[i]
-            if tok.type == TokenType.END_FEVT:
+            if tok.type in (TokenType.END_FEVT, TokenType.NEWLINE):
                 break
             if tok.type in (
                 TokenType.MARR,
@@ -2582,6 +2654,21 @@ class GeneWebParser:
                     current_event.add_note(texte_libre(tokens[note_debut:i], len(note_content)))
                 continue
 
+            if token.type in (
+                TokenType.WNOTE,
+                TokenType.IDENTIFIER,
+                TokenType.STRING,
+                TokenType.NUMBER,
+            ) and (i == 0 or tokens[i - 1].type == TokenType.NEWLINE):
+                # Texte nu ou ``wnote`` (R13) : ligne gardée telle quelle
+                est_wnote = token.type == TokenType.WNOTE
+                line_text, i = _tokens_line_text(tokens, i)
+                if current_event is not None and not (
+                    est_wnote and _attach_wnote(current_event.witnesses, line_text)
+                ):
+                    current_event.add_note(line_text)
+                continue
+
             i += 1
 
         _assign_event_end_lines(parsed_events, tokens)
@@ -2802,12 +2889,19 @@ class GeneWebParser:
         occurrence_num = None
 
         if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-            last_name = tokens[i].value
-            i += 1
+            # un mot peut être découpé par le lexeur (``A/B``) : on le recolle
+            fin = mot_end(tokens, i)
+            if fin - 1 > i and tokens[fin - 1].type == TokenType.NUMBER:
+                fin -= 1  # ``.1`` collé = numéro d'occurrence, pas le nom
+            last_name = _join_tokens_text(tokens[i:fin])
+            i = fin
 
         if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-            first_name = tokens[i].value
-            i += 1
+            fin = mot_end(tokens, i)
+            if fin - 1 > i and tokens[fin - 1].type == TokenType.NUMBER:
+                fin -= 1  # ``.1`` collé = numéro d'occurrence, pas le nom
+            first_name = _join_tokens_text(tokens[i:fin])
+            i = fin
 
         # Numéro d'occurrence (après le prénom)
         if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
