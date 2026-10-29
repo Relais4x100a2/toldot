@@ -150,3 +150,47 @@ class TestLLMHook:
         g = _parse("#Membre_Academie 1900\n#Action-Sociale 1905\nnote Un texte")
         assert g.infer_organizations(EventToOrganizationMapper(llm=hook)) == (1, 1)
         assert g.get_organization("academie").needs_review is True
+
+
+class TestInjectableRules:
+    def test_default_rules_are_exposed_and_untouched_by_custom_rules(self):
+        from geneweb_py.core.event_to_organization import (
+            DEFAULT_PREFIX_RULES,
+            PrefixRule,
+        )
+
+        before = dict(DEFAULT_PREFIX_RULES)
+        EventToOrganizationMapper(
+            custom_rules={
+                "Compagnon": PrefixRule("Compagnon", OrganizationType.COMPANY)
+            }
+        )
+        assert DEFAULT_PREFIX_RULES == before
+        assert "membre" in DEFAULT_PREFIX_RULES
+
+    def test_custom_prefix_extends_the_rules(self):
+        from geneweb_py.core.event_to_organization import PrefixRule
+
+        g = _parse("#Compagnon_Forge 1850")
+        assert g.infer_organizations() == (0, 0)
+        mapper = EventToOrganizationMapper(
+            custom_rules={
+                "compagnon": PrefixRule("Compagnon", OrganizationType.COMPANY)
+            }
+        )
+        assert g.infer_organizations(mapper) == (1, 1)
+        assert g.get_organization("forge").type is OrganizationType.COMPANY
+        assert g.get_organization_links()[0].role == "Compagnon"
+
+    def test_custom_rule_overrides_a_default_one(self):
+        from geneweb_py.core.event_to_organization import PrefixRule
+
+        g = _parse("#Membre_Academie 1900")
+        mapper = EventToOrganizationMapper(
+            custom_rules={
+                "Membre": PrefixRule("Sociétaire", OrganizationType.INSTITUTION)
+            }
+        )
+        g.infer_organizations(mapper)
+        assert g.get_organization_links()[0].role == "Sociétaire"
+        assert g.get_organization("academie").type is OrganizationType.INSTITUTION
