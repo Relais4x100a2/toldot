@@ -129,6 +129,11 @@ def _assign_event_end_lines(events: List[Any], tokens: List[Token]) -> None:
         event.end_line = max(inside) if inside else event.start_line
 
 
+def _is_bang(token: Token) -> bool:
+    """Le ``!`` qui précède la date de baptême."""
+    return token.type == TokenType.UNKNOWN and token.value == "!"
+
+
 def _is_line_start_note(tokens: List[Token], i: int) -> bool:
     """Vrai si tokens[i] est un mot ``note`` en début de ligne (hors ``#``)."""
     tok = tokens[i]
@@ -792,6 +797,8 @@ class GeneWebParser:
                 husband.birth_source = family_info["husband_birth_source"]
             if family_info["husband_death_source"]:
                 husband.death_source = family_info["husband_death_source"]
+            if family_info["husband_baptism_date"]:
+                husband.baptism_date = family_info["husband_baptism_date"]
             if family_info["husband_baptism_place"]:
                 husband.baptism_place = family_info["husband_baptism_place"]
             if family_info["husband_baptism_source"]:
@@ -843,6 +850,8 @@ class GeneWebParser:
                 wife.birth_source = family_info["wife_birth_source"]
             if family_info["wife_death_source"]:
                 wife.death_source = family_info["wife_death_source"]
+            if family_info["wife_baptism_date"]:
+                wife.baptism_date = family_info["wife_baptism_date"]
             if family_info["wife_baptism_place"]:
                 wife.baptism_place = family_info["wife_baptism_place"]
             if family_info["wife_baptism_source"]:
@@ -1074,6 +1083,7 @@ class GeneWebParser:
             "husband_death_place": None,
             "husband_birth_source": None,
             "husband_death_source": None,
+            "husband_baptism_date": None,
             "husband_baptism_place": None,
             "husband_baptism_source": None,
             "husband_burial_place": None,
@@ -1095,6 +1105,7 @@ class GeneWebParser:
             "wife_death_place": None,
             "wife_birth_source": None,
             "wife_death_source": None,
+            "wife_baptism_date": None,
             "wife_baptism_place": None,
             "wife_baptism_source": None,
             "wife_burial_place": None,
@@ -1310,14 +1321,25 @@ class GeneWebParser:
                 continue
 
             # Date (peut être naissance ou décès selon le contexte)
+            elif _is_bang(token):
+                i += 1
+                continue
+
+            elif token.type == TokenType.DATE and i > 0 and _is_bang(tokens[i - 1]):
+                result[f"{current_person}_baptism_date"] = Date.parse_with_fallback(
+                    token.value
+                )
+                i += 1
+                continue
+
             elif token.type == TokenType.DATE:
                 # Si c'est la première date, c'est probablement la naissance
-                if not result[f"{current_person}_birth_date"]:
+                if result[f"{current_person}_birth_date"] is None:
                     result[f"{current_person}_birth_date"] = Date.parse_with_fallback(
                         token.value
                     )
                 # Sinon c'est probablement le décès
-                elif not result[f"{current_person}_death_date"]:
+                elif result[f"{current_person}_death_date"] is None:
                     result[f"{current_person}_death_date"] = Date.parse_with_fallback(
                         token.value
                     )
@@ -1459,7 +1481,7 @@ class GeneWebParser:
             # Source naissance (#bs)
             elif token.type == TokenType.BS:
                 i += 1
-                value, i = self._parse_source_value(tokens, i)
+                value, i = self._parse_short_source(tokens, i)
                 if value:
                     result[f"{current_person}_birth_source"] = value.replace("_", " ")
                 continue
@@ -1467,7 +1489,7 @@ class GeneWebParser:
             # Source décès (#ds)
             elif token.type == TokenType.DS:
                 i += 1
-                value, i = self._parse_source_value(tokens, i)
+                value, i = self._parse_short_source(tokens, i)
                 if value:
                     result[f"{current_person}_death_source"] = value.replace("_", " ")
                 continue
@@ -1475,7 +1497,7 @@ class GeneWebParser:
             # Lieu baptême (#pp)
             elif token.type == TokenType.PP:
                 i += 1
-                value, i = self._parse_place_value(tokens, i)
+                value, i = self._parse_short_place(tokens, i)
                 if value:
                     result[f"{current_person}_baptism_place"] = value.replace("_", " ")
                 continue
@@ -1483,7 +1505,7 @@ class GeneWebParser:
             # Source baptême (#ps)
             elif token.type == TokenType.PS:
                 i += 1
-                value, i = self._parse_source_value(tokens, i)
+                value, i = self._parse_short_source(tokens, i)
                 if value:
                     result[f"{current_person}_baptism_source"] = value.replace("_", " ")
                 continue
@@ -1491,7 +1513,7 @@ class GeneWebParser:
             # Lieu inhumation (#rp)
             elif token.type == TokenType.RP:
                 i += 1
-                value, i = self._parse_place_value(tokens, i)
+                value, i = self._parse_short_place(tokens, i)
                 if value:
                     result[f"{current_person}_burial_place"] = value.replace("_", " ")
                 continue
@@ -1499,7 +1521,7 @@ class GeneWebParser:
             # Source inhumation (#rs)
             elif token.type == TokenType.RS:
                 i += 1
-                value, i = self._parse_source_value(tokens, i)
+                value, i = self._parse_short_source(tokens, i)
                 if value:
                     result[f"{current_person}_burial_source"] = value.replace("_", " ")
                 continue
@@ -1654,10 +1676,6 @@ class GeneWebParser:
                 occurrence_num = int(occurrence_str)
             except ValueError:
                 occurrence_num = 0
-            i += 1
-
-        # Dates seules avant #bp / #occu (ex: "- h Pierre 1976")
-        while i < len(tokens) and tokens[i].type == TokenType.DATE:
             i += 1
 
         if first_name:
@@ -1863,6 +1881,26 @@ class GeneWebParser:
             place_value = "".join(place_parts)
             return place_value, i
 
+        return None, start_index
+
+    def _parse_short_place(
+        self, tokens: List[Token], start_index: int
+    ) -> Tuple[Optional[str], int]:
+        """Lieu d'un champ de ligne de personne : un seul lieu, crochets compris."""
+        fin = place_run_end(tokens, start_index)
+        if fin == start_index:
+            return None, start_index
+        return _join_tokens_text(tokens[start_index:fin]), fin
+
+    def _parse_short_source(
+        self, tokens: List[Token], start_index: int
+    ) -> Tuple[Optional[str], int]:
+        """Source d'un champ de ligne de personne (``#bs``…) : un seul mot."""
+        if start_index < len(tokens) and tokens[start_index].type in (
+            TokenType.IDENTIFIER,
+            TokenType.STRING,
+        ):
+            return tokens[start_index].value, start_index + 1
         return None, start_index
 
     def _parse_source_value(
@@ -2807,23 +2845,32 @@ class GeneWebParser:
 
             # Date de naissance
             if token.type == TokenType.DATE:
-                birth_date = Date.parse_with_fallback(token.value)
-                person.birth_date = birth_date
+                date_gw = Date.parse_with_fallback(token.value)
+                if i > 0 and _is_bang(tokens[i - 1]):
+                    person.baptism_date = date_gw
+                elif person.birth_date is None:
+                    person.birth_date = date_gw
+                elif person.death_date is None:
+                    person.death_date = date_gw
+                i += 1
+
+            # '!' devant la date de baptême : la date suivante l'indique
+            elif _is_bang(token):
                 i += 1
 
             # Lieu de naissance (#bp)
             elif token.type == TokenType.BP:
                 i += 1
-                if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-                    person.birth_place = tokens[i].value
-                    i += 1
+                value, i = self._parse_short_place(tokens, i)
+                if value:
+                    person.birth_place = value
 
             # Lieu de décès (#dp)
             elif token.type == TokenType.DP:
                 i += 1
-                if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-                    person.death_place = tokens[i].value
-                    i += 1
+                value, i = self._parse_short_place(tokens, i)
+                if value:
+                    person.death_place = value
 
             # Occupation (#occu)
             elif token.type == TokenType.OCCU:
@@ -2918,42 +2965,42 @@ class GeneWebParser:
             # Source naissance (#bs)
             elif token.type == TokenType.BS:
                 i += 1
-                value, i = self._parse_source_value(tokens, i)
+                value, i = self._parse_short_source(tokens, i)
                 if value:
                     person.birth_source = value.replace("_", " ")
 
             # Source décès (#ds)
             elif token.type == TokenType.DS:
                 i += 1
-                value, i = self._parse_source_value(tokens, i)
+                value, i = self._parse_short_source(tokens, i)
                 if value:
                     person.death_source = value.replace("_", " ")
 
             # Lieu baptême (#pp)
             elif token.type == TokenType.PP:
                 i += 1
-                value, i = self._parse_place_value(tokens, i)
+                value, i = self._parse_short_place(tokens, i)
                 if value:
                     person.baptism_place = value.replace("_", " ")
 
             # Source baptême (#ps)
             elif token.type == TokenType.PS:
                 i += 1
-                value, i = self._parse_source_value(tokens, i)
+                value, i = self._parse_short_source(tokens, i)
                 if value:
                     person.baptism_source = value.replace("_", " ")
 
             # Lieu inhumation (#rp)
             elif token.type == TokenType.RP:
                 i += 1
-                value, i = self._parse_place_value(tokens, i)
+                value, i = self._parse_short_place(tokens, i)
                 if value:
                     person.burial_place = value.replace("_", " ")
 
             # Source inhumation (#rs)
             elif token.type == TokenType.RS:
                 i += 1
-                value, i = self._parse_source_value(tokens, i)
+                value, i = self._parse_short_source(tokens, i)
                 if value:
                     person.burial_source = value.replace("_", " ")
 
