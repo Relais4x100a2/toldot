@@ -1,0 +1,22 @@
+encoding: utf-8
+gwplus
+
+fam DUPONT Jean + MARTIN Marie
+beg
+- h DUPONT Louis
+- f DUPONT Anne
+end
+
+fam DUPONT Jean.1 + MARTIN Sophie
+beg
+- h DUPONT Paul
+end
+
+fam DUPONT Louis + MARTIN Claire
+beg
+- f DUPONT Emma
+end
+
+pevt DUPONT Jean
+#educ 1890 #p Lyon
+end pevt
