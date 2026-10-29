@@ -36,3 +36,13 @@ def test_texte_nu_dans_bloc_fam_est_conserve():
     )
     (fam,) = g.families.values()
     assert any("Mariage celebre a Dreux" in c for c in fam.comments)
+
+
+def test_wnote_de_bloc_fam_est_conserve_sans_perte():
+    g = GeneWebParser(validate=False).parse_string(
+        "fam MARTIN Pierre +1705 DUBOIS Marie\nwit m: LEROY Paul\n"
+        "wnote Cousin du marie\nwit f: LEROY Anne\nbeg\n- h Jean 1712\nend\n"
+    )
+    (fam,) = g.families.values()
+    assert fam.comments == ["wnote Cousin du marie"]
+    assert len(fam.witnesses) == 2 and len(fam.children) == 1

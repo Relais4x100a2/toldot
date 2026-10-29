@@ -659,7 +659,12 @@ class FamilyBlockParser(BlockParser):
                 i > start_index
                 and tokens[i - 1].type == TokenType.NEWLINE
                 and token.type
-                in (TokenType.IDENTIFIER, TokenType.STRING, TokenType.NUMBER)
+                in (
+                    TokenType.IDENTIFIER,
+                    TokenType.STRING,
+                    TokenType.NUMBER,
+                    TokenType.WNOTE,
+                )
                 and token.value not in _MOTS_CLES_BLOC
             ):
                 while i < len(tokens) and tokens[i].type not in (
