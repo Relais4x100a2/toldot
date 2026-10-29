@@ -29,7 +29,7 @@ Pas de `pip install` direct. `.venv/` est local et n'est jamais commité. Dépen
 uv sync --extra dev --extra api            # + --extra cli pour le CLI
 
 # Tests (forme fiable : python -m pytest)
-uv run python -m pytest                          # toute la suite (976 passés, 19 ignorés au dernier passage)
+uv run python -m pytest                          # toute la suite (1055 passés, 19 ignorés au dernier passage)
 uv run python -m pytest tests/unit/              # unitaires seulement
 uv run python -m pytest tests/unit/test_lexical_parser.py   # un fichier
 uv run python -m pytest -k "test_name"           # un test par nom
@@ -58,11 +58,11 @@ core/
     gw_parser.py         # Orchestrateur : détection d'encodage → lex → parse → modèles
     multipass_parser.py  # Résolution des références croisées après le parse complet
     streaming.py         # Mode streaming pour gros fichiers (>10 Mo, ~80 % de mémoire en moins)
-    regex_extractor.py   # Helpers d'extraction de champs par regex
   date.py           # Date : multi-calendriers, préfixes (~/?/</>), intervalles
   person.py         # Dataclass Person
   family.py         # Dataclass Family (conjoints, enfants, témoins)
   event.py          # Dataclass Event (personnel / familial)
+  place.py          # parse_place : décompose « [complément]_-_lieu » (chaîne brute conservée)
   genealogy.py      # Conteneur : Genealogy(persons, families, metadata)
   exceptions.py     # GeneWebParseError, GeneWebValidationError, GeneWebEncodingError
   validation.py     # Validation en modes strict / gracieux
