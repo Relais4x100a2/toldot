@@ -96,7 +96,7 @@ where = ["src"]
 include = ["geneweb_py*"]
 
 [tool.setuptools.package-data]
-"geneweb_py" = ["api/static/**/*"]
+"geneweb_py" = ["api/static/**/*", "py.typed"]
 
 # ===================================================================
 # Configuration Ruff (remplace Black + Flake8 + isort)

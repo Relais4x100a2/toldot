@@ -101,6 +101,7 @@ class TokenType(Enum):
     RECO = "reco"  # Reconnaissance
     CAND = "cand"  # Candidat
     GODP = "godp"  # Parrain/Marraine
+    OFFI = "offi"  # Officier (témoin #offi)
     FOST = "fost"  # Famille d'accueil
     FATH = "fath"  # Père
     MOTH = "moth"  # Mère
@@ -287,6 +288,7 @@ class LexicalParser:
             "reco": TokenType.RECO,
             "cand": TokenType.CAND,
             "godp": TokenType.GODP,
+            "offi": TokenType.OFFI,
             "fost": TokenType.FOST,
             "fath": TokenType.FATH,
             "moth": TokenType.MOTH,
