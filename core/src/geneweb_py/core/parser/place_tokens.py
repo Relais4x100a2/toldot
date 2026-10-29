@@ -49,10 +49,26 @@ def place_run_end(tokens: List[Token], start: int) -> int:
         j += 1
     else:
         return start
+    return mot_end(tokens, j - 1)
+
+
+def mot_end(tokens: List[Token], start: int) -> int:
+    """Fin du mot qui commence à ``start`` : jetons contigus, de n'importe quel type.
+
+    Un mot GeneWeb se termine à un espace ; le lexeur peut le découper (URL,
+    ``<br>``, ``a?x=1``), la contiguïté des positions le recolle. Une virgule
+    suivie d'un identifiant prolonge aussi le lieu (``Ville,_Code``).
+    """
+    n = len(tokens)
+    j = start
     while j < n:
         tok = tokens[j]
-        collé = tok.position == tokens[j - 1].position + len(tokens[j - 1].value)
-        if tok.type == TokenType.IDENTIFIER and collé:
+        if tok.type in (TokenType.NEWLINE, TokenType.EOF):
+            break
+        collé = j == start or (
+            tok.position == tokens[j - 1].position + len(tokens[j - 1].value)
+        )
+        if collé:
             j += 1
         elif (
             tok.type == TokenType.UNKNOWN
