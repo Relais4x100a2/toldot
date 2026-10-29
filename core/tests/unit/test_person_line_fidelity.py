@@ -56,3 +56,21 @@ def test_les_dates_de_la_ligne_src_ne_vont_pas_a_l_epouse():
         "fam MARTIN Pierre +1705 DUBOIS Marie\nsrc BMS Saint-Aubin 1705-1715\n"
     )["DUBOIS_Marie_0"]
     assert p.birth_date is None and p.death_date is None
+
+
+def test_source_url_est_un_seul_mot_et_ne_fuit_pas_en_date():
+    p = _persons(
+        "fam DUPONT Paul +1750 MARTIN Anne\nbeg\n"
+        "- h Luc 1751 #bs http://exemple.org/a?x=1&y=2 1790 #dp Dreux\nend\n"
+    )["DUPONT_Luc_0"]
+    assert p.birth_source == "http://exemple.org/a?x=1&y=2"
+    assert _d(p.death_date) == "1790" and p.death_place == "Dreux"
+
+
+def test_lieu_avec_balises_html_collees_reste_un_seul_mot():
+    p = _persons(
+        "fam DUPONT Paul +1750 MARTIN Anne\nbeg\n"
+        "- h Luc 1751 #bp [Eglise]_-_Dreux<br>Chartres 1790\nend\n"
+    )["DUPONT_Luc_0"]
+    assert p.birth_place == "[Eglise]_-_Dreux<br>Chartres"
+    assert _d(p.birth_date) == "1751" and _d(p.death_date) == "1790"

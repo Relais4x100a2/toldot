@@ -770,12 +770,14 @@ class FamilyBlockParser(BlockParser):
                 # Informations personnelles de l'enfant (occupation, etc.)
                 i = self._parse_personal_info(tokens, i, child_node)
 
-                # Sauter les tokens restants sur cette ligne (modificateurs inconnus
-                # comme #bs/#ds et leurs URL — arrêt uniquement à NEWLINE ou END)
+                # Garder les tokens restants de la ligne (sources #bs/#ds, URL, dates
+                # après un champ) : l'analyse de la ligne les interprète ; arrêt
+                # uniquement à NEWLINE ou END
                 while i < len(tokens) and tokens[i].type not in [
                     TokenType.NEWLINE,
                     TokenType.END,
                 ]:
+                    child_node.add_token(tokens[i])
                     i += 1
 
                 node.add_child(child_node)

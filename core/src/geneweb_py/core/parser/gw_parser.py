@@ -34,7 +34,7 @@ from .streaming import (
     should_use_streaming,
 )
 from .place_tokens import join_tokens_text as _join_tokens_text
-from .place_tokens import place_run_end, texte_libre
+from .place_tokens import mot_end, place_run_end, texte_libre
 from .syntax import BlockType, SyntaxNode, SyntaxParser
 
 logger = logging.getLogger(__name__)
@@ -1905,7 +1905,8 @@ class GeneWebParser:
             TokenType.IDENTIFIER,
             TokenType.STRING,
         ):
-            return tokens[start_index].value, start_index + 1
+            fin = mot_end(tokens, start_index)
+            return _join_tokens_text(tokens[start_index:fin]), fin
         return None, start_index
 
     def _parse_source_value(
