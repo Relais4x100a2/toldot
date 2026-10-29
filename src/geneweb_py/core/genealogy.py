@@ -7,13 +7,16 @@ familles et métadonnées d'une base généalogique GeneWeb.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from .date import Date
 from .exceptions import GeneWebError, GeneWebValidationError
 from .family import Family
 from .organization import Organization, OrganizationLink
 from .person import Person
+
+if TYPE_CHECKING:
+    from .event_to_organization import EventToOrganizationMapper
 
 
 @dataclass
@@ -568,6 +571,20 @@ class Genealogy:
         )
         self.organization_links.append(link)
         return link
+
+    def infer_organizations(
+        self, mapper: "Optional[EventToOrganizationMapper]" = None
+    ) -> Tuple[int, int]:
+        """Déduit organisations et liens depuis les événements personnalisés.
+
+        Sans ``mapper``, seules les règles déterministes s'appliquent.
+
+        Returns:
+            (organisations créées, liens créés)
+        """
+        from .event_to_organization import EventToOrganizationMapper
+
+        return (mapper or EventToOrganizationMapper()).apply(self)
 
     def get_organization_links(
         self,
