@@ -885,13 +885,15 @@ class GeneWebParser:
                 for title in family_info["wife_titles"]:
                     wife.add_title(title)
 
-        # Créer la famille seulement si au moins un époux est défini
-        if husband_id or wife_id:
+        # La ligne fam existe : la famille aussi, même si les deux conjoints sont
+        # inconnus (``fam ? ? + ? ?``), sinon enfants et événements sont perdus (R13)
+        if tokens:
             family_id = f"FAM_{len(families) + 1:03d}"
             family = Family(
                 family_id=family_id,
                 husband_id=husband_id,
                 wife_id=wife_id,
+                spouses_unknown=not (husband_id or wife_id),
                 marriage_date=family_info["marriage_date"],
                 marriage_place=family_info["marriage_place"],
                 marriage_status=family_info["marriage_status"],
@@ -2470,6 +2472,47 @@ class GeneWebParser:
         }[fet]
         return FamilyEvent(event_type=evt_type, family_event_type=fet)
 
+    def _family_event_from_comment(self, comment_value: str) -> Optional[FamilyEvent]:
+        """Événement familial d'une ligne ``#tag [date] [#p lieu] [#s source]``.
+
+        Le lexeur rend en COMMENT toute ligne ``#tag`` qu'il ne connaît pas
+        (``#marc``, ``#resi``, tag libre…). Un tag familial standard garde son
+        type ; tout autre tag devient ``OTHER`` avec la casse d'origine dans
+        ``event_type_raw``. None si la ligne n'est pas de la forme ``#tag``.
+        """
+        import re as _re
+
+        m = _re.match(
+            r"^#([A-Za-z][A-Za-z0-9_-]*)"
+            r"(?:\s+([^#]+?))?"
+            r"(?:\s+#p\s+([^#]+?))?"
+            r"(?:\s+#s\s+(.+?))?$",
+            comment_value.strip(),
+        )
+        if not m:
+            return None
+        raw_tag = m.group(1)
+        try:
+            fet = FamilyEventType(raw_tag.lower())
+            type_raw = None
+        except ValueError:
+            fet = FamilyEventType.OTHER
+            type_raw = raw_tag
+        try:
+            evt_type = EventType(fet.value)
+        except ValueError:
+            evt_type = EventType.OTHER
+        date_str = (m.group(2) or "").strip()
+        evt = FamilyEvent(
+            event_type=evt_type,
+            family_event_type=fet,
+            event_type_raw=type_raw,
+            date=Date.parse_with_fallback(date_str) if date_str else None,
+            place=(m.group(3) or "").strip() or None,
+            source=(m.group(4) or "").strip() or None,
+        )
+        return evt
+
     def _parse_family_events_block(
         self,
         node: SyntaxNode,
@@ -2592,6 +2635,20 @@ class GeneWebParser:
                 parsed_events.append(current_event)
                 i += 1
                 i = self._consume_family_event_optional_fields(tokens, i, current_event)
+                continue
+
+            if token.type == TokenType.COMMENT and token.value.startswith("#"):
+                comment_evt = self._family_event_from_comment(token.value)
+                i += 1
+                if comment_evt is None:
+                    continue
+                if fevt_event_count >= _FEVT_MAX_EVENTS_PER_BLOCK:
+                    fevt_events_truncated = True
+                    continue
+                fevt_event_count += 1
+                comment_evt.start_line = token.line_number
+                current_event = comment_evt
+                parsed_events.append(comment_evt)
                 continue
 
             if token.type == TokenType.SRC:
