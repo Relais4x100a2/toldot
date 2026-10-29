@@ -8,7 +8,7 @@
 
 [![CI](https://github.com/Relais4x100a2/toldot/actions/workflows/ci.yml/badge.svg)](https://github.com/Relais4x100a2/toldot/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13-blue?logo=python)
-![Tests](https://img.shields.io/badge/tests-1105%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1110%20passed-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-%E2%89%A5%2080%25-brightgreen)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -43,14 +43,6 @@ TOLDOT tackles this in three steps:
                 │  → validation → bulk transformation → dashboard       │
                 └───────────────────────────────────────────────────────┘
 ```
-
-## Who is this for?
-
-| You are… | What you will find |
-|---|---|
-| **Digital humanities engineer / researcher** | A reproducible path from a GeneWeb database to a prosopographic graph (GraphML/GEXF for Gephi), without touching your sources. See [The research problem](#the-research-problem-and-the-approach) and [Network analysis](#network-analysis). |
-| **Developer** | A hand-written, typed parser, 1105 tests, a REST API and a CLI. See [Repository layout](#repository-layout) and [Contributing](#contributing-and-quality-checks). |
-| **Recruiter / tech lead** | A `uv` monorepo with a multi-version CI, type checking (mypy), security and privacy safeguards, and a controlled use of LLMs (rules first, LLM second, human last). See [Notable technical choices](#notable-technical-choices). |
 
 ## The research problem and the approach
 
@@ -88,7 +80,7 @@ toldot/
 │   │   ├── api/               FastAPI: sessions, persons, families, events, genealogy
 │   │   ├── cli/               `geneweb-py` binary (Click + Rich)
 │   │   └── analytics/         networks (optional extra)
-│   ├── tests/                 1105 tests; strictly synthetic `.gw` fixtures
+│   ├── tests/                 1110 tests; strictly synthetic `.gw` fixtures
 │   └── doc/                   architecture, performance, roadmap
 ├── app/                       Enrichment application (Streamlit / DSPy / OpenRouter)
 │   ├── docker/geneweb-app/    `geneweb-app` package: Streamlit pages + `src/`
@@ -157,7 +149,7 @@ uv sync --all-packages --all-extras
 
 ```bash
 uv run --package geneweb-py python -m pytest core
-# expected: 1105 passed, 17 skipped
+# expected: 1110 passed, 17 skipped
 ```
 
 ### 3. Try the CLI on a fixture

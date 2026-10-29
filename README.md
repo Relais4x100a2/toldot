@@ -8,7 +8,7 @@
 
 [![CI](https://github.com/Relais4x100a2/toldot/actions/workflows/ci.yml/badge.svg)](https://github.com/Relais4x100a2/toldot/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13-blue?logo=python)
-![Tests](https://img.shields.io/badge/tests-1105%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1110%20passed-brightgreen)
 ![Couverture](https://img.shields.io/badge/couverture-%E2%89%A5%2080%25-brightgreen)
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-green.svg)](LICENSE)
 
@@ -43,14 +43,6 @@ TOLDOT s'attaque à ce problème en trois temps :
                 │  → validation → transformation de masse → dashboard   │
                 └───────────────────────────────────────────────────────┘
 ```
-
-## Pour qui ?
-
-| Vous êtes… | Ce que vous trouverez ici |
-|---|---|
-| **Ingénieur·e en humanités numériques / chercheur·se** | Un chemin reproductible de la base GeneWeb vers un graphe prosopographique (GraphML/GEXF pour Gephi), sans toucher à vos sources. Voir [Le problème de recherche](#le-problème-de-recherche-et-lapproche) et [Analyse de réseaux](#analyse-de-réseaux). |
-| **Développeur·se** | Un parser écrit à la main, typé, 1105 tests, une API REST et un CLI. Voir [Architecture](#architecture) et [Contribuer](#contribuer-et-vérifier-la-qualité). |
-| **Recruteur·se / lead technique** | Un monorepo `uv` avec CI multi-versions, typage vérifié (mypy), garde-fous de sécurité et de confidentialité, et un usage de LLM encadré (règles d'abord, LLM ensuite, humain en dernier). Voir [Choix techniques](#choix-techniques-notables). |
 
 ## Le problème de recherche et l'approche
 
@@ -88,7 +80,7 @@ toldot/
 │   │   ├── api/               FastAPI : sessions, persons, families, events, genealogy
 │   │   ├── cli/               binaire `geneweb-py` (Click + Rich)
 │   │   └── analytics/         réseaux (extra facultatif)
-│   ├── tests/                 1105 tests ; fixtures `.gw` strictement synthétiques
+│   ├── tests/                 1110 tests ; fixtures `.gw` strictement synthétiques
 │   └── doc/                   architecture, performances, feuille de route
 ├── app/                       Application d'enrichissement (Streamlit / DSPy / OpenRouter)
 │   ├── docker/geneweb-app/    paquet `geneweb-app` : pages Streamlit + `src/`
@@ -157,7 +149,7 @@ uv sync --all-packages --all-extras
 
 ```bash
 uv run --package geneweb-py python -m pytest core
-# attendu : 1105 passed, 17 skipped
+# attendu : 1110 passed, 17 skipped
 ```
 
 ### 3. Essayer le CLI sur une fixture
