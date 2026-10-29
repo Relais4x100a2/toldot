@@ -976,8 +976,8 @@ class GeneWebParser:
                     TokenType.IDENTIFIER,
                     TokenType.STRING,
                 ):
-                    family.marriage_source = tokens[i].value
-                    i += 1
+                    value, i = self._parse_short_source(tokens, i)
+                    family.marriage_source = value
                 continue
             if tok.type in (
                 TokenType.NSCK,
@@ -1562,6 +1562,14 @@ class GeneWebParser:
                 value, i = self._parse_short_source(tokens, i)
                 if value:
                     result[f"{current_person}_burial_source"] = value.replace("_", " ")
+                continue
+
+            # Source du mariage (#ms) : un mot, jamais le nom de l'épouse
+            elif token.type == TokenType.MS:
+                i += 1
+                value, i = self._parse_short_source(tokens, i)
+                if value:
+                    result["marriage_source"] = value.replace("_", " ")
                 continue
 
             # Lieu de mariage (#mp)

@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Tuple
 
 from ..exceptions import GeneWebParseError
 from .lexical import Token, TokenType
-from .place_tokens import place_run_end
+from .place_tokens import mot_end, place_run_end
 
 
 _MOTS_CLES_BLOC = frozenset(
@@ -339,7 +339,11 @@ class FamilyBlockParser(BlockParser):
             if token.type == TokenType.PAREN_OPEN:
                 node.add_token(token)
                 i += 1
-                while i < len(tokens) and tokens[i].type != TokenType.PAREN_CLOSE:
+                while i < len(tokens) and tokens[i].type not in (
+                    TokenType.PAREN_CLOSE,
+                    TokenType.NEWLINE,
+                    TokenType.EOF,
+                ):
                     node.add_token(tokens[i])
                     i += 1
                 if i < len(tokens) and tokens[i].type == TokenType.PAREN_CLOSE:
@@ -351,7 +355,11 @@ class FamilyBlockParser(BlockParser):
             if token.type == TokenType.BRACE_OPEN:
                 node.add_token(token)
                 i += 1
-                while i < len(tokens) and tokens[i].type != TokenType.BRACE_CLOSE:
+                while i < len(tokens) and tokens[i].type not in (
+                    TokenType.BRACE_CLOSE,
+                    TokenType.NEWLINE,
+                    TokenType.EOF,
+                ):
                     node.add_token(tokens[i])
                     i += 1
                 if i < len(tokens) and tokens[i].type == TokenType.BRACE_CLOSE:
@@ -393,8 +401,11 @@ class FamilyBlockParser(BlockParser):
                     TokenType.IDENTIFIER,
                     TokenType.STRING,
                 ):
-                    node.add_token(tokens[i])
-                    i += 1
+                    # la source est un mot : l'URL peut être découpée en jetons collés
+                    fin = mot_end(tokens, i)
+                    for tok in tokens[i:fin]:
+                        node.add_token(tok)
+                    i = fin
                 continue
 
             break

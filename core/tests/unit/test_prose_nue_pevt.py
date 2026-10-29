@@ -97,3 +97,21 @@ def test_fevt_commencant_par_un_texte_nu_ne_cree_pas_de_personne_fantome():
         "fam MARTIN Pierre +1705 DUBOIS Marie\nfevt\nPrecision utile\n#marr 1705\nend fevt\n"
     )
     assert sorted(g.persons) == ["DUBOIS_Marie_0", "MARTIN_Pierre_0"]
+
+
+def test_source_de_mariage_sur_la_ligne_fam_ne_devient_pas_le_nom_de_l_epouse():
+    g = GeneWebParser(validate=False).parse_string(
+        "fam MARTIN Pierre +1705 #mp Lyon #ms Registre DUBOIS Marie\n"
+        "fevt\n#marr 1705\nend fevt\n"
+    )
+    assert sorted(g.persons) == ["DUBOIS_Marie_0", "MARTIN_Pierre_0"]
+    assert [e.event_type.name for f in g.families.values() for e in f.events] == ["MARRIAGE"]
+
+
+def test_source_de_mariage_avec_url_contenant_des_plus_ne_casse_pas_la_ligne_fam():
+    g = GeneWebParser(validate=False).parse_string(
+        "fam MARTIN Pierre +1705 #mp Lyon #ms Registre_(http://a.b.c/d?e=f&g=h+i+j&k=1) DUBOIS Marie\n"
+        "fevt\n#marr 1705\nend fevt\n"
+    )
+    assert sorted(g.persons) == ["DUBOIS_Marie_0", "MARTIN_Pierre_0"]
+    assert [e.event_type.name for f in g.families.values() for e in f.events] == ["MARRIAGE"]
