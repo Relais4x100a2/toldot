@@ -127,6 +127,9 @@ class Family:
     start_line: Optional[int] = None
     end_line: Optional[int] = None
 
+    # Ligne ``fam ? ? + ? ?`` : conjoints inconnus déclarés, pas une omission
+    spouses_unknown: bool = False
+
     # Validation gracieuse
     is_valid: bool = field(default=True)
     validation_errors: List[Any] = field(
@@ -136,7 +139,7 @@ class Family:
     def __post_init__(self):
         """Validation après initialisation"""
         # Vérifier qu'au moins un époux est défini (validation gracieuse)
-        if not self.husband_id and not self.wife_id:
+        if not self.husband_id and not self.wife_id and not self.spouses_unknown:
             from .exceptions import GeneWebValidationError
 
             error = GeneWebValidationError(

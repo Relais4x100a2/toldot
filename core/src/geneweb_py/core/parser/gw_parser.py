@@ -885,13 +885,15 @@ class GeneWebParser:
                 for title in family_info["wife_titles"]:
                     wife.add_title(title)
 
-        # Créer la famille seulement si au moins un époux est défini
-        if husband_id or wife_id:
+        # La ligne fam existe : la famille aussi, même si les deux conjoints sont
+        # inconnus (``fam ? ? + ? ?``), sinon enfants et événements sont perdus (R13)
+        if tokens:
             family_id = f"FAM_{len(families) + 1:03d}"
             family = Family(
                 family_id=family_id,
                 husband_id=husband_id,
                 wife_id=wife_id,
+                spouses_unknown=not (husband_id or wife_id),
                 marriage_date=family_info["marriage_date"],
                 marriage_place=family_info["marriage_place"],
                 marriage_status=family_info["marriage_status"],

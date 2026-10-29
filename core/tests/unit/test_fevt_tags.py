@@ -52,3 +52,24 @@ def test_evenements_standard_et_autres_gardent_l_ordre_du_bloc():
         FamilyEventType.MARRIAGE,
         FamilyEventType.RESIDENCE,
     ]
+
+
+def test_famille_sans_aucun_conjoint_connu_garde_enfants_et_evenements():
+    g = GeneWebParser(validate=False).parse_string(
+        "fam ? ? + ? ?\nbeg\n- h Pierre 1700\nend\nfevt\n#marr 1699\nend fevt\n"
+    )
+    (f,) = g.families.values()
+    assert f.husband_id is None and f.wife_id is None
+    assert len(f.children) == 1
+    assert [e.family_event_type for e in f.events] == [FamilyEventType.MARRIAGE]
+    assert f.validation_errors == []
+    assert len(g.persons) == 1
+
+
+def test_fevt_apres_famille_sans_conjoint_ne_se_rattache_pas_a_la_famille_precedente():
+    g = GeneWebParser(validate=False).parse_string(
+        "fam MARTIN Pierre + DUBOIS Marie\nfam ? ? + ? ?\nfevt\n#marr 1699\nend fevt\n"
+    )
+    premiere, seconde = g.families.values()
+    assert premiere.events == []
+    assert len(seconde.events) == 1
