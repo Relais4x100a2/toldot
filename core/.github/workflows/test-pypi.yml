@@ -1,0 +1,220 @@
+name: Tests PyPI et Publication
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  lint:
+    name: Lint (workflow réutilisable)
+    uses: ./.github/workflows/lint.yml
+
+  tests-suite:
+    name: Tests et couverture (workflow réutilisable)
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
+
+  test-packaging:
+    name: Test packaging et métadonnées
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine check-manifest pip-licenses
+      
+      - name: Check manifest
+        run: check-manifest || true
+      
+      - name: Build package
+        run: python -m build
+      
+      - name: Check package with twine
+        run: twine check dist/*
+      
+      - name: Install package from wheel
+        run: |
+          pip install dist/*.whl
+      
+      - name: Test imports
+        run: |
+          python -c "from geneweb_py import GeneWebParser, Genealogy, Person, Family, Date"
+          python -c "import geneweb_py; print(f'Version: {geneweb_py.__version__}')"
+      
+      - name: Run packaging tests
+        run: |
+          pip install pytest pytest-cov
+          pytest tests/packaging/ -v --tb=short --cov=src/geneweb_py --cov-report=term
+
+  test-compatibility:
+    name: Test Python ${{ matrix.python-version }} sur ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Linux : suite complète déjà couverte par tests-suite (workflow réutilisable)
+        os: [windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,api]"
+          pip install pytest-cov
+      
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ tests/compatibility/ -v --tb=short -m "not slow" --cov=src/geneweb_py --cov-report=term
+      
+      - name: Run integration tests (fast only)
+        run: |
+          pytest tests/integration/test_complete_person_parsing.py -v --tb=short --cov=src/geneweb_py --cov-report=term --cov-append
+
+  test-security:
+    name: Audit de sécurité
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,api]"
+          pip install pip-audit pip-licenses
+      
+      - name: Run security audit
+        run: |
+          python << 'PY'
+          from pathlib import Path
+
+          try:
+              import tomllib
+          except ImportError:
+              import tomli as tomllib  # type: ignore
+
+          data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+          project = data["project"]
+          lines = []
+          lines.extend(project.get("dependencies", []))
+          optional = project.get("optional-dependencies", {})
+          for group in ("dev", "api", "validation"):
+              lines.extend(optional.get(group, []))
+          Path("audit-requirements.txt").write_text(
+              "\n".join(lines) + "\n", encoding="utf-8"
+          )
+          PY
+          pip-audit -r audit-requirements.txt --desc --strict
+      
+      - name: Check licenses
+        run: |
+          pip-licenses --format=markdown --output-file=licenses.md
+          cat licenses.md
+      
+      - name: Run security tests
+        run: |
+          pip install pytest pytest-cov
+          pytest tests/security/ -v --tb=short --cov=src/geneweb_py --cov-report=term
+
+  publish-test-pypi:
+    name: Publier sur TestPyPI
+    needs:
+      - lint
+      - tests-suite
+      - test-packaging
+      - test-compatibility
+      - test-security
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+      
+      - name: Build package
+        run: python -m build
+      
+      - name: Publish to TestPyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          twine upload --repository testpypi dist/* --skip-existing
+
+  publish-pypi:
+    name: Publier sur PyPI
+    needs:
+      - lint
+      - tests-suite
+      - test-packaging
+      - test-compatibility
+      - test-security
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+      
+      - name: Build package
+        run: python -m build
+      
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          twine upload dist/*
+

@@ -1,0 +1,37 @@
+encoding: utf-8
+gwplus
+
+fam DUPONT Jean + MARTIN Marie
+wit m: MARTIN Pierre
+wit f: DUPONT Anne
+fevt
+#marr 1900 #p [Mairie]_-_Lyon
+wit m: DURAND Paul
+note Note de mariage
+#div 1910
+end fevt
+beg
+- h DUPONT Louis
+end
+
+pevt DUPONT Jean
+#birt 1870 #p Lyon
+#occu 1895 #p [Atelier_Rose]_-_Lyon
+wit m: MARTIN Pierre
+note Apprenti
+#Cours_peinture ~1890
+#Membre_1900 1900
+wit f: DUPONT Anne
+#Action-Sociale 1905 #s Archives
+#bapm 1870
+#buri 1925 #p Lyon
+#crem 1926
+#deat 1925
+end pevt
+
+pevt MARTIN Marie
+#educ 1880
+wit m: DURAND Paul
+note Ecole du soir
+#resi 1885 #p Paris
+end pevt

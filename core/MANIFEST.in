@@ -1,0 +1,54 @@
+# MANIFEST.in
+# Contrôle des fichiers inclus dans la distribution source
+
+# Inclure les fichiers de documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+include pyproject.toml
+
+# Inclure la documentation
+recursive-include doc *.md
+recursive-include doc/geneweb *.md
+
+# Inclure les exemples
+recursive-include examples *.py
+recursive-include examples/output *.ged *.json *.xml
+
+# Exclure les fichiers de développement
+exclude .gitignore
+exclude .coveragerc
+exclude scripts/validate_pypi.sh
+exclude scripts/check_pypi_readiness.py
+
+# Exclure les dossiers de test et développement
+recursive-exclude tests *
+recursive-exclude htmlcov *
+recursive-exclude .github *
+recursive-exclude __pycache__ *
+recursive-exclude *.egg-info *
+
+# Exclure les fichiers temporaires
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude .DS_Store
+global-exclude *.so
+global-exclude *.dylib
+
+# Exclure les fichiers de cache
+global-exclude *~
+global-exclude *.swp
+global-exclude *.swo
+
+# Exclure les rapports
+exclude coverage.json
+exclude COVERAGE_REPORT.md
+exclude IMPLEMENTATION_SUMMARY.md
+exclude OPTIMIZATIONS_SUMMARY.md
+exclude PHASE1_FINAL_SUMMARY.md
+exclude PHASE1_REPORT.md
+exclude PROGRESS_LOG.md
+exclude SESSION_FINAL_SUMMARY.md
+exclude TESTING_ROADMAP.md
+

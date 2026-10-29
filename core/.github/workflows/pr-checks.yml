@@ -1,0 +1,167 @@
+name: Vérifications Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# GITHUB_TOKEN : liste + création / mise à jour de commentaires PR (API issues)
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  pr-checks:
+    name: Vérifications PR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout ref PR (historique complet)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -e ".[dev,api,validation]"
+          pip install pytest-cov
+
+      - name: Compute merge-base and baseline coverage.json
+        id: baseline
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          BASE_SHA=$(git merge-base "origin/${BASE_REF}" "${HEAD_SHA}")
+          echo "merge_base=${BASE_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Mesure couverture au merge-base ${BASE_SHA} (base: ${BASE_REF})"
+          git checkout "${BASE_SHA}"
+          # Génère coverage.json sur la ligne de base (sans bloquer la CI PR si la base est cassée)
+          pytest tests/ \
+            --cov=src/geneweb_py \
+            --cov-report=json \
+            --cov-report=term-missing \
+            -q \
+            --tb=no \
+            || true
+          if [ -f coverage.json ]; then
+            cp coverage.json coverage_baseline.json
+            echo "baseline_ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Impossible de générer coverage.json au merge-base — régression non comparée."
+            echo "baseline_ok=false" >> "$GITHUB_OUTPUT"
+          fi
+          git checkout "${HEAD_SHA}"
+
+      - name: Run tests on PR branch (coverage.json + seuil minimal)
+        id: pytest_pr
+        continue-on-error: true
+        run: |
+          pytest tests/ \
+            --cov=src/geneweb_py \
+            --cov-report=term-missing \
+            --cov-report=json \
+            --cov-fail-under=84 \
+            -v
+
+      - name: Préparer le corps du commentaire couverture / régression
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        id: cov_comment_body
+        run: |
+          OUTCOME_PYTEST="${{ steps.pytest_pr.outcome }}"
+          if [ "${OUTCOME_PYTEST}" = "success" ]; then
+            # Guillemets simples : sinon bash interprète les backticks comme une commande (pytest + … → erreur « + » introuvable).
+            TESTS_LABEL='succès (`pytest + --cov-fail-under=84`)'
+          else
+            TESTS_LABEL="échec ou seuil — voir journaux (\`${OUTCOME_PYTEST}\`)"
+          fi
+          python3 scripts/ci/pr_coverage_comment.py \
+            --current coverage.json \
+            --baseline coverage_baseline.json \
+            --fail-under 84 \
+            --base-ref ${{ github.base_ref }} \
+            --tests-outcome "${TESTS_LABEL}" \
+            --regression-epsilon 0.15 \
+            -o pr_coverage_comment_body.md
+
+      - name: Publier ou mettre à jour le commentaire de régression couverture
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- geneweb-py-coverage-regression -->';
+            const botLogin = 'github-actions[bot]';
+            const path = 'pr_coverage_comment_body.md';
+
+            let body;
+            try {
+              body = fs.readFileSync(path, 'utf8');
+            } catch (e) {
+              body = marker + '\n## Couverture et régression\n\n'
+                + '*Impossible de lire `pr_coverage_comment_body.md` (étape précédente).*\n';
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find((c) =>
+              c.user && c.user.login === botLogin && c.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Vérifier seuil pytest et régression vs merge-base
+        if: always()
+        env:
+          MERGE_BASE: ${{ steps.baseline.outputs.merge_base }}
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.pytest_pr.outcome }}" != "success" ]; then
+            echo "::error::Les tests pytest (avec --cov-fail-under=84) ont échoué."
+            exit 1
+          fi
+          echo "Régression vs merge-base (${MERGE_BASE}):"
+          python3 scripts/ci/pr_coverage_comment.py \
+            --current coverage.json \
+            --baseline coverage_baseline.json \
+            --fail-under 84 \
+            --base-ref ${{ github.base_ref }} \
+            --tests-outcome "succès" \
+            --regression-epsilon 0.15 \
+            --fail-on-regression
+
+      - name: Vérifier nouveaux tests ajoutés
+        run: |
+          BASE_REF="${{ github.base_ref }}"
+          NEW_TESTS=$(git diff --name-only "origin/${BASE_REF}...HEAD" | grep -E 'test_.*\.py$' | wc -l || true)
+          echo "Nouveaux fichiers de test: ${NEW_TESTS}"
+          if [ "${NEW_TESTS}" -gt 0 ]; then
+            echo "Des fichiers de test ont été ajoutés ou modifiés dans cette PR."
+          fi

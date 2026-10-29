@@ -1,0 +1,11 @@
+fam CORNO Joseph_Marie_Vincent + THOMAS Marie_Julienne
+beg
+- h Paul_Henri
+- f Marie_Claire
+end
+
+rel CORNO Paul_Henri
+beg
+- godp fath: DUBOIS Marie_Elisabeth
+- godp moth: MARTIN Pierre_Jean
+end

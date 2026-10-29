@@ -1,0 +1,31 @@
+# Fichier avec erreurs syntaxiques pour tester la récupération d'erreurs
+
+# Personne valide
+DUPONT Pierre
+    0 
+    m
+    *1950
+
+# Personne avec date invalide
+MARTIN Jacques
+    0
+    m
+    *invalid_date  # Date malformée
+
+# Personne sans information minimale (nom uniquement)
+DURAND
+    0
+
+# Famille avec référence manquante
+fam SMITH John + UNKNOWN Mary
+    0
+    m 1980
+    - h SMITH Tom  # Enfant qui n'existe pas
+
+# Personne avec dates incohérentes (naissance après décès)
+BERNARD Marie
+    0
+    f
+    *2000
+    +1990  # Décès avant naissance !
+
