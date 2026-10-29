@@ -123,6 +123,10 @@ class Family:
     # Métadonnées
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+    # Provenance : lignes du fichier .gw source (1-indexées, bornes incluses)
+    start_line: Optional[int] = None
+    end_line: Optional[int] = None
+
     # Validation gracieuse
     is_valid: bool = field(default=True)
     validation_errors: List[Any] = field(

@@ -154,6 +154,10 @@ class Event:
     # Type brut pour les événements non reconnus (event_type == OTHER dans ce cas)
     event_type_raw: Optional[str] = None
 
+    # Provenance : lignes du fichier .gw source (1-indexées, bornes incluses)
+    start_line: Optional[int] = None
+    end_line: Optional[int] = None
+
     def add_witness(
         self,
         person_id: str,

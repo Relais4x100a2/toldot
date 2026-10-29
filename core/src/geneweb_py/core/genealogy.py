@@ -141,6 +141,10 @@ class Genealogy:
             if person.nickname and not existing.nickname:
                 existing.nickname = person.nickname
 
+            if existing.start_line is None and person.start_line is not None:
+                existing.start_line = person.start_line
+                existing.end_line = person.end_line
+
             # Fusionner les événements (éviter les doublons)
             for event in person.events:
                 if event not in existing.events:

@@ -79,6 +79,52 @@ def _tokens_line_text(tokens: List[Token], start: int) -> Tuple[str, int]:
     return "".join(parts), i
 
 
+def _content_lines(tokens: List[Token], with_end: bool = False) -> List[int]:
+    """Numéros de ligne (triés) portant du contenu.
+
+    Les fins de bloc (``end``, ``end pevt``...) sont exclues sauf ``with_end``.
+    """
+    return sorted(
+        {
+            t.line_number
+            for t in tokens
+            if t.line_number
+            and t.type not in (TokenType.NEWLINE, TokenType.EOF)
+            and (with_end or not t.type.name.startswith("END"))
+        }
+    )
+
+
+def _node_line_span(node: SyntaxNode) -> Tuple[Optional[int], Optional[int]]:
+    """Première et dernière ligne source d'un nœud (enfants compris)."""
+    lines = _content_lines(node.tokens)
+    for child in node.children:
+        lines.extend(_content_lines(child.tokens))
+    return (min(lines), max(lines)) if lines else (None, None)
+
+
+def _mark_person_defined(
+    person: Person, start: Optional[int], end: Optional[int]
+) -> None:
+    """Fixe la provenance d'une personne au premier bloc qui la définit."""
+    if person.start_line is None:
+        person.start_line = start
+        person.end_line = end
+
+
+def _assign_event_end_lines(events: List[Any], tokens: List[Token]) -> None:
+    """Calcule ``end_line`` : dernière ligne de contenu avant l'événement suivant."""
+    lines = _content_lines(tokens)
+    started = [e for e in events if e.start_line is not None]
+    started.sort(key=lambda e: e.start_line)
+    for idx, event in enumerate(started):
+        limit = started[idx + 1].start_line if idx + 1 < len(started) else None
+        inside = [
+            n for n in lines if n >= event.start_line and (limit is None or n < limit)
+        ]
+        event.end_line = max(inside) if inside else event.start_line
+
+
 def _is_line_start_note(tokens: List[Token], i: int) -> bool:
     """Vrai si tokens[i] est un mot ``note`` en début de ligne (hors ``#``)."""
     tok = tokens[i]
@@ -649,6 +695,13 @@ class GeneWebParser:
                 elif node.tokens and node.tokens[0].type == TokenType.BEG:
                     # C'est un bloc enfants (beg/end) à associer à la famille courante
                     if current_family is not None:
+                        end_lines = _content_lines(node.tokens, with_end=True)
+                        for child_node in node.children:
+                            end_lines += _content_lines(child_node.tokens, True)
+                        if end_lines:
+                            current_family.end_line = max(
+                                end_lines + [current_family.end_line or 0]
+                            )
                         for child_node in node.children:
                             self._parse_child(
                                 child_node, current_family, persons, genealogy
@@ -823,6 +876,12 @@ class GeneWebParser:
                 divorce_date=family_info["divorce_date"],
                 is_separated=family_info["is_separated"],
             )
+
+            family.start_line, family.end_line = _node_line_span(node)
+            header_line = tokens[0].line_number if tokens else None
+            for spouse_id in (husband_id, wife_id):
+                if spouse_id:
+                    _mark_person_defined(persons[spouse_id], header_line, header_line)
 
             # Parser les enfants
             for child_node in node.children:
@@ -1595,6 +1654,9 @@ class GeneWebParser:
                 ),
             )
 
+            child_line = tokens[0].line_number
+            _mark_person_defined(persons[child_id], child_line, child_line)
+
             # Parser les informations personnelles supplémentaires (occupation, etc.)
             i = self._parse_inline_personal_info(tokens, i, persons[child_id])
 
@@ -1892,6 +1954,8 @@ class GeneWebParser:
                 genealogy.add_or_update_person(person)
 
             person = persons[person_id]
+            _mark_person_defined(person, *_node_line_span(node))
+            events_before = len(person.events)
 
             # Parser les événements
             i = 3  # Passer pevt, nom, prénom
@@ -1940,6 +2004,7 @@ class GeneWebParser:
                     )
                     person.add_event(birth_event)
                     last_event = birth_event
+                    birth_event.start_line = token.line_number
 
                 elif token.type == TokenType.DEAT:
                     i += 1
@@ -1980,6 +2045,7 @@ class GeneWebParser:
                     )
                     person.add_event(death_event)
                     last_event = death_event
+                    death_event.start_line = token.line_number
 
                 elif token.type == TokenType.BAPT:
                     i += 1
@@ -2018,6 +2084,7 @@ class GeneWebParser:
                         )
                         person.add_event(baptism_event)
                         last_event = baptism_event
+                        baptism_event.start_line = token.line_number
 
                 elif token.type == TokenType.NOTE:
                     i += 1
@@ -2067,6 +2134,7 @@ class GeneWebParser:
                     # dans un bloc pevt — parser via regex car tokenisées en COMMENT
                     evt = self._parse_pevt_comment_line(token.value, person.unique_id)
                     if evt is not None:
+                        evt.start_line = token.line_number
                         person.add_event(evt)
                         last_event = evt
                     i += 1
@@ -2074,9 +2142,11 @@ class GeneWebParser:
                 elif token.type in _PEVT_DEDICATED_TOKENS:
                     # #occu / #buri / #crem : tokens dédiés du lexer, reconstitués
                     # en ligne puis traités comme les autres événements
+                    event_line = token.line_number
                     line_text, i = _tokens_line_text(tokens, i)
                     evt = self._parse_pevt_comment_line(line_text, person.unique_id)
                     if evt is not None:
+                        evt.start_line = event_line
                         person.add_event(evt)
                         last_event = evt
 
@@ -2093,6 +2163,8 @@ class GeneWebParser:
 
                 else:
                     i += 1
+
+            _assign_event_end_lines(person.events[events_before:], tokens)
 
     def _parse_fevt_spouse_header(
         self,
@@ -2367,6 +2439,7 @@ class GeneWebParser:
                     continue
                 fevt_event_count += 1
                 current_event = self._family_event_from_token(token.type)
+                current_event.start_line = token.line_number
                 parsed_events.append(current_event)
                 i += 1
                 i = self._consume_family_event_optional_fields(tokens, i, current_event)
@@ -2432,6 +2505,8 @@ class GeneWebParser:
                 continue
 
             i += 1
+
+        _assign_event_end_lines(parsed_events, tokens)
 
         for pid, person in witness_persons.items():
             if pid not in persons:
