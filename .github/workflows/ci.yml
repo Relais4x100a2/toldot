@@ -17,12 +17,12 @@ concurrency:
 jobs:
   lint:
     name: Lint (ruff, mypy, lock)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
@@ -45,16 +45,16 @@ jobs:
 
   tests:
     name: Tests core (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
@@ -74,7 +74,7 @@ jobs:
 
       - name: Archive coverage report
         if: matrix.python-version == '3.12'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-xml
           path: coverage.xml
@@ -82,10 +82,10 @@ jobs:
 
   docker-build:
     name: Build image Docker (app)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [lint, tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build (contexte = racine du monorepo, sans push)
         run: docker build -f app/docker/geneweb-app/Dockerfile -t toldot-app:ci .
