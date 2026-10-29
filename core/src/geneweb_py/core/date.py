@@ -47,6 +47,23 @@ class DeathType(Enum):
     DISAPPEARED = "s"  # Disparu
 
 
+# Premier jour (1er vendémiaire) des années républicaines I à XIV ; l'an XIV
+# s'arrête au 31 décembre 1805 (retour au calendrier grégorien).
+_REPUBLICAN_YEAR_STARTS = {
+    1: date(1792, 9, 22), 2: date(1793, 9, 22), 3: date(1794, 9, 22),
+    4: date(1795, 9, 23), 5: date(1796, 9, 22), 6: date(1797, 9, 22),
+    7: date(1798, 9, 22), 8: date(1799, 9, 23), 9: date(1800, 9, 23),
+    10: date(1801, 9, 23), 11: date(1802, 9, 23), 12: date(1803, 9, 24),
+    13: date(1804, 9, 23), 14: date(1805, 9, 23),
+}  # fmt: skip
+_REPUBLICAN_LAST_DAY = date(1805, 12, 31)
+
+
+def _republican_complementary_days(year: int) -> int:
+    """Nombre de jours complémentaires (5, ou 6 les années sextiles III, VII, XI)"""
+    return 6 if year in (3, 7, 11) else 5
+
+
 def _shift_years(day: date, years: int) -> date:
     """Décale d'un nombre d'années (29 février → 28 février si besoin)"""
     year = min(max(day.year + years, date.min.year), date.max.year)
@@ -98,7 +115,8 @@ class Date:
         if self.day is not None and (self.day < 1 or self.day > 31):
             raise ValueError(f"Jour invalide: {self.day}")
 
-        if self.month is not None and (self.month < 1 or self.month > 12):
+        max_month = 13 if self.calendar == CalendarType.FRENCH_REPUBLICAN else 12
+        if self.month is not None and (self.month < 1 or self.month > max_month):
             raise ValueError(f"Mois invalide: {self.month}")
 
         if self.year is not None and self.year < 1:
@@ -192,7 +210,7 @@ class Date:
                 parts.append("|".join(alt_texts))
             elif self.prefix == DatePrefix.BETWEEN:
                 if self.alternative_dates:
-                    parts.append(f"..{self.alternative_dates[0].year}")
+                    parts.append(f"..{self.alternative_dates[0].display_text}")
 
         result = "".join(parts)
 
@@ -218,7 +236,8 @@ class Date:
         - ``>`` : borne haute ouverte, borne basse = lendemain de la fin de la date ;
         - ``|`` et ``..`` : enveloppe de toutes les alternatives.
 
-        Le calendrier julien est converti en grégorien (proleptique).
+        Le calendrier julien est converti en grégorien (proleptique) ; le
+        calendrier républicain l'est par table pour les ans I à XIV.
 
         Args:
             fuzzy_window_years: demi-fenêtre appliquée aux dates ``~``.
@@ -227,12 +246,20 @@ class Date:
             ``(None, None)`` si la date est inconnue ou en texte libre.
 
         Raises:
-            UnsupportedCalendarError: calendrier républicain ou hébraïque.
+            UnsupportedCalendarError: calendrier hébraïque, ou année républicaine
+                hors de I–XIV.
             ValueError: date impossible (ex. 31 février) ou hors de 1..9999.
         """
         if self.is_unknown or self.text_date or self.year is None:
             return (None, None)
-        if self.calendar not in (CalendarType.GREGORIAN, CalendarType.JULIAN):
+        if self.calendar == CalendarType.HEBREW or (
+            self.calendar == CalendarType.FRENCH_REPUBLICAN
+            and any(
+                d.year not in _REPUBLICAN_YEAR_STARTS
+                for d in [self, *self.alternative_dates]
+                if d.year is not None
+            )
+        ):
             raise UnsupportedCalendarError(
                 f"Le calendrier {self.calendar.name.lower()} n'est pas supporté "
                 "pour le calcul de bornes automatiques",
@@ -263,6 +290,8 @@ class Date:
         self, year: int, month: Optional[int], day: Optional[int]
     ) -> Tuple[date, date]:
         """Premier et dernier jour (grégoriens) de la période, dans le calendrier"""
+        if self.calendar == CalendarType.FRENCH_REPUBLICAN:
+            return self._republican_span(year, month, day)
         if month is None:
             first, last = (year, 1, 1), (year, 12, 31)
         elif day is None:
@@ -271,6 +300,26 @@ class Date:
         else:
             first = last = (year, month, day)
         return self._to_gregorian(*first), self._to_gregorian(*last)
+
+    def _republican_span(
+        self, year: int, month: Optional[int], day: Optional[int]
+    ) -> Tuple[date, date]:
+        """Période républicaine en jours grégoriens (l'an XIV s'arrête au 31/12/1805)"""
+        start = _REPUBLICAN_YEAR_STARTS[year]
+        complementary = _republican_complementary_days(year)
+        if month is None:
+            first_idx, last_idx = 0, 359 + complementary
+        else:
+            length = complementary if month == 13 else 30
+            if day is not None and day > length:
+                raise ValueError(f"Jour invalide: {day}/{month}/{year}")
+            first_idx = (month - 1) * 30 + (day - 1 if day else 0)
+            last_idx = first_idx if day else first_idx + length - 1
+        first = start + timedelta(days=first_idx)
+        last = min(start + timedelta(days=last_idx), _REPUBLICAN_LAST_DAY)
+        if first > _REPUBLICAN_LAST_DAY:
+            raise ValueError(f"Date républicaine hors période: {month}/{year}")
+        return first, last
 
     def _days_in_month(self, year: int, month: int) -> int:
         if month == 2:
@@ -403,10 +452,13 @@ class Date:
             prefix = DatePrefix.BETWEEN
             parts = date_str.split("..")
             date_str = parts[0]
+            if date_str[-1:] in ("J", "F", "H"):
+                date_str = date_str[:-1]  # calendrier écrit sur la première borne
             if len(parts) > 1:
-                # Pour BETWEEN, on stocke juste l'année de fin
-                end_year = int(parts[1])
-                alternative_dates.append(cls(year=end_year))
+                # Borne de fin : année seule ou date complète, même calendrier
+                fin = cls._parse_impl(parts[1] + calendar.value)
+                fin.calendar = CalendarType.GREGORIAN  # le calendrier reste porté par la date principale
+                alternative_dates.append(fin)
 
         # Parser la date principale avec gestion des champs vides
         if "/" in date_str:
