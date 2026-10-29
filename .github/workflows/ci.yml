@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (ruff, mypy, lock)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras --frozen
+
+      - name: Lockfile is up to date
+        run: uv lock --check
+
+      - name: Ruff lint
+        run: uv run --package geneweb-py ruff check core/src core/tests --ignore E501 --output-format=github
+
+      - name: Ruff format
+        run: uv run --package geneweb-py ruff format --check core/src core/tests
+
+      # Gate ciblé : la dette mypy globale de core reste suivie à part
+      - name: Mypy (modules gardés)
+        run: |
+          uv run --package geneweb-py mypy \
+            core/src/geneweb_py/api/models/person.py core/src/geneweb_py/api/routers/persons.py \
+            core/src/geneweb_py/analytics core/src/geneweb_py/core/event_to_organization.py \
+            --ignore-missing-imports \
+            --disable-error-code no-untyped-def \
+            --disable-error-code call-arg
+
+  tests:
+    name: Tests core (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras --frozen
+
+      - name: Tests with coverage (seuil 80 %)
+        run: |
+          uv run --package geneweb-py --with pytest-xdist python -m pytest core \
+            -n auto \
+            --cov=core/src/geneweb_py \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=80
+
+      - name: Archive coverage report
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 30
+
+  docker-build:
+    name: Build image Docker (app)
+    runs-on: ubuntu-latest
+    needs: [lint, tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (contexte = racine du monorepo, sans push)
+        run: docker build -f app/docker/geneweb-app/Dockerfile -t toldot-app:ci .
+
+      - name: Import smoke test
+        run: |
+          docker run --rm toldot-app:ci python -c \
+            "import geneweb_py; from src.pevt_extractor import PEVTExtractor; print('import ok')"
