@@ -1,14 +1,8 @@
 """
-Adaptateur geneweb-py -> PEVTRaw (transition, pas encore branché)
+Adaptateur geneweb-py -> PEVTRaw (branché dans pevt_extractor)
 
-Remplace ``gw_parser.extract_custom_pevts`` par le moteur central ``geneweb-py``.
-Pour basculer, il suffit dans ``pevt_extractor.py`` de remplacer
-
-    from .gw_parser import extract_custom_pevts
-
-par
-
-    from .gw_adapter import extract_custom_pevts
+Remplace l'ancien parseur regex interne (supprimé) par le moteur central
+``geneweb-py``.
 
 Les pages Streamlit continuent de consommer des ``PEVTRaw`` : rien d'autre ne change.
 ``geneweb-py`` est importé à l'appel pour que l'application démarre même si la

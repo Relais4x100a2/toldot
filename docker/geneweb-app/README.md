@@ -112,7 +112,7 @@ docker/geneweb-app/
 ├── src/                            # Code source
 │   ├── __init__.py
 │   ├── data_models.py              # Modèles de données
-│   ├── gw_parser.py                # Parser de fichiers .gw
+│   ├── gw_adapter.py               # Adaptateur geneweb-py -> PEVTRaw
 │   ├── pevt_extractor.py           # Extraction des PEVT
 │   ├── dspy_optimizer.py           # Optimisation DSPY
 │   └── utils.py                    # Utilitaires
@@ -229,7 +229,7 @@ Voilà ! J'ai créé une architecture complète avec :
 1. **Fichier principal** : `app.py` - Interface d'accueil
 2. **Modules source** (dans `src/`) :
    - `data_models.py` - Modèles de données
-   - `gw_parser.py` - Parser de fichiers .gw
+   - `gw_adapter.py` - Adaptateur geneweb-py vers PEVTRaw
    - `pevt_extractor.py` - Extraction intelligente
    - `dspy_optimizer.py` - Optimisation DSPY
    - `utils.py` - Utilitaires et DataManager

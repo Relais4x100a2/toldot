@@ -10,7 +10,7 @@ n'ont pas besoin d'annotation manuelle.
 from typing import List, Dict, Tuple
 from collections import Counter
 from .data_models import PEVTRaw
-from .gw_parser import extract_custom_pevts
+from .gw_adapter import extract_custom_pevts
 
 
 class PEVTExtractor:
