@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import chardet
 
-from ..event import EventType
+from ..event import EventType, WitnessKind
 from ..exceptions import (
     GeneWebEncodingError,
     GeneWebParseError,
@@ -846,11 +846,11 @@ class GeneWebParser:
         while i < len(tokens):
             tok = tokens[i]
             if tok.type == TokenType.WIT:
-                next_i, witness_id, witness_type = self._parse_witness_person(
-                    tokens, i, persons, genealogy
+                next_i, witness_id, witness_type, witness_kind = (
+                    self._parse_witness_person(tokens, i, persons, genealogy)
                 )
                 if witness_id:
-                    family.add_witness(witness_id, witness_type)
+                    family.add_witness(witness_id, witness_type, witness_kind)
                 i = next_i
                 continue
             if tok.type == TokenType.SEP:
@@ -2048,11 +2048,11 @@ class GeneWebParser:
 
                 elif token.type == TokenType.WIT:
                     # Parser les témoins avec informations complètes et les rattacher à l'événement courant  # noqa: E501
-                    next_i, witness_id, witness_type = self._parse_witness_person(
-                        tokens, i, persons, genealogy
+                    next_i, witness_id, witness_type, witness_kind = (
+                        self._parse_witness_person(tokens, i, persons, genealogy)
                     )
                     if witness_id and last_event is not None:
-                        last_event.add_witness(witness_id, witness_type)
+                        last_event.add_witness(witness_id, witness_type, witness_kind)
                     i = next_i
 
                 elif token.type == TokenType.COMMENT:
@@ -2326,11 +2326,11 @@ class GeneWebParser:
                     i = self._skip_fevt_witness_person(tokens, i)
                     continue
                 fevt_witness_count += 1
-                next_i, witness_id, witness_type = self._parse_witness_person(
-                    tokens, i, witness_persons, genealogy
+                next_i, witness_id, witness_type, witness_kind = (
+                    self._parse_witness_person(tokens, i, witness_persons, genealogy)
                 )
                 if witness_id and current_event is not None:
-                    current_event.add_witness(witness_id, witness_type)
+                    current_event.add_witness(witness_id, witness_type, witness_kind)
                 i = next_i
                 continue
 
@@ -2565,6 +2565,17 @@ class GeneWebParser:
 
         return None
 
+    @staticmethod
+    def _witness_kind_at(tokens: List[Token], index: int) -> Optional[WitnessKind]:
+        """Rôle de témoin du jeton à ``index`` (``#godp``, ``#offi``), sinon None."""
+        if index >= len(tokens):
+            return None
+        if tokens[index].type == TokenType.GODP:
+            return WitnessKind.GODPARENT
+        if tokens[index].value == "#offi":
+            return WitnessKind.OFFICER
+        return None
+
     def _skip_fevt_witness_person(self, tokens: List[Token], start_index: int) -> int:
         """Avance après un jeton ``wit`` sans créer de personne témoin.
 
@@ -2586,6 +2597,8 @@ class GeneWebParser:
             i += 1
         if i < len(tokens) and tokens[i].type == TokenType.COLON:
             i += 1
+        if self._witness_kind_at(tokens, i) is not None:
+            i += 1
         if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
             i += 1
         if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
@@ -2602,10 +2615,10 @@ class GeneWebParser:
 
     def _parse_witness_person(
         self, tokens: List[Token], start_index: int, persons: dict, genealogy: Genealogy
-    ) -> Tuple[int, Optional[str], Optional[str]]:
+    ) -> Tuple[int, Optional[str], Optional[str], Optional[WitnessKind]]:
         """Parse un témoin avec toutes ses informations personnelles
 
-        Format: wit [m|f]: LastName FirstName [dates] [#bp place] [#occu occupation] ...
+        Format: wit [m|f]: [#godp|#offi] LastName FirstName [dates] [#bp place] ...
 
         Args:
             tokens: Liste des tokens
@@ -2614,13 +2627,13 @@ class GeneWebParser:
             genealogy: Objet Genealogy
 
         Returns:
-            Tuple (index_suivant, witness_id, witness_type)
+            Tuple (index_suivant, witness_id, witness_type, witness_kind)
         """
         i = start_index
 
         # Passer le token wit
         if i >= len(tokens) or tokens[i].type != TokenType.WIT:
-            return i + 1, None, None
+            return i + 1, None, None, None
         i += 1
 
         # Type de témoin (m ou f) - optionnel
@@ -2635,6 +2648,11 @@ class GeneWebParser:
 
         # Passer les deux points
         if i < len(tokens) and tokens[i].type == TokenType.COLON:
+            i += 1
+
+        # Rôle explicite (#godp / #offi) entre les deux points et le nom
+        witness_kind = self._witness_kind_at(tokens, i)
+        if witness_kind is not None:
             i += 1
 
         # Extraire nom et prénom
@@ -2660,7 +2678,7 @@ class GeneWebParser:
             i += 1
 
         if not last_name or not first_name:
-            return i, None, None
+            return i, None, None, None
 
         # Utiliser la nouvelle méthode de déduplication
         witness_id = self._get_or_create_person(
@@ -2670,7 +2688,7 @@ class GeneWebParser:
         # Parser les informations personnelles supplémentaires
         i = self._parse_inline_personal_info(tokens, i, persons[witness_id])
 
-        return i, witness_id, witness_type
+        return i, witness_id, witness_type, witness_kind
 
     def _parse_inline_personal_info(
         self, tokens: List[Token], start_index: int, person: Person

@@ -10,7 +10,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from .date import Date
-from .event import EventType, FamilyEvent, FamilyEventType
+from .event import EventType, FamilyEvent, FamilyEventType, WitnessKind
 
 if TYPE_CHECKING:
     pass
@@ -223,14 +223,24 @@ class Family:
                 return True
         return False
 
-    def add_witness(self, person_id: str, witness_type: Optional[str] = None) -> None:
+    def add_witness(
+        self,
+        person_id: str,
+        witness_type: Optional[str] = None,
+        witness_kind: Optional[WitnessKind] = None,
+    ) -> None:
         """Ajoute un témoin au mariage
 
         Args:
             person_id: ID de la personne témoin
             witness_type: Type de témoin (m=masculin, f=féminin)
+            witness_kind: Rôle explicite (``#godp``, ``#offi``), None si simple
         """
-        witness = {"person_id": person_id, "type": witness_type}
+        witness = {
+            "person_id": person_id,
+            "type": witness_type,
+            "witness_kind": witness_kind,
+        }
         self.witnesses.append(witness)
 
     def add_event(self, event: FamilyEvent) -> None:

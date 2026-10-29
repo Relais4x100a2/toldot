@@ -107,6 +107,13 @@ class FamilyEventType(Enum):
     NAME_STRING = "strng"
 
 
+class WitnessKind(Enum):
+    """Rôle d'un témoin explicitement marqué dans le ``.gw``"""
+
+    GODPARENT = "godp"  # ``wit m: #godp Personne`` : parrain ou marraine
+    OFFICER = "offi"  # ``#offi`` : documenté par GeneWeb, pas encore implémenté
+
+
 @dataclass
 class Event:
     """Représentation d'un événement généalogique
@@ -147,14 +154,24 @@ class Event:
     # Type brut pour les événements non reconnus (event_type == OTHER dans ce cas)
     event_type_raw: Optional[str] = None
 
-    def add_witness(self, person_id: str, witness_type: Optional[str] = None) -> None:
+    def add_witness(
+        self,
+        person_id: str,
+        witness_type: Optional[str] = None,
+        witness_kind: Optional[WitnessKind] = None,
+    ) -> None:
         """Ajoute un témoin à l'événement
 
         Args:
             person_id: ID de la personne témoin
             witness_type: Type de témoin (m=masculin, f=féminin, etc.)
+            witness_kind: Rôle explicite (``#godp``, ``#offi``), None si témoin simple
         """
-        witness_info = {"person_id": person_id, "type": witness_type}
+        witness_info = {
+            "person_id": person_id,
+            "type": witness_type,
+            "witness_kind": witness_kind,
+        }
         self.witnesses.append(witness_info)
 
     def add_note(self, note: str) -> None:
