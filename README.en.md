@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/img/banner.svg" alt="TOLDOT: a family tree extended into a network of organizations" width="100%">
+
 # TOLDOT
 
 **From GeneWeb genealogy to prosopography: a reliable parser, an object model, organizations, graphs and LLM-assisted enrichment.**
@@ -8,7 +10,7 @@
 
 [![CI](https://github.com/Relais4x100a2/toldot/actions/workflows/ci.yml/badge.svg)](https://github.com/Relais4x100a2/toldot/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13-blue?logo=python)
-![Tests](https://img.shields.io/badge/tests-1110%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1245%20passed-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-%E2%89%A5%2080%25-brightgreen)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -25,6 +27,9 @@ TOLDOT tackles this in three steps:
 1. **Read** a `.gw` file without losing anything, with a parser tested on edge cases (apostrophes, multiple calendars, approximate dates, GW Plus extensions, encodings).
 2. **Model**: besides `Person`, `Family` and `Event`, an **`Organization`** entity linked to people through dated links. The `.gw` file is never modified; organizations live in a JSON sidecar file.
 3. **Discover** the organizations hidden in free-text events, first with auditable **deterministic rules**, then with the help of an **LLM** that can be optimized (DSPy) and validated by a human.
+
+
+<p align="center"><img src="docs/img/pipeline.svg" alt="Pipeline: .gw, parser, model, rules and LLM, organizations, networks" width="100%"><br><em>Original illustrations, released into the public domain (CC0).</em></p>
 
 ```
                 ┌───────────────────────────────────────────────────────┐
@@ -80,7 +85,7 @@ toldot/
 │   │   ├── api/               FastAPI: sessions, persons, families, events, genealogy
 │   │   ├── cli/               `geneweb-py` binary (Click + Rich)
 │   │   └── analytics/         networks (optional extra)
-│   ├── tests/                 1110 tests; strictly synthetic `.gw` fixtures
+│   ├── tests/                 1245 tests; strictly synthetic `.gw` fixtures
 │   └── doc/                   architecture, performance, roadmap
 ├── app/                       Enrichment application (Streamlit / DSPy / OpenRouter)
 │   ├── docker/geneweb-app/    `geneweb-app` package: Streamlit pages + `src/`
@@ -149,7 +154,7 @@ uv sync --all-packages --all-extras
 
 ```bash
 uv run --package geneweb-py python -m pytest core
-# expected: 1110 passed, 17 skipped
+# expected: 1245 passed, 17 skipped
 ```
 
 ### 3. Try the CLI on a fixture

@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/img/banner.svg" alt="TOLDOT : un arbre généalogique prolongé en réseau d'organisations" width="100%">
+
 # TOLDOT
 
 **De la généalogie GeneWeb à la prosopographie : parser fiable, modèle objet, organisations, graphes et enrichissement par LLM.**
@@ -8,7 +10,7 @@
 
 [![CI](https://github.com/Relais4x100a2/toldot/actions/workflows/ci.yml/badge.svg)](https://github.com/Relais4x100a2/toldot/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13-blue?logo=python)
-![Tests](https://img.shields.io/badge/tests-1110%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1245%20passed-brightgreen)
 ![Couverture](https://img.shields.io/badge/couverture-%E2%89%A5%2080%25-brightgreen)
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-green.svg)](LICENSE)
 
@@ -25,6 +27,9 @@ TOLDOT s'attaque à ce problème en trois temps :
 1. **Lire** un fichier `.gw` sans rien perdre, avec un parser testé sur des cas limites (apostrophes, calendriers multiples, dates approximatives, extensions GW Plus, encodages).
 2. **Modéliser** : en plus de `Person`, `Family` et `Event`, une entité **`Organization`** reliée aux personnes par des liens datés. Le fichier `.gw` n'est jamais modifié ; les organisations vivent dans un fichier compagnon JSON.
 3. **Découvrir** les organisations cachées dans les événements libres, d'abord par des **règles déterministes** auditables, puis avec l'aide d'un **LLM** que l'on peut optimiser (DSPy) et valider humainement.
+
+
+<p align="center"><img src="docs/img/pipeline.svg" alt="Chaîne de traitement : .gw, parser, modèle, règles et LLM, organisations, réseaux" width="100%"><br><em>Illustrations originales du dépôt, dédiées au domaine public (CC0).</em></p>
 
 ```
                 ┌───────────────────────────────────────────────────────┐
@@ -80,7 +85,7 @@ toldot/
 │   │   ├── api/               FastAPI : sessions, persons, families, events, genealogy
 │   │   ├── cli/               binaire `geneweb-py` (Click + Rich)
 │   │   └── analytics/         réseaux (extra facultatif)
-│   ├── tests/                 1110 tests ; fixtures `.gw` strictement synthétiques
+│   ├── tests/                 1245 tests ; fixtures `.gw` strictement synthétiques
 │   └── doc/                   architecture, performances, feuille de route
 ├── app/                       Application d'enrichissement (Streamlit / DSPy / OpenRouter)
 │   ├── docker/geneweb-app/    paquet `geneweb-app` : pages Streamlit + `src/`
@@ -149,7 +154,7 @@ uv sync --all-packages --all-extras
 
 ```bash
 uv run --package geneweb-py python -m pytest core
-# attendu : 1110 passed, 17 skipped
+# attendu : 1245 passed, 17 skipped
 ```
 
 ### 3. Essayer le CLI sur une fixture

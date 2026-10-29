@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 220" role="img" aria-labelledby="t d">
+  <title id="t">TOLDOT</title>
+  <desc id="d">Un arbre généalogique stylisé dont les branches se prolongent en réseau d'organisations.</desc>
+  <!-- Illustration originale, dédiée au domaine public (CC0 1.0). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f3a5f"/><stop offset="1" stop-color="#3b6e8f"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="220" rx="14" fill="url(#bg)"/>
+  <g stroke="#e8d9b0" stroke-width="2.5" fill="none" stroke-linecap="round">
+    <path d="M150 190 V135"/>
+    <path d="M150 135 C150 110 95 110 95 85"/>
+    <path d="M150 135 C150 110 205 110 205 85"/>
+    <path d="M95 85 C95 65 60 65 60 45"/>
+    <path d="M95 85 C95 65 130 65 130 45"/>
+    <path d="M205 85 C205 65 170 65 170 45"/>
+    <path d="M205 85 C205 65 240 65 240 45"/>
+  </g>
+  <g fill="#e8d9b0">
+    <circle cx="150" cy="190" r="9"/><circle cx="150" cy="135" r="8"/>
+    <circle cx="95" cy="85" r="7"/><circle cx="205" cy="85" r="7"/>
+    <circle cx="60" cy="45" r="6"/><circle cx="130" cy="45" r="6"/>
+    <circle cx="170" cy="45" r="6"/><circle cx="240" cy="45" r="6"/>
+  </g>
+  <!-- liens vers le réseau d'organisations -->
+  <g stroke="#9fd3c7" stroke-width="1.5" stroke-dasharray="5 5" fill="none">
+    <path d="M240 45 C330 40 360 90 450 95"/>
+    <path d="M205 85 C300 110 360 130 450 130"/>
+    <path d="M130 45 C250 10 380 20 450 60"/>
+  </g>
+  <g stroke="#9fd3c7" stroke-width="2" fill="none">
+    <path d="M450 60 L520 100 L450 130 Z"/><path d="M450 95 L520 100"/>
+    <path d="M520 100 L600 70"/><path d="M520 100 L600 140"/><path d="M600 70 L600 140"/>
+  </g>
+  <g fill="#9fd3c7">
+    <rect x="442" y="52" width="16" height="16" rx="3"/><rect x="442" y="87" width="16" height="16" rx="3"/>
+    <rect x="442" y="122" width="16" height="16" rx="3"/><rect x="512" y="92" width="16" height="16" rx="3"/>
+    <rect x="592" y="62" width="16" height="16" rx="3"/><rect x="592" y="132" width="16" height="16" rx="3"/>
+  </g>
+  <text x="650" y="112" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="bold" fill="#fff" letter-spacing="4">TOLDOT</text>
+  <text x="652" y="146" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#e8d9b0">généalogie · prosopographie</text>
+</svg>

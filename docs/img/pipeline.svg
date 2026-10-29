@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 200" role="img" aria-labelledby="t d">
+  <title id="t">Chaîne de traitement TOLDOT</title>
+  <desc id="d">Fichier .gw, puis parser, modèle objet, règles, LLM optionnel, et enfin réseau et exports.</desc>
+  <!-- Illustration originale, dédiée au domaine public (CC0 1.0). -->
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5b6b7a"/></marker></defs>
+  <g font-family="Helvetica, Arial, sans-serif" font-size="14" text-anchor="middle">
+    <g fill="#f4efe1" stroke="#b9a977" stroke-width="2">
+      <rect x="10" y="60" width="120" height="80" rx="10"/>
+    </g>
+    <text x="70" y="96" fill="#3a3320" font-weight="bold">base.gw</text><text x="70" y="116" fill="#3a3320" font-size="12">source intacte</text>
+    <g fill="#dfeaf3" stroke="#5f8db3" stroke-width="2">
+      <rect x="170" y="60" width="120" height="80" rx="10"/><rect x="330" y="60" width="120" height="80" rx="10"/>
+    </g>
+    <text x="230" y="96" fill="#1f3a5f" font-weight="bold">Parser</text><text x="230" y="116" fill="#1f3a5f" font-size="12">lexer · syntaxe</text>
+    <text x="390" y="96" fill="#1f3a5f" font-weight="bold">Modèle objet</text><text x="390" y="116" fill="#1f3a5f" font-size="12">personnes · familles</text>
+    <g fill="#e1f1ec" stroke="#4f9d8a" stroke-width="2">
+      <rect x="490" y="30" width="120" height="60" rx="10"/><rect x="490" y="110" width="120" height="60" rx="10" stroke-dasharray="6 4"/>
+    </g>
+    <text x="550" y="66" fill="#1d5a4c" font-weight="bold">Règles</text>
+    <text x="550" y="140" fill="#1d5a4c" font-weight="bold">LLM</text><text x="550" y="158" fill="#1d5a4c" font-size="12">optionnel · DSPy</text>
+    <g fill="#f6e4e4" stroke="#b86a6a" stroke-width="2"><rect x="650" y="60" width="120" height="80" rx="10"/></g>
+    <text x="710" y="96" fill="#6a2a2a" font-weight="bold">Organisations</text><text x="710" y="116" fill="#6a2a2a" font-size="12">fichier compagnon</text>
+    <g fill="#ece6f4" stroke="#7d68a8" stroke-width="2"><rect x="800" y="60" width="90" height="80" rx="10"/></g>
+    <text x="845" y="96" fill="#3d2f63" font-weight="bold">Réseaux</text><text x="845" y="116" fill="#3d2f63" font-size="12">GraphML · GEXF</text>
+  </g>
+  <g stroke="#5b6b7a" stroke-width="2" fill="none" marker-end="url(#a)">
+    <path d="M130 100H168"/><path d="M290 100H328"/><path d="M450 100 L488 62"/><path d="M450 100 L488 138"/>
+    <path d="M610 62 L648 90"/><path d="M610 138 L648 112"/><path d="M770 100H798"/>
+  </g>
+</svg>

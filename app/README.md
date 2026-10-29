@@ -1,3 +1,5 @@
+<p align="center"><img src="../docs/img/pipeline.svg" alt="Chaîne de traitement TOLDOT" width="100%"></p>
+
 # GeneWeb Revamped - Processeur de Fichiers via LLM
 
 Cette application Streamlit analyse les fichiers GeneWeb (`.gw`) et utilise l'intelligence artificielle via OpenRouter pour identifier et transformer les événements personnalisés en nouvelles entités organisationnelles.
