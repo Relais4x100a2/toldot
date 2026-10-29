@@ -1,13 +1,16 @@
-# Contexte = racine du workspace : tout est exclu sauf ce dont l'image a besoin.
-# (aucune base .gw, aucun autre dépôt, aucun .venv ne doit entrer dans le contexte)
+# Contexte = racine du monorepo : tout est exclu sauf ce dont l'image a besoin.
+# (aucune base .gw, aucun _local_testdata, aucun .venv ne doit entrer dans le contexte)
 *
 
-!geneweb-py/pyproject.toml
-!geneweb-py/README.md
-!geneweb-py/LICENSE
-!geneweb-py/src/**
+!pyproject.toml
+!uv.lock
 
-!geneweb_revamped/docker/geneweb-app/**
+!core/pyproject.toml
+!core/README.md
+!core/LICENSE
+!core/src/**
+
+!app/docker/geneweb-app/**
 
 **/.venv
 **/__pycache__

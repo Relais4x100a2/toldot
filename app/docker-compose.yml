@@ -24,16 +24,16 @@ services:
 
   geneweb-app:
     build:
-      # Racine du workspace (parent de ce dépôt) : permet d'embarquer ../geneweb-py
+      # Racine du monorepo (parent de app/) : embarque core/ via le workspace uv
       context: ..
-      dockerfile: geneweb_revamped/docker/geneweb-app/Dockerfile
+      dockerfile: app/docker/geneweb-app/Dockerfile
     container_name: geneweb-app
     ports:
       - "8501:8501"
     volumes:
       - ${GENEWEB_BASES_HOST_DIR:-./data/geneweb_bases}:/opt/geneweb/bases
       - ./data/training:/opt/geneweb/data/training
-      - ./docker/geneweb-app:/workspace/geneweb_revamped/docker/geneweb-app
+      - ./docker/geneweb-app:/workspace/app/docker/geneweb-app
     environment:
       # Charger depuis le fichier .env
       - API_KEY_OPENROUTER=${API_KEY_OPENROUTER}

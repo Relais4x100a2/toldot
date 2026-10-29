@@ -30,29 +30,30 @@ ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
 
 # Créer les dossiers nécessaires
 RUN mkdir -p /opt/geneweb/data/training \
-    && mkdir -p /opt/geneweb/bases \
-    && mkdir -p /app
+    && mkdir -p /opt/geneweb/bases
 
-# Le contexte de build est la racine du workspace (voir docker-compose.yml) : il contient
-# geneweb-py à côté de geneweb_revamped. Les chemins relatifs de pyproject.toml
-# (../../../geneweb-py) y restent valables.
-WORKDIR /workspace/geneweb_revamped/docker/geneweb-app
+# Le contexte de build est la racine du monorepo (voir app/docker-compose.yml). L'image
+# reproduit la disposition du workspace uv : pyproject.toml + uv.lock racine, core/ et app/.
+WORKDIR /workspace
 
 # Environnement virtuel hors du dossier applicatif : un bind mount de développement sur
 # ce dossier ne doit pas le masquer
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Moteur geneweb-py (dépendance locale, installée non éditable dans l'image)
-COPY geneweb-py/pyproject.toml geneweb-py/README.md geneweb-py/LICENSE /workspace/geneweb-py/
-COPY geneweb-py/src /workspace/geneweb-py/src
+# Workspace uv : manifeste racine, lock unifié et moteur geneweb-py (membre du workspace,
+# installé non éditable dans l'image)
+COPY pyproject.toml uv.lock ./
+COPY core/pyproject.toml core/README.md core/LICENSE core/
+COPY core/src core/src
 
-# Dépendances verrouillées par uv.lock
-COPY geneweb_revamped/docker/geneweb-app/pyproject.toml geneweb_revamped/docker/geneweb-app/uv.lock ./
-RUN uv sync --frozen --no-dev --no-editable --no-install-project
+# Dépendances verrouillées de l'application (couche mise en cache tant que le lock ne change pas)
+COPY app/docker/geneweb-app/pyproject.toml app/docker/geneweb-app/
+RUN uv sync --frozen --no-dev --no-editable --package geneweb-app --no-install-project
 
 # Copier le code source de l'application
-COPY geneweb_revamped/docker/geneweb-app/ ./
+WORKDIR /workspace/app/docker/geneweb-app
+COPY app/docker/geneweb-app/ ./
 
 # Créer un fichier de configuration Streamlit
 RUN mkdir -p /root/.streamlit && \

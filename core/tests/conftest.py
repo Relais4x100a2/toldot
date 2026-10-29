@@ -5,6 +5,8 @@ Ce fichier contient les fixtures et configurations partagées
 pour tous les tests.
 """
 
+from pathlib import Path
+
 import pytest
 
 try:
@@ -135,3 +137,10 @@ fevt CORNO Joseph + THOMAS Marie
 #marr 10/08/2015 #p Paris
 end fevt
 """
+
+
+@pytest.fixture(autouse=True)
+def _run_from_package_root(monkeypatch):
+    """Les tests référencent ``tests/fixtures/...`` en relatif : se placer à la racine
+    du paquet, quel que soit le répertoire de lancement (racine du monorepo incluse)."""
+    monkeypatch.chdir(Path(__file__).resolve().parent.parent)
