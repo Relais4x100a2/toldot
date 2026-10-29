@@ -27,8 +27,13 @@ packages = ["src"]
 
 [dependency-groups]
 dev = [
+    "geneweb-py",
     "pytest>=7.0.0",
     "black>=23.0.0",
     "flake8>=6.0.0",
     "mypy>=1.0.0",
 ]
+
+# Moteur de parsing .gw (dépôt voisin, développement local uniquement)
+[tool.uv.sources]
+geneweb-py = { path = "../../../geneweb-py", editable = true }
