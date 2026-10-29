@@ -115,3 +115,13 @@ def test_source_de_mariage_avec_url_contenant_des_plus_ne_casse_pas_la_ligne_fam
     )
     assert sorted(g.persons) == ["DUBOIS_Marie_0", "MARTIN_Pierre_0"]
     assert [e.event_type.name for f in g.families.values() for e in f.events] == ["MARRIAGE"]
+
+
+def test_temoin_au_nom_compose_avec_barre_recoit_sa_wnote():
+    g = GeneWebParser(validate=False).parse_string(
+        "pevt MARTIN Pierre\n#birt 1700\nwit f: DU/PONT_X/Y Marie\nwnote cousine\nend pevt\n"
+    )
+    pierre = g.persons["MARTIN_Pierre_0"]
+    temoins = pierre.events[0].witnesses
+    assert len(temoins) == 1
+    assert temoins[0]["note"] == "cousine"

@@ -2889,12 +2889,19 @@ class GeneWebParser:
         occurrence_num = None
 
         if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-            last_name = tokens[i].value
-            i += 1
+            # un mot peut être découpé par le lexeur (``A/B``) : on le recolle
+            fin = mot_end(tokens, i)
+            if fin - 1 > i and tokens[fin - 1].type == TokenType.NUMBER:
+                fin -= 1  # ``.1`` collé = numéro d'occurrence, pas le nom
+            last_name = _join_tokens_text(tokens[i:fin])
+            i = fin
 
         if i < len(tokens) and tokens[i].type == TokenType.IDENTIFIER:
-            first_name = tokens[i].value
-            i += 1
+            fin = mot_end(tokens, i)
+            if fin - 1 > i and tokens[fin - 1].type == TokenType.NUMBER:
+                fin -= 1  # ``.1`` collé = numéro d'occurrence, pas le nom
+            first_name = _join_tokens_text(tokens[i:fin])
+            i = fin
 
         # Numéro d'occurrence (après le prénom)
         if i < len(tokens) and tokens[i].type == TokenType.NUMBER:
