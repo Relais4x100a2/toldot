@@ -332,6 +332,31 @@ class TestGEDCOMDatePrefixAndCalendarRoundTrip:
         line, _ = self._export_line_and_reloaded_date(date)
         assert line == "2 DATE ABT @#DFRENCH R@ 3 COMP 7"
 
+    @pytest.mark.parametrize(
+        ("day", "month", "year"),
+        [(3, 13, 7), (18, 2, 8), (None, 2, 8), (None, None, 8)],
+    )
+    def test_french_republican_date_survives_round_trip(self, day, month, year):
+        date = Date(
+            day=day, month=month, year=year, calendar=CalendarType.FRENCH_REPUBLICAN
+        )
+        _, restored = self._export_line_and_reloaded_date(date)
+        assert restored.calendar == CalendarType.FRENCH_REPUBLICAN
+        assert (restored.day, restored.month, restored.year) == (day, month, year)
+
+    def test_prefixed_republican_date_survives_round_trip(self):
+        date = Date(
+            day=3,
+            month=13,
+            year=7,
+            prefix=DatePrefix.BEFORE,
+            calendar=CalendarType.FRENCH_REPUBLICAN,
+        )
+        _, restored = self._export_line_and_reloaded_date(date)
+        assert restored.prefix == DatePrefix.BEFORE
+        assert restored.calendar == CalendarType.FRENCH_REPUBLICAN
+        assert (restored.day, restored.month, restored.year) == (3, 13, 7)
+
     def test_plain_gregorian_date_unchanged(self):
         line, restored = self._export_line_and_reloaded_date(
             Date(day=15, month=6, year=1990)

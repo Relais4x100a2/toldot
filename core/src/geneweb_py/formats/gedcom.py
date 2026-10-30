@@ -659,6 +659,18 @@ class GEDCOMImporter(BaseImporter):
             return None
         if tokens[0] == "BET":
             return None
+        calendar = CalendarType.GREGORIAN
+        months = self._GEDCOM_MONTHS
+        if tokens[:2] == ["@#DFRENCH", "R@"]:
+            calendar = CalendarType.FRENCH_REPUBLICAN
+            months = {
+                name: number
+                for number, name in enumerate(GEDCOMExporter._FRENCH_REPUBLICAN_MONTHS)
+                if name
+            }
+            tokens = tokens[2:]
+            if not tokens:
+                return None
         day: Optional[int] = None
         month: Optional[int] = None
         year: Optional[int] = None
@@ -667,8 +679,8 @@ class GEDCOMImporter(BaseImporter):
                 year = int(tokens[0])
         elif len(tokens) == 2:
             mkey = tokens[0].upper()
-            if mkey in self._GEDCOM_MONTHS and tokens[1].isdigit():
-                month = self._GEDCOM_MONTHS[mkey]
+            if mkey in months and tokens[1].isdigit():
+                month = months[mkey]
                 year = int(tokens[1])
             elif tokens[0].isdigit() and tokens[1].isdigit():
                 day = int(tokens[0])
@@ -677,12 +689,14 @@ class GEDCOMImporter(BaseImporter):
             if tokens[0].isdigit():
                 day = int(tokens[0])
             mkey = tokens[1].upper()
-            if mkey in self._GEDCOM_MONTHS:
-                month = self._GEDCOM_MONTHS[mkey]
+            if mkey in months:
+                month = months[mkey]
             if tokens[2].isdigit():
                 year = int(tokens[2])
         try:
-            return Date(day=day, month=month, year=year, prefix=prefix)
+            return Date(
+                day=day, month=month, year=year, prefix=prefix, calendar=calendar
+            )
         except ValueError as exc:
             raise ConversionError(
                 f"Date GEDCOM invalide : {value!r}",
