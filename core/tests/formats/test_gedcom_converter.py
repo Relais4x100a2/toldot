@@ -9,7 +9,7 @@ import tempfile
 import pytest
 
 from geneweb_py.core.date import CalendarType, Date, DatePrefix
-from geneweb_py.core.event import Event, EventType
+from geneweb_py.core.event import Event, EventType, FamilyEvent, PersonalEvent
 from geneweb_py.core.family import Child, ChildSex, Family, MarriageStatus
 from geneweb_py.core.genealogy import Genealogy
 from geneweb_py.core.person import Gender, Person
@@ -585,3 +585,152 @@ class TestGEDCOMXrefConformity:
         for header in ("@I1@", "I1"):
             ged = f"0 HEAD\n0 {header} INDI\n1 NAME Jean /DUPONT/\n0 TRLR\n"
             assert len(GEDCOMImporter().import_from_string(ged).persons) == 1
+
+
+class TestGEDCOMPersonalEventsRoundTrip:
+    """Les événements personnels et familiaux survivent à l'aller-retour GEDCOM."""
+
+    DATE = Date(day=3, month=7, year=1850, calendar=CalendarType.FRENCH_REPUBLICAN)
+
+    @staticmethod
+    def _export(person=None, family=None):
+        genealogy = Genealogy()
+        person = person or Person(last_name="DUPONT", first_name="Jean")
+        genealogy.add_person(person)
+        if family is not None:
+            family.husband_id = person.unique_id
+            genealogy.add_family(family)
+        return GEDCOMExporter().export_to_string(genealogy)
+
+    @classmethod
+    def _person_events(cls, *events):
+        person = Person(last_name="DUPONT", first_name="Jean")
+        for event in events:
+            person.add_event(event)
+        content = cls._export(person)
+        (restored,) = GEDCOMImporter().import_from_string(content).persons.values()
+        return content, restored.events
+
+    @pytest.mark.parametrize(
+        ("event_type", "tag"),
+        [
+            (EventType.OCCUPATION, "OCCU"),
+            (EventType.RESIDENCE, "RESI"),
+            (EventType.EDUCATION, "EDUC"),
+            (EventType.IMMIGRATION, "IMMI"),
+            (EventType.EMIGRATION, "EMIG"),
+            (EventType.RECENSEMENT, "CENS"),
+            (EventType.RETIREMENT, "RETI"),
+        ],
+    )
+    def test_standard_tag_round_trip(self, event_type, tag):
+        event = PersonalEvent(
+            event_type=event_type, date=self.DATE, place="Lyon", notes=["Une note"]
+        )
+        content, events = self._person_events(event)
+        assert f"1 {tag}" in content.splitlines()
+        (restored,) = events
+        assert restored.event_type == event_type
+        assert (
+            restored.date.year == 1850 and restored.date.calendar == self.DATE.calendar
+        )
+        assert restored.place == "Lyon"
+        assert restored.notes == ["Une note"]
+
+    @pytest.mark.parametrize(
+        "event_type",
+        [
+            EventType.DECORATION,
+            EventType.MILITARY_SERVICE,
+            EventType.ELECTION,
+            EventType.ILLNESS,
+        ],
+    )
+    def test_event_without_standard_tag_uses_even_and_type(self, event_type):
+        event = PersonalEvent(event_type=event_type, date=self.DATE, place="Lyon")
+        content, events = self._person_events(event)
+        lines = content.splitlines()
+        assert "1 EVEN" in lines
+        assert f"2 TYPE {event_type.value}" in lines
+        (restored,) = events
+        assert restored.event_type == event_type
+        assert restored.place == "Lyon"
+        assert restored.date.year == 1850
+
+    def test_free_label_event_keeps_its_label(self):
+        event = PersonalEvent(
+            event_type=EventType.OTHER, event_type_raw="Libellé libre", place="Lyon"
+        )
+        content, events = self._person_events(event)
+        assert "2 TYPE Libellé libre" in content.splitlines()
+        (restored,) = events
+        assert restored.event_type == EventType.OTHER
+        assert restored.event_type_raw == "Libellé libre"
+
+    def test_multiline_event_note_round_trip(self):
+        event = PersonalEvent(
+            event_type=EventType.DECORATION, notes=["Ligne un\nLigne deux"]
+        )
+        content, events = self._person_events(event)
+        for number, line in enumerate(content.splitlines(), start=1):
+            assert re.match(r"^\d+ ", line), f"ligne {number} sans niveau"
+        assert "\n".join(events[0].notes) == "Ligne un\nLigne deux"
+
+    def test_several_events_keep_their_order_and_count(self):
+        events_in = [
+            PersonalEvent(event_type=EventType.RESIDENCE, place="A"),
+            PersonalEvent(event_type=EventType.DECORATION, place="B"),
+            PersonalEvent(event_type=EventType.RESIDENCE, place="C"),
+        ]
+        _, events = self._person_events(*events_in)
+        assert [(e.event_type, e.place) for e in events] == [
+            (e.event_type, e.place) for e in events_in
+        ]
+
+    @pytest.mark.parametrize(
+        "event_type",
+        [
+            EventType.RESIDENCE,
+            EventType.SEPARATION,
+            EventType.ENGAGEMENT,
+            EventType.OTHER,
+        ],
+    )
+    def test_family_event_round_trip(self, event_type):
+        raw = "Libellé libre" if event_type == EventType.OTHER else None
+        event = FamilyEvent(
+            event_type=event_type, date=self.DATE, place="Lyon", event_type_raw=raw
+        )
+        family = Family(family_id="f1")
+        family.events.append(event)
+        reloaded = GEDCOMImporter().import_from_string(self._export(family=family))
+        (fam,) = reloaded.families.values()
+        (restored,) = fam.events
+        assert restored.event_type == event_type
+        assert restored.event_type_raw == raw
+        assert restored.place == "Lyon"
+        assert restored.date.year == 1850
+
+    @pytest.mark.parametrize(
+        "event_type", [EventType.MARRIAGE, EventType.DIVORCE, EventType.ENGAGEMENT]
+    )
+    def test_family_type_event_on_a_person_uses_even(self, event_type):
+        event = PersonalEvent(event_type=event_type, place="Lyon")
+        content, events = self._person_events(event)
+        indi = content.split("0 @I0001@ INDI")[1]
+        assert f"1 {event_type.value.upper()}" not in indi.splitlines()
+        assert "1 EVEN" in indi.splitlines()
+        (restored,) = events
+        assert restored.event_type == event_type and restored.place == "Lyon"
+
+    def test_importer_reads_even_without_type_as_other(self):
+        ged = "0 HEAD\n0 @I1@ INDI\n1 NAME Jean /DUPONT/\n1 EVEN\n2 PLAC Lyon\n0 TRLR\n"
+        (person,) = GEDCOMImporter().import_from_string(ged).persons.values()
+        (event,) = person.events
+        assert event.event_type == EventType.OTHER and event.place == "Lyon"
+
+    def test_importer_keeps_unknown_type_as_free_label(self):
+        ged = "0 HEAD\n0 @I1@ INDI\n1 NAME Jean /DUPONT/\n1 EVEN\n2 TYPE Mystère\n0 TRLR\n"
+        (person,) = GEDCOMImporter().import_from_string(ged).persons.values()
+        (event,) = person.events
+        assert event.event_type == EventType.OTHER and event.event_type_raw == "Mystère"

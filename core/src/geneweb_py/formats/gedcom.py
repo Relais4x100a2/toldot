@@ -263,21 +263,36 @@ class GEDCOMExporter(BaseExporter):
 
         # Événements familiaux
         for event in family.events:
-            event_lines = self._export_event(event)
+            event_lines = self._export_event(event, in_family=True)
             lines.extend(event_lines)
 
         return lines
 
-    def _export_event(self, event: Event) -> List[str]:
-        """Exporte un événement vers le format GEDCOM."""
+    def _export_event(self, event: Event, in_family: bool = False) -> List[str]:
+        """Exporte un événement vers le format GEDCOM.
+
+        MARR / DIV / ENGA ne sont valides que dans un bloc FAM, et les autres
+        balises que dans un INDI ; dans le mauvais contexte, EVEN + TYPE.
+        """
         lines = []
 
         # Mapper les types d'événements GeneWeb vers GEDCOM
         gedcom_type = self._map_event_type(
             event.event_type.value if event.event_type else ""
         )
+        # Sans balise dédiée, l'événement devient un EVEN typé (rien n'est perdu)
+        generic_type = None
+        if gedcom_type and in_family != (gedcom_type in ("MARR", "DIV", "ENGA")):
+            gedcom_type = None
+        if not gedcom_type and event.event_type:
+            gedcom_type = "EVEN"
+            generic_type = " ".join(
+                (event.event_type_raw or event.event_type.value).split()
+            )
         if gedcom_type:
             lines.append(f"1 {gedcom_type}")
+            if generic_type:
+                lines.append(f"2 TYPE {generic_type}")
 
             if event.date:
                 date_lines = self._export_date(event.date, gedcom_type)
@@ -438,6 +453,18 @@ class GEDCOMExporter(BaseExporter):
             "grad": "GRAD",
             "marr": "MARR",
             "div": "DIV",
+            "immi": "IMMI",
+            "emig": "EMIG",
+            "cens": "CENS",
+            "reti": "RETI",
+            "fcom": "FCOM",
+            "ordn": "ORDN",
+            "barm": "BARM",
+            "basm": "BASM",
+            "bles": "BLES",
+            "will": "WILL",
+            "prop": "PROP",
+            "enga": "ENGA",
         }
         return mapping.get(event_type.lower())
 
@@ -475,8 +502,19 @@ class GEDCOMImporter(BaseImporter):
         "NATU": EventType.NATURALIZATION,
         "OCCU": EventType.OCCUPATION,
         "RESI": EventType.RESIDENCE,
-        "IMMI": EventType.OTHER,
-        "EMIG": EventType.OTHER,
+        "EDUC": EventType.EDUCATION,
+        "IMMI": EventType.IMMIGRATION,
+        "EMIG": EventType.EMIGRATION,
+        "CENS": EventType.RECENSEMENT,
+        "RETI": EventType.RETIREMENT,
+        "FCOM": EventType.FIRST_COMMUNION,
+        "ORDN": EventType.ORDINATION,
+        "BARM": EventType.BAR_MITZVAH,
+        "BASM": EventType.BAT_MITZVAH,
+        "BLES": EventType.BENEDICTION,
+        "WILL": EventType.WILL,
+        "PROP": EventType.PROPERTY,
+        "CREM": EventType.CREMATION,
     }
 
     def __init__(self, encoding: str = "utf-8") -> None:
@@ -847,9 +885,10 @@ class GEDCOMImporter(BaseImporter):
         ln0, raw0 = block[start]
         lv0, _xr0, tg0, _v0 = self._parse_line(raw0, ln0)
         if tg0 != tag_expected:
-            return {"date": None, "place": None, "notes": []}, start + 1
+            return {"date": None, "place": None, "notes": [], "type": None}, start + 1
         date_v: Optional[Date] = None
         place_v: Optional[str] = None
+        type_v: Optional[str] = None
         notes_acc: List[str] = []
         i = start + 1
         while i < len(block):
@@ -863,6 +902,9 @@ class GEDCOMImporter(BaseImporter):
             elif tg == "PLAC":
                 place_v = va or place_v
                 i += 1
+            elif tg == "TYPE" and lv == 2:
+                type_v = va or type_v
+                i += 1
             elif tg == "NOTE":
                 text, j = self._parse_note_payload(block, i, lv)
                 if text:
@@ -874,7 +916,19 @@ class GEDCOMImporter(BaseImporter):
             "date": date_v,
             "place": place_v,
             "notes": notes_acc,
+            "type": type_v,
         }, i
+
+    @staticmethod
+    def _resolve_generic_event_type(
+        type_value: Optional[str],
+    ) -> Tuple[EventType, Optional[str]]:
+        """Type d'un EVEN : code EventType connu, sinon libellé libre (OTHER)."""
+        if type_value:
+            for event_type in EventType:
+                if event_type.value == type_value and event_type != EventType.OTHER:
+                    return event_type, None
+        return EventType.OTHER, type_value or None
 
     def _allocate_person(
         self, last_name: str, first_name: str, genealogy: Genealogy
@@ -987,13 +1041,19 @@ class GEDCOMImporter(BaseImporter):
                 i += 1
                 continue
             et = self._GEDCOM_TAG_TO_EVENT.get(tag)
-            if et is not None:
+            raw_type: Optional[str] = None
+            if tag == "EVEN":
                 payload, ni = self._parse_event_payload(block, i, tag)
+                et, raw_type = self._resolve_generic_event_type(payload.get("type"))
+            if et is not None:
+                if tag != "EVEN":
+                    payload, ni = self._parse_event_payload(block, i, tag)
                 meta: Dict[str, str] = {}
-                if et == EventType.OTHER and tag in ("IMMI", "EMIG"):
+                if tag in ("IMMI", "EMIG"):
                     meta["gedcom_tag"] = tag
                 ev = PersonalEvent(
                     event_type=et,
+                    event_type_raw=raw_type,
                     date=payload.get("date"),
                     place=payload.get("place"),
                     notes=list(payload.get("notes") or []),
@@ -1103,6 +1163,25 @@ class GEDCOMImporter(BaseImporter):
                     notes=list(payload.get("notes") or []),
                 )
                 fam_events.append(fe)
+                i = ni
+                continue
+            if tag in ("ENGA", "EVEN"):
+                payload, ni = self._parse_event_payload(block, i, tag)
+                if tag == "ENGA":
+                    fam_type, fam_raw = EventType.ENGAGEMENT, None
+                else:
+                    fam_type, fam_raw = self._resolve_generic_event_type(
+                        payload.get("type")
+                    )
+                fam_events.append(
+                    FamilyEvent(
+                        event_type=fam_type,
+                        event_type_raw=fam_raw,
+                        date=payload.get("date"),
+                        place=payload.get("place"),
+                        notes=list(payload.get("notes") or []),
+                    )
+                )
                 i = ni
                 continue
             if tag == "NOTE":
