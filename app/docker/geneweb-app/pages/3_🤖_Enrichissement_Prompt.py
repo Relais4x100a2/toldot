@@ -232,5 +232,4 @@ if st.session_state.current_prompt_version > 1 or len(st.session_state.annotatio
     st.markdown("---")
     if st.button("🔧 Passer à l'optimisation DSPY", type="primary"):
         st.switch_page("pages/4_🔧_Optimisation_DSPY.py")
-```
 

@@ -378,7 +378,5 @@ st.markdown("""
     <p>Développé avec ❤️ pour la généalogie</p>
 </div>
 """, unsafe_allow_html=True)
-```
 
-```
 
