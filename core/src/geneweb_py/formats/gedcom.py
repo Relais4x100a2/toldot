@@ -56,6 +56,8 @@ class GEDCOMExporter(BaseExporter):
         self.version = version
         self._person_ids: Dict[str, str] = {}
         self._family_ids: Dict[str, str] = {}
+        self._spouse_families: Dict[str, List[str]] = {}
+        self._child_families: Dict[str, List[str]] = {}
         self._next_person_id = 1
         self._next_family_id = 1
 
@@ -117,6 +119,8 @@ class GEDCOMExporter(BaseExporter):
             family_id = f"F{self._next_family_id:04d}"
             self._family_ids[family.family_id] = family_id
             self._next_family_id += 1
+
+        self._index_family_links(genealogy)
 
         # Exporter les personnes
         for person in genealogy.persons.values():
@@ -212,7 +216,27 @@ class GEDCOMExporter(BaseExporter):
                     event_lines = self._export_event(event)
                     lines.extend(event_lines)
 
+        # Liens retour vers les familles (le format les exige des deux côtés)
+        lines.extend(
+            f"1 FAMS @{fid}@" for fid in self._spouse_families.get(person.unique_id, [])
+        )
+        lines.extend(
+            f"1 FAMC @{fid}@" for fid in self._child_families.get(person.unique_id, [])
+        )
+
         return lines
+
+    def _index_family_links(self, genealogy: Genealogy) -> None:
+        """Indexe, par personne, les familles où elle est conjoint (FAMS) ou enfant (FAMC)."""
+        self._spouse_families = {}
+        self._child_families = {}
+        for family in genealogy.families.values():
+            fid = self._family_ids[family.family_id]
+            for spouse_id in (family.husband_id, family.wife_id):
+                if spouse_id:
+                    self._spouse_families.setdefault(spouse_id, []).append(fid)
+            for child in family.children:
+                self._child_families.setdefault(child.person_id, []).append(fid)
 
     def _export_family(self, family: Family) -> List[str]:
         """Exporte une famille vers le format GEDCOM."""

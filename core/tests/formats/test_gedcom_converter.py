@@ -10,7 +10,7 @@ import pytest
 
 from geneweb_py.core.date import CalendarType, Date, DatePrefix
 from geneweb_py.core.event import Event, EventType
-from geneweb_py.core.family import Family, MarriageStatus
+from geneweb_py.core.family import Child, ChildSex, Family, MarriageStatus
 from geneweb_py.core.genealogy import Genealogy
 from geneweb_py.core.person import Gender, Person
 from geneweb_py.formats.gedcom import ConversionError, GEDCOMExporter, GEDCOMImporter
@@ -451,3 +451,85 @@ class TestGEDCOMBetweenAndHebrewDates:
         assert restored.prefix == DatePrefix.ABOUT
         assert restored.calendar == CalendarType.HEBREW
         assert restored.year == 5750
+
+
+class TestGEDCOMFamilyLinks:
+    """Les fiches INDI pointent en retour vers leurs familles (FAMS / FAMC)."""
+
+    @staticmethod
+    def _genealogy():
+        genealogy = Genealogy()
+        father = Person(last_name="DUPONT", first_name="Jean", gender=Gender.MALE)
+        mother = Person(last_name="MARTIN", first_name="Marie", gender=Gender.FEMALE)
+        stepmother = Person(last_name="DURAND", first_name="Anne", gender=Gender.FEMALE)
+        child = Person(last_name="DUPONT", first_name="Paul", gender=Gender.MALE)
+        for person in (father, mother, stepmother, child):
+            genealogy.add_person(person)
+        first = Family(
+            family_id="f1", husband_id=father.unique_id, wife_id=mother.unique_id
+        )
+        first.children.append(Child(person_id=child.unique_id, sex=ChildSex.MALE))
+        second = Family(
+            family_id="f2", husband_id=father.unique_id, wife_id=stepmother.unique_id
+        )
+        genealogy.add_family(first)
+        genealogy.add_family(second)
+        return genealogy
+
+    @staticmethod
+    def _blocks(content):
+        """Retourne {xref: [lignes de niveau 1]} pour chaque enregistrement."""
+        blocks, current = {}, None
+        for line in content.splitlines():
+            if line.startswith("0 "):
+                parts = line.split()
+                current = parts[1] if len(parts) > 2 else None
+                if current:
+                    blocks[current] = []
+            elif current and line.startswith("1 "):
+                blocks[current].append(line)
+        return blocks
+
+    @staticmethod
+    def _targets(lines, tag):
+        return [
+            line.split()[2].strip("@") for line in lines if line.startswith(f"1 {tag} ")
+        ]
+
+    def test_spouse_gets_one_fams_per_union(self):
+        blocks = self._blocks(GEDCOMExporter().export_to_string(self._genealogy()))
+        assert self._targets(blocks["I0001"], "FAMS") == ["F0001", "F0002"]
+        assert self._targets(blocks["I0002"], "FAMS") == ["F0001"]
+
+    def test_child_gets_famc(self):
+        blocks = self._blocks(GEDCOMExporter().export_to_string(self._genealogy()))
+        assert self._targets(blocks["I0004"], "FAMC") == ["F0001"]
+        assert self._targets(blocks["I0001"], "FAMC") == []
+
+    def test_family_links_are_symmetric_with_fam_records(self):
+        blocks = self._blocks(GEDCOMExporter().export_to_string(self._genealogy()))
+        for xref, lines in blocks.items():
+            if not xref.startswith("I"):
+                continue
+            for fam in self._targets(lines, "FAMS"):
+                assert fam in blocks
+                fam_lines = blocks[fam]
+                assert any(
+                    t in ("HUSB", "WIFE") for t in [x.split()[1] for x in fam_lines]
+                )
+            for fam in self._targets(lines, "FAMC"):
+                assert any(x.startswith("1 CHIL ") for x in blocks[fam])
+
+    def test_round_trip_keeps_person_family_links(self):
+        genealogy = self._genealogy()
+        reloaded = GEDCOMImporter().import_from_string(
+            GEDCOMExporter().export_to_string(genealogy)
+        )
+        spouse_counts = sorted(
+            len(p.families_as_spouse) for p in reloaded.persons.values()
+        )
+        child_counts = sorted(
+            len(p.families_as_child) for p in reloaded.persons.values()
+        )
+        assert spouse_counts == [0, 1, 1, 2]
+        assert child_counts == [0, 0, 0, 1]

@@ -88,14 +88,14 @@ class TestGEDCOMExporter:
         family = Family(
             family_id="FAM001", husband_id=husband.unique_id, wife_id=wife.unique_id
         )
-        family.add_child(child)
+        family.add_child(child.unique_id)
         genealogy.add_family(family)
 
         result = exporter.export_to_string(genealogy)
         lines = result.split("\n")
 
         # Vérifier la présence d'une famille
-        fam_lines = [line for line in lines if " FAM" in line]
+        fam_lines = [line for line in lines if line.endswith(" FAM")]
         assert len(fam_lines) == 1
 
         # Vérifier les relations familiales
