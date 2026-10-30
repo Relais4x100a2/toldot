@@ -370,3 +370,14 @@ class TestDateComparisons:
         date = Date(year=1950, month=3, day=15)
         result = str(date)
         assert isinstance(result, str)
+
+
+class TestThirteenthMonth:
+    """Le 13e mois existe en hébreu (année embolismique) et en républicain, pas en grégorien."""
+
+    def test_hebrew_accepts_month_13(self):
+        assert Date(month=13, year=5750, calendar=CalendarType.HEBREW).month == 13
+
+    def test_gregorian_rejects_month_13(self):
+        with pytest.raises(ValueError):
+            Date(month=13, year=1850)

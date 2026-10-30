@@ -305,9 +305,28 @@ class GEDCOMExporter(BaseExporter):
         "COMP",
     ]
 
+    # Mois du calendrier hébreu ; le 7e (ADS) est l'Adar II des années embolismiques.
+    _HEBREW_MONTHS = [
+        "",
+        "TSH",
+        "CSH",
+        "KSL",
+        "TVT",
+        "SHV",
+        "ADR",
+        "ADS",
+        "NSN",
+        "IYR",
+        "SVN",
+        "TMZ",
+        "AAV",
+        "ELL",
+    ]
+
     # Échappement GEDCOM et noms de mois des calendriers non grégoriens.
     _CALENDARS = {
         CalendarType.FRENCH_REPUBLICAN: ("@#DFRENCH R@", _FRENCH_REPUBLICAN_MONTHS),
+        CalendarType.HEBREW: ("@#DHEBREW@", _HEBREW_MONTHS),
     }
 
     # Pas d'équivalent GEDCOM à « peut-être » : EST (estimé) est le plus proche.

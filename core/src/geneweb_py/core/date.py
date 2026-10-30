@@ -115,7 +115,12 @@ class Date:
         if self.day is not None and (self.day < 1 or self.day > 31):
             raise ValueError(f"Jour invalide: {self.day}")
 
-        max_month = 13 if self.calendar == CalendarType.FRENCH_REPUBLICAN else 12
+        # 13 mois : jours complémentaires (républicain), année embolismique (hébreu)
+        has_month_13 = self.calendar in (
+            CalendarType.FRENCH_REPUBLICAN,
+            CalendarType.HEBREW,
+        )
+        max_month = 13 if has_month_13 else 12
         if self.month is not None and (self.month < 1 or self.month > max_month):
             raise ValueError(f"Mois invalide: {self.month}")
 

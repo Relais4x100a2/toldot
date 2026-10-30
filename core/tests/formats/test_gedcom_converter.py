@@ -366,8 +366,13 @@ class TestGEDCOMDatePrefixAndCalendarRoundTrip:
         assert restored.calendar == CalendarType.GREGORIAN
 
 
-class TestGEDCOMBetweenDates:
-    """Intervalles BET ... AND ... (export et import)."""
+class TestGEDCOMBetweenAndHebrewDates:
+    """Intervalles BET ... AND ... et calendrier hébreu (@#DHEBREW@)."""
+
+    _HEBREW_MONTHS = [
+        "TSH", "CSH", "KSL", "TVT", "SHV", "ADR", "ADS",
+        "NSN", "IYR", "SVN", "TMZ", "AAV", "ELL",
+    ]  # fmt: skip
 
     @staticmethod
     def _export_line_and_reloaded_date(date):
@@ -430,3 +435,19 @@ class TestGEDCOMBetweenDates:
         )
         (person,) = GEDCOMImporter().import_from_string(content).persons.values()
         assert person.birth_date is None
+
+    @pytest.mark.parametrize("month", range(1, 14))
+    def test_hebrew_month_round_trip(self, month):
+        date = Date(day=15, month=month, year=5750, calendar=CalendarType.HEBREW)
+        line, restored = self._export_line_and_reloaded_date(date)
+        assert line == f"2 DATE @#DHEBREW@ 15 {self._HEBREW_MONTHS[month - 1]} 5750"
+        assert restored.calendar == CalendarType.HEBREW
+        assert (restored.day, restored.month, restored.year) == (15, month, 5750)
+
+    def test_hebrew_year_only_and_prefix_round_trip(self):
+        date = Date(year=5750, prefix=DatePrefix.ABOUT, calendar=CalendarType.HEBREW)
+        line, restored = self._export_line_and_reloaded_date(date)
+        assert line == "2 DATE ABT @#DHEBREW@ 5750"
+        assert restored.prefix == DatePrefix.ABOUT
+        assert restored.calendar == CalendarType.HEBREW
+        assert restored.year == 5750
