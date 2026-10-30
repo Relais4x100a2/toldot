@@ -3,11 +3,13 @@ Tests pour le convertisseur GEDCOM
 """
 
 import os
+import re
 import tempfile
 
 import pytest
 
 from geneweb_py.core.date import CalendarType, Date
+from geneweb_py.core.event import Event, EventType
 from geneweb_py.core.family import Family, MarriageStatus
 from geneweb_py.core.genealogy import Genealogy
 from geneweb_py.core.person import Gender, Person
@@ -230,3 +232,47 @@ class TestGEDCOMExporterCalendars:
         date = Date(day=18, month=2, year=8, calendar=CalendarType.FRENCH_REPUBLICAN)
         line = self._birth_date_line(date)
         assert line == "2 DATE @#DFRENCH R@ 18 BRUM 8"
+
+
+class TestGEDCOMExporterMultilineNotes:
+    """Les notes multi-lignes doivent rester du GEDCOM valide (CONT)."""
+
+    @staticmethod
+    def _export(person):
+        genealogy = Genealogy()
+        genealogy.add_person(person)
+        return GEDCOMExporter().export_to_string(genealogy)
+
+    @staticmethod
+    def _assert_every_line_has_level(content):
+        for number, line in enumerate(content.splitlines(), start=1):
+            assert re.match(r"^\d+ ", line), f"ligne {number} sans niveau GEDCOM"
+
+    def test_person_note_with_newline_stays_valid_gedcom(self):
+        person = Person(last_name="DUPONT", first_name="Jean")
+        person.notes.append("Première ligne\nDeuxième ligne")
+        self._assert_every_line_has_level(self._export(person))
+
+    def test_person_note_round_trip_keeps_line_breaks(self):
+        person = Person(last_name="DUPONT", first_name="Jean")
+        person.notes.append("Première ligne\nDeuxième ligne")
+        content = self._export(person)
+        reloaded = GEDCOMImporter().import_from_string(content)
+        (restored,) = reloaded.persons.values()
+        assert "\n".join(restored.notes) == "Première ligne\nDeuxième ligne"
+
+    def test_event_note_with_newline_stays_valid_gedcom(self):
+        person = Person(last_name="DUPONT", first_name="Jean")
+        person.events.append(
+            Event(
+                event_type=EventType.BIRTH,
+                place="Paris",
+                notes=["Ligne A\nLigne B\r\nLigne C"],
+            )
+        )
+        self._assert_every_line_has_level(self._export(person))
+
+    def test_single_line_notes_unchanged(self):
+        person = Person(last_name="DUPONT", first_name="Jean")
+        person.notes.append("Une seule ligne")
+        assert "2 CONT Une seule ligne" in self._export(person).splitlines()

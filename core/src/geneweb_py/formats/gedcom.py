@@ -194,7 +194,7 @@ class GEDCOMExporter(BaseExporter):
         if person.notes:
             lines.append("1 NOTE")
             for note in person.notes:
-                lines.append(f"2 CONT {note}")
+                lines.extend(f"2 CONT {text}" for text in self._split_note(note))
 
         # Événements personnels
         if person.events:
@@ -251,9 +251,16 @@ class GEDCOMExporter(BaseExporter):
 
             if event.notes:
                 for note in event.notes:
-                    lines.append(f"2 NOTE {note}")
+                    first, *rest = self._split_note(note)
+                    lines.append(f"2 NOTE {first}")
+                    lines.extend(f"3 CONT {text}" for text in rest)
 
         return lines
+
+    @staticmethod
+    def _split_note(note: str) -> List[str]:
+        """Découpe une note en lignes (une ligne GEDCOM ne contient jamais de saut de ligne)."""
+        return note.splitlines() or [""]
 
     def _export_date(self, date: Date, event_type: str) -> List[str]:
         """Exporte une date vers le format GEDCOM."""
