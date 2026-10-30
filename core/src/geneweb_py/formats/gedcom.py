@@ -305,8 +305,13 @@ class GEDCOMExporter(BaseExporter):
         "COMP",
     ]
 
+    # Échappement GEDCOM et noms de mois des calendriers non grégoriens.
+    _CALENDARS = {
+        CalendarType.FRENCH_REPUBLICAN: ("@#DFRENCH R@", _FRENCH_REPUBLICAN_MONTHS),
+    }
+
     # Pas d'équivalent GEDCOM à « peut-être » : EST (estimé) est le plus proche.
-    # OR / BETWEEN portent des dates alternatives que cet export n'écrit pas.
+    # OR porte des dates alternatives que cet export n'écrit pas.
     _GEDCOM_PREFIXES = {
         DatePrefix.ABOUT: "ABT",
         DatePrefix.MAYBE: "EST",
@@ -316,18 +321,26 @@ class GEDCOMExporter(BaseExporter):
 
     def _format_gedcom_date(self, date: Date) -> str:
         """Formate une date au format GEDCOM."""
-        parts = []
+        if date.prefix == DatePrefix.BETWEEN and date.alternative_dates:
+            # Le calendrier est porté par la date principale pour les deux bornes.
+            start = self._format_date_body(date, date.calendar)
+            end = self._format_date_body(date.alternative_dates[0], date.calendar)
+            if start and end:
+                return f"BET {start} AND {end}"
 
         prefix_keyword = self._GEDCOM_PREFIXES.get(date.prefix) if date.prefix else None
-        if prefix_keyword:
-            parts.append(prefix_keyword)
+        body = self._format_date_body(date, date.calendar)
+        return f"{prefix_keyword} {body}" if prefix_keyword else body
 
-        is_republican = date.calendar == CalendarType.FRENCH_REPUBLICAN
-        if is_republican:
-            parts.append("@#DFRENCH R@")
-            month_names = self._FRENCH_REPUBLICAN_MONTHS
-        else:
-            month_names = self._GREGORIAN_MONTHS
+    def _format_date_body(self, date: Date, calendar: CalendarType) -> str:
+        """Formate jour, mois et année, avec l'échappement du calendrier."""
+        parts = []
+
+        escape, month_names = self._CALENDARS.get(
+            calendar, ("", self._GREGORIAN_MONTHS)
+        )
+        if escape:
+            parts.append(escape)
 
         if date.day:
             parts.append(str(date.day))
@@ -658,19 +671,18 @@ class GEDCOMImporter(BaseImporter):
         if not tokens:
             return None
         if tokens[0] == "BET":
-            return None
+            return self._parse_gedcom_between(tokens[1:], line_number)
         calendar = CalendarType.GREGORIAN
         months = self._GEDCOM_MONTHS
-        if tokens[:2] == ["@#DFRENCH", "R@"]:
-            calendar = CalendarType.FRENCH_REPUBLICAN
-            months = {
-                name: number
-                for number, name in enumerate(GEDCOMExporter._FRENCH_REPUBLICAN_MONTHS)
-                if name
-            }
-            tokens = tokens[2:]
-            if not tokens:
-                return None
+        for candidate, (escape, names) in GEDCOMExporter._CALENDARS.items():
+            escape_tokens = escape.split()
+            if tokens[: len(escape_tokens)] == escape_tokens:
+                calendar = candidate
+                months = {name: number for number, name in enumerate(names) if name}
+                tokens = tokens[len(escape_tokens) :]
+                break
+        if not tokens:
+            return None
         day: Optional[int] = None
         month: Optional[int] = None
         year: Optional[int] = None
@@ -704,6 +716,23 @@ class GEDCOMImporter(BaseImporter):
                 context=value,
                 source_format="GEDCOM",
             ) from exc
+
+    def _parse_gedcom_between(
+        self, tokens: List[str], line_number: int
+    ) -> Optional[Date]:
+        """Lit ``<date> AND <date>`` : la borne de fin va dans ``alternative_dates``."""
+        if "AND" not in tokens:
+            return None
+        cut = tokens.index("AND")
+        start = self._parse_gedcom_date(" ".join(tokens[:cut]), line_number)
+        end = self._parse_gedcom_date(" ".join(tokens[cut + 1 :]), line_number)
+        if start is None or end is None:
+            return None
+        # Le calendrier reste porté par la date principale (cf. Date.parse).
+        end.calendar = CalendarType.GREGORIAN
+        start.prefix = DatePrefix.BETWEEN
+        start.alternative_dates = [end]
+        return start
 
     def _parse_note_payload(
         self, block: List[Tuple[int, str]], start: int, base_level: int

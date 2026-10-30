@@ -508,9 +508,19 @@ class TestGEDCOMImporterCoverage:
         assert importer._parse_gedcom_date("ABT", 1) is None
 
     def test_parse_gedcom_date_bet(self) -> None:
-        """Ligne 602 : BET retourne None (non supporté)."""
+        """BET <date> AND <date> devient un intervalle (borne de fin en alternative)."""
         importer = GEDCOMImporter()
-        assert importer._parse_gedcom_date("BET 1900 AND 1910", 1) is None
+        d = importer._parse_gedcom_date("BET 1900 AND 1910", 1)
+        assert d is not None
+        assert d.prefix == DatePrefix.BETWEEN
+        assert d.year == 1900
+        assert [alt.year for alt in d.alternative_dates] == [1910]
+
+    def test_parse_gedcom_date_bet_without_and_is_ignored(self) -> None:
+        """BET sans AND (ou avec une borne illisible) reste ignoré."""
+        importer = GEDCOMImporter()
+        assert importer._parse_gedcom_date("BET 1900", 1) is None
+        assert importer._parse_gedcom_date("BET 1900 AND", 1) is None
 
     def test_parse_gedcom_date_year_only(self) -> None:
         """Lignes 607-608 : année seule."""

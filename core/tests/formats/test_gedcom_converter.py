@@ -364,3 +364,69 @@ class TestGEDCOMDatePrefixAndCalendarRoundTrip:
         assert line == "2 DATE 15 JUN 1990"
         assert restored.prefix is None
         assert restored.calendar == CalendarType.GREGORIAN
+
+
+class TestGEDCOMBetweenDates:
+    """Intervalles BET ... AND ... (export et import)."""
+
+    @staticmethod
+    def _export_line_and_reloaded_date(date):
+        person = Person(last_name="DUPONT", first_name="Jean", birth_date=date)
+        genealogy = Genealogy()
+        genealogy.add_person(person)
+        content = GEDCOMExporter().export_to_string(genealogy)
+        lines = content.splitlines()
+        line = lines[lines.index("1 BIRT") + 1]
+        (restored,) = GEDCOMImporter().import_from_string(content).persons.values()
+        return line, restored.birth_date
+
+    def test_between_years_is_exported(self):
+        date = Date(
+            year=1850, prefix=DatePrefix.BETWEEN, alternative_dates=[Date(year=1860)]
+        )
+        line, _ = self._export_line_and_reloaded_date(date)
+        assert line == "2 DATE BET 1850 AND 1860"
+
+    def test_between_full_dates_round_trip(self):
+        date = Date(
+            day=3,
+            month=5,
+            year=1850,
+            prefix=DatePrefix.BETWEEN,
+            alternative_dates=[Date(day=5, month=6, year=1860)],
+        )
+        line, restored = self._export_line_and_reloaded_date(date)
+        assert line == "2 DATE BET 3 MAY 1850 AND 5 JUN 1860"
+        assert restored.prefix == DatePrefix.BETWEEN
+        assert (restored.day, restored.month, restored.year) == (3, 5, 1850)
+        (end,) = restored.alternative_dates
+        assert (end.day, end.month, end.year) == (5, 6, 1860)
+
+    def test_between_without_end_bound_is_written_as_plain_date(self):
+        date = Date(year=1850, prefix=DatePrefix.BETWEEN)
+        line, _ = self._export_line_and_reloaded_date(date)
+        assert line == "2 DATE 1850"
+
+    def test_between_republican_round_trip_keeps_calendar_on_main_date(self):
+        date = Date(
+            day=3,
+            month=13,
+            year=7,
+            prefix=DatePrefix.BETWEEN,
+            calendar=CalendarType.FRENCH_REPUBLICAN,
+            alternative_dates=[Date(day=1, month=1, year=8)],
+        )
+        line, restored = self._export_line_and_reloaded_date(date)
+        assert line == "2 DATE BET @#DFRENCH R@ 3 COMP 7 AND @#DFRENCH R@ 1 VEND 8"
+        assert restored.prefix == DatePrefix.BETWEEN
+        assert restored.calendar == CalendarType.FRENCH_REPUBLICAN
+        (end,) = restored.alternative_dates
+        assert (end.day, end.month, end.year) == (1, 1, 8)
+        assert end.calendar == CalendarType.GREGORIAN
+
+    def test_malformed_between_is_still_ignored_on_import(self):
+        content = (
+            "0 HEAD\n0 @I1@ INDI\n1 NAME Jean /DUPONT/\n1 BIRT\n2 DATE BET 1850\n0 TRLR"
+        )
+        (person,) = GEDCOMImporter().import_from_string(content).persons.values()
+        assert person.birth_date is None
