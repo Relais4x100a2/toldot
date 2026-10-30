@@ -66,7 +66,7 @@ class TestGEDCOMExporter:
         lines = result.split("\n")
 
         # Vérifier la présence de la personne et des dates
-        assert any("0 I0001 INDI" in line for line in lines)
+        assert any("0 @I0001@ INDI" in line for line in lines)
         assert any("2 GIVN Jean" in line for line in lines)
         assert any("2 SURN DUPONT" in line for line in lines)
         assert any("2 DATE 15 MAR 1950" in line for line in lines)

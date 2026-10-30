@@ -77,9 +77,9 @@ class TestGEDCOMExporter:
             assert "0 HEAD" in content
             assert "1 GEDC" in content
             assert "2 VERS" in content
-            assert "0 I0001 INDI" in content  # Personne 1
-            assert "0 I0002 INDI" in content  # Personne 2
-            assert "0 F0001 FAM" in content  # Famille 1
+            assert "0 @I0001@ INDI" in content  # Personne 1
+            assert "0 @I0002@ INDI" in content  # Personne 2
+            assert "0 @F0001@ FAM" in content  # Famille 1
 
         finally:
             if os.path.exists(temp_path):
@@ -95,9 +95,9 @@ class TestGEDCOMExporter:
         assert "0 HEAD" in gedcom_string
         assert "1 GEDC" in gedcom_string
         assert "2 VERS" in gedcom_string
-        assert "0 I0001 INDI" in gedcom_string
-        assert "0 I0002 INDI" in gedcom_string
-        assert "0 F0001 FAM" in gedcom_string
+        assert "0 @I0001@ INDI" in gedcom_string
+        assert "0 @I0002@ INDI" in gedcom_string
+        assert "0 @F0001@ FAM" in gedcom_string
 
     def test_export_with_custom_settings(self, sample_genealogy):
         """Test export avec paramètres personnalisés."""
@@ -483,7 +483,7 @@ class TestGEDCOMFamilyLinks:
         for line in content.splitlines():
             if line.startswith("0 "):
                 parts = line.split()
-                current = parts[1] if len(parts) > 2 else None
+                current = parts[1].strip("@") if len(parts) > 2 else None
                 if current:
                     blocks[current] = []
             elif current and line.startswith("1 "):
@@ -533,3 +533,55 @@ class TestGEDCOMFamilyLinks:
         )
         assert spouse_counts == [0, 1, 1, 2]
         assert child_counts == [0, 0, 0, 1]
+
+
+class TestGEDCOMXrefConformity:
+    """Enregistrements et pointeurs suivent la forme standard @XREF@."""
+
+    @staticmethod
+    def _content():
+        return GEDCOMExporter().export_to_string(TestGEDCOMFamilyLinks._genealogy())
+
+    def test_record_headers_use_at_delimiters(self):
+        lines = self._content().splitlines()
+        assert "0 @I0001@ INDI" in lines
+        assert "0 @F0001@ FAM" in lines
+
+    def test_fam_pointers_are_xrefs(self):
+        lines = self._content().splitlines()
+        fam = lines[lines.index("0 @F0001@ FAM") :]
+        assert "1 HUSB @I0001@" in fam
+        assert "1 WIFE @I0002@" in fam
+        assert "1 CHIL @I0004@" in fam
+
+    def test_every_level_one_pointer_is_a_standard_xref(self):
+        for line in self._content().splitlines():
+            parts = line.split(" ", 2)
+            if parts[0] == "1" and parts[1] in ("HUSB", "WIFE", "CHIL", "FAMS", "FAMC"):
+                assert re.fullmatch(r"@[IF]\d{4}@", parts[2]), line
+
+    def test_pointer_to_unknown_person_is_not_written(self):
+        genealogy = TestGEDCOMFamilyLinks._genealogy()
+        family = next(iter(genealogy.families.values()))
+        family.wife_id = "INCONNU_Personne_0"
+        content = GEDCOMExporter().export_to_string(genealogy)
+        assert "INCONNU" not in content
+        reloaded = GEDCOMImporter().import_from_string(content)
+        assert len(reloaded.persons) == 4
+
+    def test_round_trip_restores_family_structure(self):
+        genealogy = TestGEDCOMFamilyLinks._genealogy()
+        reloaded = GEDCOMImporter().import_from_string(
+            GEDCOMExporter().export_to_string(genealogy)
+        )
+        first = next(iter(reloaded.families.values()))
+        assert reloaded.persons[first.husband_id].first_name == "Jean"
+        assert reloaded.persons[first.wife_id].first_name == "Marie"
+        assert [reloaded.persons[c.person_id].first_name for c in first.children] == [
+            "Paul"
+        ]
+
+    def test_importer_accepts_headers_with_or_without_delimiters(self):
+        for header in ("@I1@", "I1"):
+            ged = f"0 HEAD\n0 {header} INDI\n1 NAME Jean /DUPONT/\n0 TRLR\n"
+            assert len(GEDCOMImporter().import_from_string(ged).persons) == 1

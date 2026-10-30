@@ -266,9 +266,9 @@ class TestGEDCOMConverter:
             assert "0 HEAD" in content
             assert "1 GEDC" in content
             assert "2 VERS" in content
-            assert "0 I0001 INDI" in content  # Personne 1
-            assert "0 I0002 INDI" in content  # Personne 2
-            assert "0 F0001 FAM" in content  # Famille 1
+            assert "0 @I0001@ INDI" in content  # Personne 1
+            assert "0 @I0002@ INDI" in content  # Personne 2
+            assert "0 @F0001@ FAM" in content  # Famille 1
 
         finally:
             if os.path.exists(temp_path):
@@ -284,9 +284,9 @@ class TestGEDCOMConverter:
         assert "0 HEAD" in gedcom_string
         assert "1 GEDC" in gedcom_string
         assert "2 VERS" in gedcom_string
-        assert "0 I0001 INDI" in gedcom_string
-        assert "0 I0002 INDI" in gedcom_string
-        assert "0 F0001 FAM" in gedcom_string
+        assert "0 @I0001@ INDI" in gedcom_string
+        assert "0 @I0002@ INDI" in gedcom_string
+        assert "0 @F0001@ FAM" in gedcom_string
 
     def test_gedcom_export_invalid_genealogy(self):
         """Test export GEDCOM avec généalogie invalide."""

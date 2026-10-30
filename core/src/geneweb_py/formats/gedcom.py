@@ -161,7 +161,7 @@ class GEDCOMExporter(BaseExporter):
         lines = []
         person_id = self._person_ids[person.unique_id]
 
-        lines.append(f"0 {person_id} INDI")
+        lines.append(f"0 @{person_id}@ INDI")
 
         # Nom
         if person.last_name or person.first_name:
@@ -243,19 +243,23 @@ class GEDCOMExporter(BaseExporter):
         lines = []
         family_id = self._family_ids[family.family_id]
 
-        lines.append(f"0 {family_id} FAM")
+        lines.append(f"0 @{family_id}@ FAM")
 
         # Époux
-        if family.husband_id:
-            lines.append(f"1 HUSB {family.husband_id}")
+        husband = self._person_ids.get(family.husband_id or "")
+        if husband:
+            lines.append(f"1 HUSB @{husband}@")
 
         # Épouse
-        if family.wife_id:
-            lines.append(f"1 WIFE {family.wife_id}")
+        wife = self._person_ids.get(family.wife_id or "")
+        if wife:
+            lines.append(f"1 WIFE @{wife}@")
 
         # Enfants
         for child in family.children:
-            lines.append(f"1 CHIL {child.person_id}")
+            child_xref = self._person_ids.get(child.person_id)
+            if child_xref:
+                lines.append(f"1 CHIL @{child_xref}@")
 
         # Événements familiaux
         for event in family.events:
