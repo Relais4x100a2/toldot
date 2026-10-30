@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import chardet
 
-from ..core.date import Date, DatePrefix
+from ..core.date import CalendarType, Date, DatePrefix
 from ..core.event import (
     Event,
     EventType,
@@ -265,28 +265,53 @@ class GEDCOMExporter(BaseExporter):
 
         return lines
 
+    _GREGORIAN_MONTHS = [
+        "",
+        "JAN",
+        "FEB",
+        "MAR",
+        "APR",
+        "MAY",
+        "JUN",
+        "JUL",
+        "AUG",
+        "SEP",
+        "OCT",
+        "NOV",
+        "DEC",
+    ]
+    # Mois du calendrier républicain ; le 13e (COMP) regroupe les jours complémentaires.
+    _FRENCH_REPUBLICAN_MONTHS = [
+        "",
+        "VEND",
+        "BRUM",
+        "FRIM",
+        "NIVO",
+        "PLUV",
+        "VENT",
+        "GERM",
+        "FLOR",
+        "PRAI",
+        "MESS",
+        "THER",
+        "FRUC",
+        "COMP",
+    ]
+
     def _format_gedcom_date(self, date: Date) -> str:
         """Formate une date au format GEDCOM."""
         parts = []
 
+        is_republican = date.calendar == CalendarType.FRENCH_REPUBLICAN
+        if is_republican:
+            parts.append("@#DFRENCH R@")
+            month_names = self._FRENCH_REPUBLICAN_MONTHS
+        else:
+            month_names = self._GREGORIAN_MONTHS
+
         if date.day:
             parts.append(str(date.day))
         if date.month:
-            month_names = [
-                "",
-                "JAN",
-                "FEB",
-                "MAR",
-                "APR",
-                "MAY",
-                "JUN",
-                "JUL",
-                "AUG",
-                "SEP",
-                "OCT",
-                "NOV",
-                "DEC",
-            ]
             parts.append(month_names[date.month])
         if date.year:
             parts.append(str(date.year))

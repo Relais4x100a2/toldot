@@ -7,7 +7,7 @@ import tempfile
 
 import pytest
 
-from geneweb_py.core.date import Date
+from geneweb_py.core.date import CalendarType, Date
 from geneweb_py.core.family import Family, MarriageStatus
 from geneweb_py.core.genealogy import Genealogy
 from geneweb_py.core.person import Gender, Person
@@ -203,3 +203,30 @@ class TestGEDCOMConverterIntegration:
         imp1 = imported_genealogy.find_person("DUPONT", "Jean", 0)
         assert imp1 is not None
         assert imp1.birth_place == "Paris"
+
+
+class TestGEDCOMExporterCalendars:
+    """Export des dates selon le calendrier (mois 13 républicain inclus)."""
+
+    @staticmethod
+    def _birth_date_line(date):
+        person = Person(last_name="DUPONT", first_name="Jean", birth_date=date)
+        genealogy = Genealogy()
+        genealogy.add_person(person)
+        content = GEDCOMExporter().export_to_string(genealogy)
+        lines = content.splitlines()
+        return lines[lines.index("1 BIRT") + 1]
+
+    def test_gregorian_date_unchanged(self):
+        line = self._birth_date_line(Date(day=15, month=6, year=1990))
+        assert line == "2 DATE 15 JUN 1990"
+
+    def test_french_republican_complementary_month_does_not_crash(self):
+        date = Date(day=3, month=13, year=7, calendar=CalendarType.FRENCH_REPUBLICAN)
+        line = self._birth_date_line(date)
+        assert line == "2 DATE @#DFRENCH R@ 3 COMP 7"
+
+    def test_french_republican_regular_month(self):
+        date = Date(day=18, month=2, year=8, calendar=CalendarType.FRENCH_REPUBLICAN)
+        line = self._birth_date_line(date)
+        assert line == "2 DATE @#DFRENCH R@ 18 BRUM 8"
