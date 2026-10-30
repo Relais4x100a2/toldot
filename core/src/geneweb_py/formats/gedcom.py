@@ -305,9 +305,22 @@ class GEDCOMExporter(BaseExporter):
         "COMP",
     ]
 
+    # Pas d'équivalent GEDCOM à « peut-être » : EST (estimé) est le plus proche.
+    # OR / BETWEEN portent des dates alternatives que cet export n'écrit pas.
+    _GEDCOM_PREFIXES = {
+        DatePrefix.ABOUT: "ABT",
+        DatePrefix.MAYBE: "EST",
+        DatePrefix.BEFORE: "BEF",
+        DatePrefix.AFTER: "AFT",
+    }
+
     def _format_gedcom_date(self, date: Date) -> str:
         """Formate une date au format GEDCOM."""
         parts = []
+
+        prefix_keyword = self._GEDCOM_PREFIXES.get(date.prefix) if date.prefix else None
+        if prefix_keyword:
+            parts.append(prefix_keyword)
 
         is_republican = date.calendar == CalendarType.FRENCH_REPUBLICAN
         if is_republican:

@@ -8,7 +8,7 @@ import tempfile
 
 import pytest
 
-from geneweb_py.core.date import CalendarType, Date
+from geneweb_py.core.date import CalendarType, Date, DatePrefix
 from geneweb_py.core.event import Event, EventType
 from geneweb_py.core.family import Family, MarriageStatus
 from geneweb_py.core.genealogy import Genealogy
@@ -276,3 +276,66 @@ class TestGEDCOMExporterMultilineNotes:
         person = Person(last_name="DUPONT", first_name="Jean")
         person.notes.append("Une seule ligne")
         assert "2 CONT Une seule ligne" in self._export(person).splitlines()
+
+
+class TestGEDCOMDatePrefixAndCalendarRoundTrip:
+    """Préfixes (vers/avant/après) et calendrier républicain : export puis ré-import."""
+
+    @staticmethod
+    def _export_line_and_reloaded_date(date):
+        person = Person(last_name="DUPONT", first_name="Jean", birth_date=date)
+        genealogy = Genealogy()
+        genealogy.add_person(person)
+        content = GEDCOMExporter().export_to_string(genealogy)
+        lines = content.splitlines()
+        line = lines[lines.index("1 BIRT") + 1]
+        (restored,) = GEDCOMImporter().import_from_string(content).persons.values()
+        return line, restored.birth_date
+
+    @pytest.mark.parametrize(
+        ("prefix", "keyword"),
+        [
+            (DatePrefix.ABOUT, "ABT"),
+            (DatePrefix.BEFORE, "BEF"),
+            (DatePrefix.AFTER, "AFT"),
+            (DatePrefix.MAYBE, "EST"),
+        ],
+    )
+    def test_prefix_is_exported(self, prefix, keyword):
+        line, _ = self._export_line_and_reloaded_date(Date(year=1850, prefix=prefix))
+        assert line == f"2 DATE {keyword} 1850"
+
+    @pytest.mark.parametrize(
+        "prefix", [DatePrefix.ABOUT, DatePrefix.BEFORE, DatePrefix.AFTER]
+    )
+    def test_prefix_survives_round_trip(self, prefix):
+        _, restored = self._export_line_and_reloaded_date(
+            Date(day=3, month=5, year=1850, prefix=prefix)
+        )
+        assert (restored.day, restored.month, restored.year) == (3, 5, 1850)
+        assert restored.prefix == prefix
+
+    def test_maybe_prefix_is_exported_as_estimated_and_read_back_as_about(self):
+        _, restored = self._export_line_and_reloaded_date(
+            Date(year=1850, prefix=DatePrefix.MAYBE)
+        )
+        assert restored.prefix == DatePrefix.ABOUT
+
+    def test_prefix_comes_before_calendar_escape(self):
+        date = Date(
+            day=3,
+            month=13,
+            year=7,
+            prefix=DatePrefix.ABOUT,
+            calendar=CalendarType.FRENCH_REPUBLICAN,
+        )
+        line, _ = self._export_line_and_reloaded_date(date)
+        assert line == "2 DATE ABT @#DFRENCH R@ 3 COMP 7"
+
+    def test_plain_gregorian_date_unchanged(self):
+        line, restored = self._export_line_and_reloaded_date(
+            Date(day=15, month=6, year=1990)
+        )
+        assert line == "2 DATE 15 JUN 1990"
+        assert restored.prefix is None
+        assert restored.calendar == CalendarType.GREGORIAN
