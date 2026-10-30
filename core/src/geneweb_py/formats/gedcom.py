@@ -10,6 +10,15 @@ résolution des pointeurs, ``DATE``, ``NOTE`` et continuations ``CONT`` /
 ``CONC``. Les erreurs de conversion sont levées via ``ConversionError``
 (hiérarchie ``GeneWebError``). La lecture fichier détecte l'encodage
 (UTF-8 puis ``chardet``, repli ISO-8859-1), alignée sur le parser .gw.
+
+Dates : préfixes ``ABT`` / ``BEF`` / ``AFT`` / ``EST``, intervalles
+``BET ... AND ...`` et calendriers républicain (``@#DFRENCH R@``) et hébreu
+(``@#DHEBREW@``) sont conservés à l'aller-retour. Limites du format :
+
+- une date inconnue (``is_unknown``) n'est pas écrite, GEDCOM n'ayant pas de
+  valeur valide pour elle ; elle est relue comme absente (``None``) ;
+- « peut-être » est écrit ``EST`` et relu comme « vers » (``ABOUT``) ;
+- les dates ``OR`` (alternatives) ne sont pas écrites.
 """
 
 from datetime import datetime
